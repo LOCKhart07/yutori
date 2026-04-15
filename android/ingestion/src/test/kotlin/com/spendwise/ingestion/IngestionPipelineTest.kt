@@ -181,7 +181,7 @@ class IngestionPipelineTest {
         val raw = rawSms(
             sender = "JD-KOTAKB-S",
             body = "Sent Rs.100.00 from Kotak Bank AC X0000 to " +
-                "examplename-4@oksbi on 09-01-26.UPI Ref 1. Not you, URL",
+                "examplename-4@oksbi on 01-01-26.UPI Ref 1. Not you, URL",
         )
 
         val outcome = pipeline.ingest(raw)

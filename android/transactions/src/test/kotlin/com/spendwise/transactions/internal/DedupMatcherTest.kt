@@ -110,7 +110,7 @@ class DedupMatcherTest {
 
     @Test
     fun `amount beyond 0_5 INR tolerance does not match`() {
-        val rows = listOf(row(inrAmount = 2255.0))
+        val rows = listOf(row(inrAmount = 101.0))
         DedupMatcher.findCandidate(event(), rows).shouldBeNull()
     }
 

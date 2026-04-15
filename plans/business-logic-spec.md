@@ -579,7 +579,7 @@ Reparse is a potentially large operation. It must:
 ### 10.1 CRED bill payment (single SMS, straightforward)
 
 Input: `Sent Rs.1000.00 from Kotak Bank AC X0000 to cred.club@axisb
-on 20-02-26`.
+on 01-01-26`.
 
 - Parser: `ParseResult(CC_BILL_PAYMENT, 1000, merchant="cred.club@axisb",
   last4="0000")` — the parser's middleman detection fires.
@@ -633,7 +633,7 @@ them requires the salary-sender whitelist / payback UX — not in v1.
 ### 10.5 Self-transfer Kotak→Axis (registered)
 
 - Kotak UPI debit: `Sent Rs.100 from Kotak Bank AC X0000 to
-  examplename-4@oksbi on 09-01-26` → parser → UPI_PAYMENT →
+  examplename-4@oksbi on 01-01-26` → parser → UPI_PAYMENT →
   classifier consults `recipient_rules`, finds
   `examplename-*@oksbi → SELF_TRANSFER` → final classification:
   SELF_TRANSFER → `budgetEffect = DROP` → no transaction for budget.
@@ -738,9 +738,8 @@ Against a fresh in-memory Room DB:
 1. Preload the feasibility dataset.
 2. Register known accounts + recipient rules (seeded per accounts memo, local-only).
 3. Run the full ingestion → classifier → transactions pipeline.
-4. Assert: monthly spend totals match the corrected post-CRED-fix
-   numbers (Jan 50,000 / Feb 50,000 / Mar 50,000 from the feasibility
-   analysis).
+4. Assert: monthly spend totals match the expected post-CRED-fix
+   numbers from the feasibility analysis.
 
 This is the "does the real-world math come out right" smoke test.
 

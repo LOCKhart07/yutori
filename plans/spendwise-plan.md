@@ -359,7 +359,7 @@ the parser failed to recognize (a parser gap, not a content category).
 
 Surfaced during the April 2026 feasibility dataset labeling. Examples:
 
-> `Txn of INR 100.00 at WWW OLACABS COM on Kotak Credit Card x3333 declined as incorrect CVC entered...`
+> `Txn of INR 100.00 at WWW EXAMPLE COM on Kotak Credit Card x3333 declined as incorrect CVC entered...`
 > `Transaction on Axis Bank Credit Card no. XX1111 has been declined due to incorrect CVV...`
 
 No money moves; counting them would inflate spend. They are still stored in
@@ -394,8 +394,8 @@ is auditable, but they do not enter the `transactions` table.
 
 Real inboxes contain a substantial stream of incoming-credit SMSes:
 
-> `Received Rs.2.00 in your Kotak Bank AC X0000 from goog-payments@axisbank on 01-01-26. UPI Ref:...`
-> `Received Rs.5000.00 in your Kotak Bank AC X0000 from friendone-1@okicici on 02-01-26. UPI Ref:...`
+> `Received Rs.100.00 in your Kotak Bank AC X0000 from goog-payments@axisbank on 01-01-26. UPI Ref:...`
+> `Received Rs.50.00 in your Kotak Bank AC X0000 from friendone-1@okicici on 01-01-26. UPI Ref:...`
 
 These split semantically into two distinct cases:
 
@@ -430,7 +430,7 @@ A transfer between the user's own accounts (e.g. Kotak savings → Axis
 savings, or Kotak savings → Axis CC bill) produces two SMSes whose
 individual contents are indistinguishable from real external transactions:
 
-> `Sent Rs.100 from Kotak Bank AC X0000 to <upi>@axl on 09-01-26.UPI Ref ...`
+> `Sent Rs.100 from Kotak Bank AC X0000 to <upi>@axl on 01-01-26.UPI Ref ...`
 > `INR 100.00 credited A/c no. XX2222 ... UPI/P2A/...`
 
 The first matches `rule_kotak_upi` → classified `UPI_PAYMENT` → **counted
@@ -447,14 +447,12 @@ It only nets out cleanly because both sides happen to be
 
 - Add a Settings screen: "My Accounts." User registers their own accounts
   once — `(bank, masked_last4)` plus optional UPI VPAs and beneficiary
-  names. Known accounts from the feasibility dataset (Jan–Mar 2026):
-  Kotak Bank `XX0000` (savings), Axis Bank `XX2222` (savings), Vasai
-  Janata Bank `006666` (savings — quarterly interest only, likely dormant),
-  Axis Bank CC `XX1111`, Kotak CC `x3333`, Paytm Money `X5555`
+  names. Seed shape (placeholders): Kotak Bank `XX0000` (savings), Axis
+  Bank `XX2222` (savings), Vasai Janata Bank `006666` (savings), Axis
+  Bank CC `XX1111`, Kotak CC `x3333`, Paytm Money `X5555`
   (investments — inflows via IMPS are self-transfers, not spend).
-  Confirmed own UPI handle pattern: `examplename-*@oksbi`. Other
-  handles sharing the surname root in the dataset are family members,
-  not the user — heuristic matching on surname is unsafe.
+  Own UPI handle pattern follows `examplename-*@oksbi`. Heuristic
+  matching on a surname root is unsafe — family members often share it.
 - Parser checks the recipient (debit side) and source (credit side) against
   this list.
 - If either matches → new classification `SELF_TRANSFER`. Both sides drop
@@ -549,10 +547,9 @@ The CC transactions that make up this bill were *already* counted at
 transaction time (§4.2). Counting the UPI leg too = same double-count that
 §4.1 warns about, just via a different channel.
 
-**Feasibility dataset evidence:** 8 UPI payments to `cred.club@axisb` over
-3 months totaling INR 100,000. When reclassified correctly, real spend
-drops by 21K / 41K / 98K respectively across Jan/Feb/Mar 2026 — material
-distortion (up to 36% of a month's spend).
+**Feasibility dataset evidence:** recurring UPI payments to `cred.club@axisb`
+over several months. When reclassified correctly, reported spend drops
+materially month-on-month — up to roughly a third of a month's spend.
 
 **Fix:**
 

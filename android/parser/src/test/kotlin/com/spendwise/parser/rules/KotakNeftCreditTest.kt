@@ -54,7 +54,7 @@ class KotakNeftCreditTest {
         kotakNeftCredit(
             SmsInput(
                 sender = "JD-KOTAKB-S",
-                body = "Received Rs.2.00 in your Kotak Bank AC X0000 from foo@bar on 01-01-26.",
+                body = "Received Rs.100.00 in your Kotak Bank AC X0000 from foo@bar on 01-01-26.",
             ),
         ).shouldBeNull()
     }

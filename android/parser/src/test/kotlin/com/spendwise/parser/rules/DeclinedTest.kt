@@ -31,7 +31,7 @@ class DeclinedTest {
         val result = declined(
             SmsInput(
                 sender = "VM-KOTAKB-S",
-                body = "Txn of INR 100.00 at WWW OLACABS COM on Kotak Credit Card x3333 " +
+                body = "Txn of INR 100.00 at WWW EXAMPLE COM on Kotak Credit Card x3333 " +
                     "declined as incorrect CVC entered. Please enter correct CVC.",
             ),
         )!!

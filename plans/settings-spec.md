@@ -54,7 +54,7 @@ First-launch seed (shown as a suggestion, not auto-confirmed):
 ```
 Kotak Bank         XX0000   SAVINGS       "Primary"
 Axis Bank          XX2222   SAVINGS       "Axis savings"
-Vasai Janata Bank  006666   SAVINGS       "Dormant"
+Vasai Janata Bank  006666   SAVINGS       "Secondary"
 Axis Bank          XX1111   CREDIT_CARD   "Axis ACE"
 Axis Bank          XX4444   CREDIT_CARD   "Axis ACE (replacement)"
 Kotak Bank         x3333    CREDIT_CARD   "Kotak CC"

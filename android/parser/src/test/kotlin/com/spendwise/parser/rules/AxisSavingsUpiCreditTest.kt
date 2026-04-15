@@ -13,7 +13,7 @@ class AxisSavingsUpiCreditTest {
         val result = axisSavingsUpiCredit(
             SmsInput(
                 sender = "JD-AXISBK-S",
-                body = "INR 100.00 credited\nA/c no. XX2222\n09-01-26, 11:09:42 IST\nUPI/P2A/000000000000/EXAMPLE E/KKBK/Cc p - Axis Bank",
+                body = "INR 100.00 credited\nA/c no. XX2222\n01-01-26, 12:00:00 IST\nUPI/P2A/000000000000/EXAMPLE E/KKBK/Cc p - Axis Bank",
             ),
         )!!
         result.classification shouldBe Classification.INCOMING_CREDIT
@@ -30,10 +30,10 @@ class AxisSavingsUpiCreditTest {
         val result = axisSavingsUpiCredit(
             SmsInput(
                 sender = "AX-AXISBK-S",
-                body = "INR 20130.00 credited\nA/c no. XX2222\n21-03-26, 11:09:24 IST\nUPI/P2A/000000000000/EXAMPLE E/BACB/Jeet - Axis Bank",
+                body = "INR 50.00 credited\nA/c no. XX2222\n01-01-26, 12:00:00 IST\nUPI/P2A/000000000000/EXAMPLE E/BACB/Jeet - Axis Bank",
             ),
         )!!
-        result.amount shouldBe 20130.00
+        result.amount shouldBe 50.00
         result.last4 shouldBe "2222"
         result.merchant shouldBe null
         result.pattern shouldBe "axis_savings_upi_credit"
@@ -44,7 +44,7 @@ class AxisSavingsUpiCreditTest {
         axisSavingsUpiCredit(
             SmsInput(
                 sender = "VK-KOTAKB",
-                body = "INR 100.00 credited\nA/c no. XX2222\n09-01-26, 11:09:42 IST\n",
+                body = "INR 100.00 credited\nA/c no. XX0000\n01-01-26, 12:00:00 IST\n",
             ),
         ).shouldBeNull()
     }

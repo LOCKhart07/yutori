@@ -13,11 +13,11 @@ class KotakUpiCreditTest {
         val result = kotakUpiCredit(
             SmsInput(
                 sender = "JD-KOTAKB-S",
-                body = "Received Rs.2.00 in your Kotak Bank AC X0000 from goog-payments@axisbank on 01-01-26.UPI Ref:000000000000.",
+                body = "Received Rs.100.00 in your Kotak Bank AC X0000 from goog-payments@axisbank on 01-01-26.UPI Ref:000000000000.",
             ),
         )!!
         result.classification shouldBe Classification.INCOMING_CREDIT
-        result.amount shouldBe 2.00
+        result.amount shouldBe 100.00
         result.currency shouldBe "INR"
         result.merchant shouldBe "goog-payments@axisbank"
         result.last4 shouldBe "0000"
@@ -30,11 +30,11 @@ class KotakUpiCreditTest {
         val result = kotakUpiCredit(
             SmsInput(
                 sender = "JD-KOTAKB-S",
-                body = "Received Rs.5000.00 in your Kotak Bank AC X0000 from friendone-1@okicici on 02-01-26.UPI Ref:000000000000.",
+                body = "Received Rs.50.00 in your Kotak Bank AC X0000 from friendone-1@okicici on 01-01-26.UPI Ref:000000000000.",
             ),
         )!!
         result.classification shouldBe Classification.INCOMING_CREDIT
-        result.amount shouldBe 5000.00
+        result.amount shouldBe 50.00
         result.merchant shouldBe "friendone-1@okicici"
         result.last4 shouldBe "0000"
         result.pattern shouldBe "kotak_upi_credit"
@@ -45,7 +45,7 @@ class KotakUpiCreditTest {
         kotakUpiCredit(
             SmsInput(
                 sender = "VK-AXISBK",
-                body = "Received Rs.2.00 in your Kotak Bank AC X0000 from foo@bar on 01-01-26.",
+                body = "Received Rs.100.00 in your Kotak Bank AC X0000 from foo@bar on 01-01-26.",
             ),
         ).shouldBeNull()
     }

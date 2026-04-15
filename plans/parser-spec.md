@@ -587,7 +587,7 @@ The canonical parser test:
 
 ```kotlin
 @Test fun `parser matches labels across the feasibility dataset`() {
-    val rows = loadRawSmses()             // 656 items
+    val rows = loadRawSmses()
     val labels = loadLabels()
     var correct = 0
     var wrong = 0
@@ -608,7 +608,7 @@ The canonical parser test:
 ```
 
 **Required outcomes** (matching the current Python parser):
-- Financial classification accuracy: 100% (100%).
+- Financial classification accuracy: 100%.
 - Non-financial → spend false-positive rate: <1%.
 - Unmatched financial: 0.
 

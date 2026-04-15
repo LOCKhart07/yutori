@@ -302,8 +302,8 @@ Reads / writes the `budgets` row for the selected month.
    - Info: "Alerts fire at 50% (fixed), 100% (fixed), and every 10% over."
    - Slider / input for "Warn at X%" — default 80, range 60–95.
 4. Carry-over breakdown, read-only:
-   - "From March 2026: +₹12,305 underspent"
-   - "From February 2026: +₹3,411 underspent"
+   - "From March 2026: +₹10,000 underspent"
+   - "From February 2026: +₹5,000 underspent"
    - …and so on back to first budgeted month.
    - Final line: "Effective budget: ₹limit + ₹carry-over = ₹total"
 5. "Save" button; disabled if no change.
@@ -526,8 +526,8 @@ Kotlin. Full unit coverage:
 - **Category ring: theme palette.** 11 accents derived from Material
   dynamic color. No brand colors — they'd fight the primary accent.
 - **Month-over-month comparisons: off in v1 MVP.** Volatility makes
-  simple deltas misleading (see feasibility data: spend swung 2.7×
-  across 3 months). Revisit when smoothing approaches are designed.
+  simple deltas misleading across the sample data. Revisit when
+  smoothing approaches are designed.
 - **Tablet/landscape: phone-only, portrait for v1 MVP.** Accessibility
   §14 still calls out dynamic type + TalkBack; dimensional flexibility
   is a later concern.

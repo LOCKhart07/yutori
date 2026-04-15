@@ -149,8 +149,8 @@ Both writers emit the same shape:
 ```json
 {
   "ids": {
-    "6993": {"classification": "NON_FINANCIAL", "amount": null, ...},
-    "7297": {"classification": "INCOMING_CREDIT", "amount": 50000.00, ...},
+    "0001": {"classification": "NON_FINANCIAL", "amount": null, ...},
+    "0002": {"classification": "INCOMING_CREDIT", "amount": 50000.00, ...},
     ...
   }
 }
