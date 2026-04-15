@@ -18,6 +18,7 @@ Reconciled snapshot. Delete rows as they ship.
 - **Onboarding 4-step flow** (welcome, permissions, import prompt, budget prompt). Only permissions exists.
 - **CardDrillDown filter chips** — All / Spend / Refunds / Bills / Self-transfers (ui-spec §7).
 - **Tx-detail Edit / Mark as payback** (v1.1 per spec).
+- **AI-assisted rule creation.** Adding a RecipientRule manually is fiddly — user has to know regex vs literal, pick a classification, etc. Better UX: show a recent UNMATCHED or mis-categorized transaction, let the user describe the intent in plain English ("anything from CRED is a CC bill payment"), have a small LLM turn that into a concrete rule row, preview the matches, then save. Needs a local model or an API key in settings.
 - **View previous months** — dashboard shows current month only. Add month picker or swipeable month navigator so user can scroll backwards.
 - **Budget suggestions from history** — seed BudgetSetup's limit field from the user's median net-spend over the prior 3 months (skip months before the app had data). Offer as a tap-to-fill, not auto-applied.
 - **Surfacing suggested accounts** — the SUGGESTED section lives inside Settings → My accounts. Consider: a dashboard one-liner (e.g. "1 new account detected") that deep-links into it, or a pull-down on the Accounts list to also review DISMISSED history.
