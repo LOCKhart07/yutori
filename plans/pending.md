@@ -172,6 +172,10 @@ Rejected framings worth naming so they don't sneak back in:
 
 ## Distribution & updates
 
+- **Android 13+ "Restricted settings" gate blocks SMS-permission prompt on sideloaded installs.** After installing the APK from a browser/file-manager (not Play), the user gets a system notification "app denied access to SMS" and the in-app permission prompt simply won't grant. Cause: Android's Restricted-settings policy for sideloaded apps (RECEIVE_SMS / READ_SMS are on the restricted list). User has to open **Settings → Apps → SpendWise → ⋮ → Allow restricted settings** before the in-app prompt works. We hit this on first install 2026-04-16. Mitigations:
+  - **Update the PermissionScreen onboarding** to detect the "permission permanently denied" state (`shouldShowRequestPermissionRationale` returns false on first call) and surface a clear "Open app info → Allow restricted settings → come back" instruction with a deep-link button to the app-info page (`Settings.ACTION_APPLICATION_DETAILS_SETTINGS`).
+  - **Document in `docs/RELEASING.md`** so first-time installs (every release until autoupdater takes over) know the step.
+  - This is unfixable in code itself — it's Google's friction layer for sideloaded apps. UX work only.
 - **Play Protect "App scan recommended" install warning.** First-install of the side-loaded APK triggers Google's Play Protect dialog ("Play Protect hasn't seen this app before. Scan app / Don't install app"). Side-load reality. Mitigations:
   - Ship a **release-signed** APK (set the four `SIGNING_*` repo secrets per `docs/RELEASING.md`) — same key across builds gives the install a stable identity that Play Protect can build reputation against over time.
   - Optionally **register the package** in Google Play Console (even without publishing) so Play Protect knows the package + signing cert pair. Free, requires a Play Console account.
