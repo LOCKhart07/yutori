@@ -16,6 +16,38 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Release signing config.
+    //
+    // CI-friendly: reads everything from env vars. No local.properties,
+    // no committed keystore paths. Two modes:
+    //
+    //   1. All four SPENDWISE_* env vars + an existing keystore file at
+    //      SPENDWISE_KEYSTORE_PATH → real release signing.
+    //   2. Anything missing → fall through to the debug signingConfig so
+    //      the release build still produces an installable (debug-signed)
+    //      APK. Intended for side-loading by the app author only; the
+    //      release workflow emits a warning when this path is taken.
+    val keystorePath: String? = System.getenv("SPENDWISE_KEYSTORE_PATH")
+    val keystorePassword: String? = System.getenv("SPENDWISE_KEYSTORE_PASSWORD")
+    val keyAlias: String? = System.getenv("SPENDWISE_KEY_ALIAS")
+    val keyPassword: String? = System.getenv("SPENDWISE_KEY_PASSWORD")
+    val hasReleaseSigning = !keystorePath.isNullOrBlank() &&
+        !keystorePassword.isNullOrBlank() &&
+        !keyAlias.isNullOrBlank() &&
+        !keyPassword.isNullOrBlank() &&
+        file(keystorePath!!).exists()
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(keystorePath!!)
+                storePassword = keystorePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -23,6 +55,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                // Fallback: debug key. Produces a side-loadable APK but
+                // Android will tag it as a debug build. Not for public
+                // distribution. See docs/RELEASING.md.
+                signingConfigs.getByName("debug")
+            }
         }
     }
 
