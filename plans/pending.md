@@ -5,8 +5,6 @@ Reconciled snapshot. Delete rows as they ship.
 ## UX / layout gaps
 
 - **Over-budget hero overflows on large deficits.** Example: `₹−30,027` at the display font size — confirm exact layout break and either shrink font, use compact format (`30k`), or wrap. (Needs repro amount.)
-- **No entry point to edit an existing budget.** `BudgetSetup` is only reachable via the "Set budget" CTA, which vanishes once a budget exists. Add an edit affordance (tap the budget header, or a pencil icon).
-- **Claude / GitHub subscriptions land in Entertainment.** Add a `SUBSCRIPTIONS` (or `SOFTWARE`) category and update the merchant-key mapping for known SaaS vendors. Bonus: per-merchant user overrides.
 - **"KOTAK UPI" shows 2 similar sources** — user-flagged on device, needs a screenshot to diagnose. Probably two merchant-key variants (spacing, casing) that should normalize to one.
 
 ## Branding / identity
@@ -16,7 +14,6 @@ Reconciled snapshot. Delete rows as they ship.
 
 ## Features not yet built
 
-- **Auto-detect accounts.** On first SMS from an unknown sender + last-4, create a suggested account draft and surface it on the Settings screen for confirmation. Removes manual account entry.
 - **Dashboard ring/donut chart** — spec mentions; tinted bars shipped. Decide: keep bars or build donut.
 - **Onboarding 4-step flow** (welcome, permissions, import prompt, budget prompt). Only permissions exists.
 - **CardDrillDown filter chips** — All / Spend / Refunds / Bills / Self-transfers (ui-spec §7).
@@ -35,7 +32,6 @@ Reconciled snapshot. Delete rows as they ship.
 
 - Dashboard state variants 1b (approaching), 1c (early-month), 1d (end-month-hot), 1e (end-month-surplus) — need seeded data that triggers each.
 - Forex tx-detail variant (mockup frame 6).
-- `BudgetSetup` — unreachable until an edit entry point exists (see UX gaps).
 
 ## Tech debt
 
