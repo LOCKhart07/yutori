@@ -135,6 +135,26 @@ private fun AppContent() {
                 .collectAsStateWithLifecycle(initialValue = 0)
             val viewedMonthKey: String by viewModel.viewedMonthKey.collectAsState()
 
+            // Re-check the runtime POST_NOTIFICATIONS grant on every
+            // recomposition tick that follows a lifecycle event so we
+            // pick up grant/revoke from the OS settings flow.
+            val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+            var notificationGranted by remember {
+                mutableStateOf(Permissions.hasNotificationPermission(app))
+            }
+            androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+                val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                    if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                        notificationGranted = Permissions.hasNotificationPermission(app)
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            }
+            var notificationBannerDismissed by androidx.compose.runtime.saveable.rememberSaveable {
+                mutableStateOf(false)
+            }
+
             DashboardScreen(
                 state = state,
                 importStatus = importStatus,
@@ -148,6 +168,21 @@ private fun AppContent() {
                 onMonthNext = { viewModel.navigateMonth(1) },
                 onResetMonth = { viewModel.resetToCurrentMonth() },
                 isCurrentMonth = viewModel.isCurrentMonth(viewedMonthKey),
+                showNotificationPermissionBanner = !notificationGranted &&
+                    !notificationBannerDismissed,
+                onOpenNotificationSettings = {
+                    val intent = android.content.Intent(
+                        android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS,
+                    ).apply {
+                        putExtra(
+                            android.provider.Settings.EXTRA_APP_PACKAGE,
+                            app.packageName,
+                        )
+                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    app.startActivity(intent)
+                },
+                onDismissNotificationBanner = { notificationBannerDismissed = true },
             )
 
             if (importDialogOpen) {

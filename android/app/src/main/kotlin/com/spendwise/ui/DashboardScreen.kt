@@ -69,6 +69,9 @@ fun DashboardScreen(
     onMonthNext: () -> Unit = {},
     onResetMonth: () -> Unit = {},
     isCurrentMonth: Boolean = true,
+    showNotificationPermissionBanner: Boolean = false,
+    onOpenNotificationSettings: () -> Unit = {},
+    onDismissNotificationBanner: () -> Unit = {},
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -82,6 +85,8 @@ fun DashboardScreen(
                     state, onSetBudget, onImport, importStatus, onSettings,
                     hasSettingsBadge,
                     onMonthPrev, onMonthNext, onResetMonth, isCurrentMonth,
+                    showNotificationPermissionBanner,
+                    onOpenNotificationSettings, onDismissNotificationBanner,
                 )
             is DashboardUiState.Ready ->
                 ReadyView(
@@ -90,6 +95,8 @@ fun DashboardScreen(
                     onCategoryClick, onCardClick,
                     hasSettingsBadge,
                     onMonthPrev, onMonthNext, onResetMonth, isCurrentMonth,
+                    showNotificationPermissionBanner,
+                    onOpenNotificationSettings, onDismissNotificationBanner,
                 )
         }
     }
@@ -123,6 +130,9 @@ private fun EmptyView(
     onMonthNext: () -> Unit = {},
     onResetMonth: () -> Unit = {},
     isCurrentMonth: Boolean = true,
+    showNotificationPermissionBanner: Boolean = false,
+    onOpenNotificationSettings: () -> Unit = {},
+    onDismissNotificationBanner: () -> Unit = {},
 ) {
     ScrollingShell {
         TopBar(
@@ -135,6 +145,13 @@ private fun EmptyView(
             onResetMonth = onResetMonth,
             isCurrentMonth = isCurrentMonth,
         )
+        if (showNotificationPermissionBanner) {
+            Spacer(Modifier.height(16.dp))
+            NotificationPermissionBanner(
+                onAction = onOpenNotificationSettings,
+                onDismiss = onDismissNotificationBanner,
+            )
+        }
         Spacer(Modifier.height(24.dp))
         HeroAmount(primaryText = "₹0", subText = if (state.hasBudget) "No spend yet this month" else "Spent this month")
         Spacer(Modifier.height(20.dp))
@@ -172,6 +189,9 @@ private fun ReadyView(
     onMonthNext: () -> Unit = {},
     onResetMonth: () -> Unit = {},
     isCurrentMonth: Boolean = true,
+    showNotificationPermissionBanner: Boolean = false,
+    onOpenNotificationSettings: () -> Unit = {},
+    onDismissNotificationBanner: () -> Unit = {},
 ) {
     val inr = remember { NumberFormat.getCurrencyInstance(Locale("en", "IN")) }
     val snap = state.snapshot
@@ -195,6 +215,13 @@ private fun ReadyView(
             onResetMonth = onResetMonth,
             isCurrentMonth = isCurrentMonth,
         )
+        if (showNotificationPermissionBanner) {
+            Spacer(Modifier.height(16.dp))
+            NotificationPermissionBanner(
+                onAction = onOpenNotificationSettings,
+                onDismiss = onDismissNotificationBanner,
+            )
+        }
 
         Spacer(Modifier.height(24.dp))
 
@@ -677,6 +704,64 @@ private fun Banner(kind: BannerKind, title: String, detail: String) {
                 .height(0.dp)
                 .background(border),
         )
+    }
+}
+
+@Composable
+private fun NotificationPermissionBanner(
+    onAction: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val colors = SpendWiseTheme.colors
+    val tint = colors.warn
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(tint.copy(alpha = 0.09f))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 5.dp)
+                    .size(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(tint),
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Notifications are off.",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "Budget threshold alerts won't appear until " +
+                        "you grant permission in Android settings.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onMuted,
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Open settings",
+                modifier = Modifier
+                    .clickable(onClick = onAction)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = "Dismiss",
+                modifier = Modifier
+                    .clickable(onClick = onDismiss)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.labelLarge,
+                color = colors.onMuted,
+            )
+        }
     }
 }
 
