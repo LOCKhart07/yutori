@@ -7,9 +7,9 @@ Reconciled snapshot. Delete rows as they ship.
 *Last reviewed: 2026-04-16. Assume stale. This repo ships ~15 real commits per working day (check `git log --since="<last-reviewed-date>"` to confirm); a priority list from a previous session is almost certainly out of date. Regenerate from scratch at the start of each planning session rather than patching this snapshot — don't trust ordinal numbers, don't assume "Tier 0 item 1" still means what it did yesterday.* Ordered by value-per-hour, not strict rank. Items within a tier are roughly equivalent. Full context for each bullet lives in its section below.
 
 **Tier 0 — ship-blockers / foundational**
-1. Publish repo + first release
-2. App name lock-in (Yutori / Lagom / Sukoon)
-3. DB migration failure handler
+1. App name lock-in (Yutori / Lagom / Sukoon)
+2. DB migration failure handler
+3. Release-sign the next build *(v0.1.0 shipped debug-signed; flip to release-signing before v0.2.0 so Play Protect reputation builds on a stable key — see Distribution & updates)*
 
 **Tier 1 — easy wins (hours, no schema)**
 4. Pending-FX banner on dashboard
@@ -38,7 +38,7 @@ Reconciled snapshot. Delete rows as they ship.
 
 Note: 20–24 form a tight cluster — treat as one mini-milestone.
 
-(Shipped this session: traffic-light hero `e1db251`, post-spend impact notif `ddd51ec`, notification-permission banner `6afefe7`.)
+(Shipped this session: traffic-light hero `e1db251`, post-spend impact notif `ddd51ec`, notification-permission banner `6afefe7`, repo published + `v0.1.0` released 2026-04-15 (private, debug-signed).)
 
 **Tier 3 — structurally important, bigger lifts**
 25. Historical-import worker checkpointing + foreground notification
@@ -52,7 +52,7 @@ Note: 20–24 form a tight cluster — treat as one mini-milestone.
 Onboarding 4-step flow · CardDrillDown filter chips · ring/donut decision · carry-over per-prior-month breakdown · dashboard state variants visual check · forex tx-detail visual check · bucket simplification mode · surfacing suggested accounts · BudgetSetup pace anchor · card drill-down pace · Tx-detail Edit / Mark as payback · animation polish (color transitions, banner fades, progress-bar tween, money counter) · Play Protect install-warning mitigation (release-signing for reputation, autoupdater first-run dialog explainer)
 
 **Tier 5 — deferred / low urgency**
-Dashboard ₹0 flash · `computeBanner` untested branches · Compose render tests · Navigation-Compose migration · historical-import → Settings · carry-over genesis month · AI-assisted rule creation · launcher icon (blocked on name) · About screen · Alert thresholds / CSV export / Purge non-financial / Rerun parser screens · in-app autoupdater *(blocked on Tier 0 item 1)*
+Dashboard ₹0 flash · `computeBanner` untested branches · Compose render tests · Navigation-Compose migration · historical-import → Settings · carry-over genesis month · AI-assisted rule creation · launcher icon (blocked on name) · About screen · Alert thresholds / CSV export / Purge non-financial / Rerun parser screens · in-app autoupdater *(unblocked now repo exists; private-repo wrinkle — APK download URLs need a PAT unless the repo flips public or releases are mirrored; revisit design before building)*
 
 ## Bugs / silent gaps
 
@@ -184,7 +184,7 @@ Rejected framings worth naming so they don't sneak back in:
   - Optionally **register the package** in Google Play Console (even without publishing) so Play Protect knows the package + signing cert pair. Free, requires a Play Console account.
   - Document the "Install without scanning" path in the autoupdater's first-run dialog so the user knows the warning is expected and benign.
   - Accept the warning as a permanent side-load tax if none of the above feel worth the cost.
-- **In-app autoupdater**, Tachiyomi-style: periodic GitHub Releases check, download APK, invoke `PackageInstaller`. Requires `REQUEST_INSTALL_PACKAGES`. Reads release body for in-app changelog dialog — see next item for what that body should look like.
+- **In-app autoupdater**, Tachiyomi-style: periodic GitHub Releases check, download APK, invoke `PackageInstaller`. Requires `REQUEST_INSTALL_PACKAGES`. Reads release body for in-app changelog dialog — see next item for what that body should look like. **Private-repo wrinkle:** `LOCKhart07/spendwise` is private, so the `/releases/latest` API and the APK asset URL both require a GitHub token. Options: (a) flip the repo public at v1.0 once the code is clean enough to share; (b) ship a fine-grained PAT (read-only, releases-only) embedded in the APK — ugly but works for a single-user app; (c) mirror releases to a public repo with only the APKs and release notes. (a) is the right long-term path; (b) is the cheapest stopgap.
 - **Release-body changelog automation** — current release body is GitHub's default blurb. For the autoupdater dialog to be readable, ship a grouped Markdown changelog generated automatically per release. Plan:
   - **Layer 1: `git-cliff` in the workflow.** Single binary, single config (`cliff.toml`). Groups commits by prefix into Features / Bug fixes / Performance / Internal / Other. Pre-existing un-prefixed commits get bucketed via regex map (e.g. `^(Fix|Drop|Scrub)` → Bug fixes / Internal; `^(Dashboard|Nav|Auto-detect|Add|Post-spend|Implement)` → Features). Path filter hides commits touching only `plans/pending.md`.
   - **Layer 2: going-forward conventional-commit prefixes** (`feat:` / `fix:` / `perf:` / `refactor:` / `chore:` / `docs:`). No enforcement hook — cliff's regex fallback covers un-prefixed.
@@ -192,4 +192,4 @@ Rejected framings worth naming so they don't sneak back in:
   - **APK SHA-256 appended** to the body so the autoupdater can verify download integrity before install.
   - **Backfill v0.1.0 body** by running cliff locally and `gh release edit v0.1.0 --notes "$(...)"` once cliff is configured.
   - Skipped for now: per-release min-DB-version marker (only matters when we ship a one-way Room migration; revisit then).
-- **Publish the repo + first release.** Workflow + keystore config shipped (`docs/RELEASING.md`). Remaining: create the GitHub repo, `git remote add origin …`, push, optionally add the 4 `SIGNING_*` secrets, tag `v0.1.0`.
+- **Publish the repo + first release** — **done 2026-04-15.** `LOCKhart07/spendwise` exists (private); `v0.1.0` tag cut at `b1a54a6`; release workflow built and attached the APK. Caveat: release body reports **Signing mode: debug** — the four `SIGNING_*` repo secrets aren't set, so `v0.1.0` is signed with the auto-generated debug key. Acceptable for a first private release, but flip to release-signing before `v0.2.0` so Play Protect reputation starts accruing on the key we intend to keep (see Tier 0 #3 and Tier 4 polish). Also pending: backfill the `v0.1.0` release body once git-cliff lands (Tier 1 #15).
