@@ -24,30 +24,32 @@ Reconciled snapshot. Delete rows as they ship.
 13. End-to-end profiling round *(user wants soon; prereq for any animation work — profile before animating)*
 14. Swipe between months on dashboard *(user wants; pairs with screen-transition animations)*
 15. Release-body changelog automation *(git-cliff + APK SHA-256 + tag-annotation header; prereq for a useful in-app autoupdater dialog)*
+16. Decimal-display consistency in money amounts *(strip `.00` everywhere on dashboard / category rows; cleanly fixes column-scan misreads)*
+17. Restricted-settings onboarding helper *(detect Android-13+ permanently-denied state on first install; deep-link to App info → ⋮ → Allow restricted settings; first-install blocker we hit on 2026-04-16)*
 
 **Tier 2 — behavior-change core (medium effort)**
-16. Hard-stop over-budget state (opt-in)
-17. Per-tx notes + Ignore-a-transaction
-18. Manual recipient-rule add/edit form
-19. "Add rule from this transaction" entry point
-20. Reparse pipeline
-21. "Offer" reclassify confirm dialog
-22. Review unmatched screen
+18. Hard-stop over-budget state (opt-in)
+19. Per-tx notes + Ignore-a-transaction
+20. Manual recipient-rule add/edit form
+21. "Add rule from this transaction" entry point
+22. Reparse pipeline
+23. "Offer" reclassify confirm dialog
+24. Review unmatched screen
 
-Note: 18–22 form a tight cluster — treat as one mini-milestone.
+Note: 20–24 form a tight cluster — treat as one mini-milestone.
 
 (Shipped this session: traffic-light hero `e1db251`, post-spend impact notif `ddd51ec`, notification-permission banner `6afefe7`.)
 
 **Tier 3 — structurally important, bigger lifts**
-23. Historical-import worker checkpointing + foreground notification
-24. Add `source` field to `sms_log` + `transactions` *(prereq for 25)*
-25. PDF/CSV statement import
-26. Goals entity + translator
-27. Annual-cost smoothing buckets
-28. Per-category pacing baseline
+25. Historical-import worker checkpointing + foreground notification
+26. Add `source` field to `sms_log` + `transactions` *(prereq for 27)*
+27. PDF/CSV statement import
+28. Goals entity + translator
+29. Annual-cost smoothing buckets
+30. Per-category pacing baseline
 
 **Tier 4 — nice-to-have polish**
-Onboarding 4-step flow · CardDrillDown filter chips · ring/donut decision · carry-over per-prior-month breakdown · dashboard state variants visual check · forex tx-detail visual check · bucket simplification mode · surfacing suggested accounts · BudgetSetup pace anchor · card drill-down pace · Tx-detail Edit / Mark as payback · animation polish (color transitions, banner fades, progress-bar tween, money counter)
+Onboarding 4-step flow · CardDrillDown filter chips · ring/donut decision · carry-over per-prior-month breakdown · dashboard state variants visual check · forex tx-detail visual check · bucket simplification mode · surfacing suggested accounts · BudgetSetup pace anchor · card drill-down pace · Tx-detail Edit / Mark as payback · animation polish (color transitions, banner fades, progress-bar tween, money counter) · Play Protect install-warning mitigation (release-signing for reputation, autoupdater first-run dialog explainer)
 
 **Tier 5 — deferred / low urgency**
 Dashboard ₹0 flash · `computeBanner` untested branches · Compose render tests · Navigation-Compose migration · historical-import → Settings · carry-over genesis month · AI-assisted rule creation · launcher icon (blocked on name) · About screen · Alert thresholds / CSV export / Purge non-financial / Rerun parser screens · in-app autoupdater *(blocked on Tier 0 item 1)*
