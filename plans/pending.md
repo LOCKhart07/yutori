@@ -13,18 +13,18 @@ Reconciled snapshot. Delete rows as they ship.
 
 **Tier 1 — easy wins (hours, no schema)**
 4. Pending-FX banner on dashboard
-5. Traffic-light hero color state
-6. Mid-month overshoot projection *(net-new from external suggestions)*
-7. Frequency insight ("N small txns · median ₹X")
-8. Budgets roll forward by default (option b)
-9. Budget suggestions from history
-10. Daily-burn pill `· target ₹Y` + pace tint
-11. Sharper notification copy (`· +Zpp over pace`)
-12. Late-arriving past-month alert stamping
-13. Rebuild database screen
+5. Mid-month overshoot projection *(net-new from external suggestions)*
+6. Frequency insight ("N small txns · median ₹X")
+7. Budgets roll forward by default (option b)
+8. Budget suggestions from history
+9. Daily-burn pill `· target ₹Y` + pace tint
+10. Sharper notification copy (`· +Zpp over pace`)
+11. Late-arriving past-month alert stamping
+12. Rebuild database screen
+13. End-to-end profiling round *(user wants soon; prereq for any animation work — profile before animating)*
+14. Swipe between months on dashboard *(user wants; pairs with screen-transition animations)*
 
 **Tier 2 — behavior-change core (medium effort)**
-14. Post-spend "impact" notification
 15. Hard-stop over-budget state (opt-in)
 16. Per-tx notes + Ignore-a-transaction
 17. Manual recipient-rule add/edit form
@@ -32,9 +32,10 @@ Reconciled snapshot. Delete rows as they ship.
 19. Reparse pipeline
 20. "Offer" reclassify confirm dialog
 21. Review unmatched screen
-22. Notification-permission banner *(verify — may have shipped in 213b762)*
 
 Note: 17–21 form a tight cluster — treat as one mini-milestone.
+
+(Shipped this session: traffic-light hero `e1db251`, post-spend impact notif `ddd51ec`, notification-permission banner `6afefe7`.)
 
 **Tier 3 — structurally important, bigger lifts**
 23. Historical-import worker checkpointing + foreground notification
@@ -45,10 +46,10 @@ Note: 17–21 form a tight cluster — treat as one mini-milestone.
 28. Per-category pacing baseline
 
 **Tier 4 — nice-to-have polish**
-Onboarding 4-step flow · CardDrillDown filter chips · swipe between months · ring/donut decision · carry-over per-prior-month breakdown · dashboard state variants visual check · forex tx-detail visual check · bucket simplification mode · surfacing suggested accounts · BudgetSetup pace anchor · card drill-down pace · Tx-detail Edit / Mark as payback
+Onboarding 4-step flow · CardDrillDown filter chips · ring/donut decision · carry-over per-prior-month breakdown · dashboard state variants visual check · forex tx-detail visual check · bucket simplification mode · surfacing suggested accounts · BudgetSetup pace anchor · card drill-down pace · Tx-detail Edit / Mark as payback · animation polish (color transitions, banner fades, progress-bar tween, money counter)
 
 **Tier 5 — deferred / low urgency**
-Dashboard ₹0 flash · `computeBanner` untested branches · Compose render tests · end-to-end profiling · Navigation-Compose migration · historical-import → Settings · carry-over genesis month · AI-assisted rule creation · launcher icon (blocked on name) · About screen · Alert thresholds / CSV export / Purge non-financial / Rerun parser screens · in-app autoupdater *(blocked on Tier 0 item 1)*
+Dashboard ₹0 flash · `computeBanner` untested branches · Compose render tests · Navigation-Compose migration · historical-import → Settings · carry-over genesis month · AI-assisted rule creation · launcher icon (blocked on name) · About screen · Alert thresholds / CSV export / Purge non-financial / Rerun parser screens · in-app autoupdater *(blocked on Tier 0 item 1)*
 
 ## Bugs / silent gaps
 
@@ -73,8 +74,6 @@ Dashboard ₹0 flash · `computeBanner` untested branches · Compose render test
 
 Framing: the real problem isn't budgeting accuracy, it's *awareness at the moment of spending*. SpendWise is SMS-reactive so we can't gate a spend pre-confirm — the closest we get is a push notification within seconds of the SMS. Features below lean into that reality.
 
-- **Post-spend "impact" notification** — when a parsed debit is ≥ some % of the monthly budget (start at 10%), fire a push: "₹2,400 at BLINKIT — 12% of April budget. ₹18,300 left." Opens the tx detail. Distinct from the existing threshold-% alerts, which fire on cumulative totals; this fires per-transaction above a size threshold. Configurable threshold; off by default to avoid spam.
-- **Traffic-light dashboard state** — map the existing budget-used % to explicit green/yellow/red color treatments on the hero (not just a number). Thresholds ideally align with alert thresholds (default 60% / 80% / 100%). Already halfway there via `DashboardDerived.computeBanner`; lift the color up to the whole hero card, not just the banner.
 - **Frequency insight on dashboard** — alongside "₹X spent", show "N transactions under ₹300 this month" or "42 small txns · median ₹180". Small-debit count hits harder than a lump total. Derive from existing tx rows; no schema change.
 - **Annual-cost smoothing buckets** — let the user declare irregular yearly expenses ("Travel ₹60k/yr", "Insurance ₹24k/yr"); app divides by 12 and subtracts from the month's effective budget (or shows as a separate "reserved" line). New entity `annual_allocation(name, amount_paise, start_month)`; BudgetCalculator subtracts the monthly slice from the headline limit. Different from carry-over: this is forward-smoothing of known lumpy spend, not backward reconciliation.
 - **Goal-linked savings framing** — user defines a goal (amount + target date, e.g. "House down-payment ₹X by 2028-06"); dashboard shows surplus months as "₹10k saved → 2 days closer". Needs a `goals` entity + a translator from surplus paise to goal-progress units. Motivation layer, not accounting — keep it optional and off by default.
@@ -106,7 +105,7 @@ The traffic-light hero (mocked in `mockups/v3-behavioral.html` §1) buckets by `
 - **Budget carry-over genesis month** — today, carry-over only walks months where a Budget row exists, which is an implicit genesis (prior months without budgets contribute 0). Once users can record historical budgets retroactively (for history/suggestions), we'll want a `carryStartsFrom` setting so those historical records don't bleed into the current month's effective budget. Options: a per-Budget `isHistoricalOnly` flag, or a single app-level genesis-month setting.
 - **Bank / CC statement import (PDF + CSV)** — spec §10.1 future scope. Lets the user backfill complete history for months before the app was installed, or recover txs whose SMS was missed/deleted. Architectural prep already in spec: `sms_log.source` + `transactions.source` should carry `STATEMENT_PDF` / `STATEMENT_CSV` / `MANUAL` values alongside SMS_*. Today the schema doesn't even have `source` on the entities (drift from spec) — would need to add that first, then a parser per issuer's statement format.
 - **Budgets roll forward by default.** Setting April = ₹45k should also be the budget for May, June, … until explicitly changed. Today each month needs its own Budget row or it shows "No budget set". Two implementation options: (a) on month rollover, auto-create a Budget row by copying the last-set one; (b) treat the latest Budget row as a "template" applied to any subsequent month with no row of its own. (b) is simpler — change `BudgetCalculator` lookups to fall back to the most recent prior Budget when none exists for the requested month.
-- **Swipe between months** on the dashboard. Chevrons work, but a horizontal swipe gesture on the hero area feels more native and is discoverable without reading the chrome.
+- **Swipe between months** on the dashboard — user wants this. Chevrons work, but a horizontal swipe gesture on the hero area feels more native and is discoverable without reading the chrome. Pairs naturally with the screen-transition animation work (see Animations above) — the gesture carries its own slide animation driven by drag offset, so both land in the same change. Implementation: `HorizontalPager` keyed on month, or `Modifier.draggable` on the hero with an `animateFloatAsState` settle.
 - **Surfacing suggested accounts** — the SUGGESTED section lives inside Settings → My accounts. Consider: a dashboard one-liner (e.g. "1 new account detected") that deep-links into it, or a pull-down on the Accounts list to also review DISMISSED history.
 - **Manual recipient-rule add/edit form** — settings-spec §3.5 requires an add/edit screen with pattern-kind dropdown and a "Test" match-preview tool. Today `RecipientRulesScreen` only toggles or deletes existing rules; new rules can only be added implicitly via the AccountEdit UPI-handles field. The bigger AI-assisted creation flow (above) is the long-term direction, but a basic manual form is the closer minimal fix.
 - **"Offer" reclassify after saving an account UPI handle** — currently we silently call `ReclassifyOnRuleAdd` and show a toast count. Settings-spec §2.7 calls for an explicit confirm prompt before bulk-reclassifying past txs as self-transfers.
@@ -136,7 +135,17 @@ The traffic-light hero (mocked in `mockups/v3-behavioral.html` §1) buckets by `
 - **Historical-import worker checkpointing + foreground notification** — ingestion §7.2/§7.3: the worker should persist progress so a kill mid-import resumes from the last-imported `androidSmsId`, and should run as a foreground service with a sticky notification. Today it's a normal CoroutineWorker with no resume.
 - **`DashboardDerived.computeBanner`** untested branches — approaching / surplus / early-month paths.
 - **Compose render tests** are thin — only `TransactionListItem`. Dashboard / TransactionDetail state-change paths have no regression net.
-- **Profile the app end-to-end** — measure ingest-per-SMS time (parse + classify + merge + persist), dashboard initial render (Flow cold-start to first frame), and large-drill-down scroll (LazyColumn recomposition on 1000+ txns). Look for synchronous DB reads on the main thread and unnecessary recompositions via the Compose layout inspector.
+- **Profile the app end-to-end** — user wants a round soon. Measure ingest-per-SMS time (parse + classify + merge + persist), dashboard initial render (Flow cold-start to first frame), and large-drill-down scroll (LazyColumn recomposition on 1000+ txns). Look for synchronous DB reads on the main thread and unnecessary recompositions via the Compose layout inspector. Do this *before* adding animations — motion on top of janky frame pacing reads as broken; profile-then-animate is the right order.
+
+## Animations (all absent — app snaps instantly everywhere)
+
+Zero uses of `animate*`, `AnimatedVisibility`, `Crossfade`, `tween`, `spring` anywhere in the codebase. For the "spend without guilt / breathing room" product framing, small amounts of motion meaningfully change how the app *feels* — but none of these are correctness fixes. Tier 4 polish.
+
+- **Traffic-light hero color transition** — the pace-driven hero (shipped `e1db251`) hard-swaps between green/amber/red when spend crosses a pace bucket. `animateColorAsState` is a two-line change. Closest thing to a bug on this list — a snap-swap looks broken, not intentional.
+- **`AnimatedVisibility` on dashboard banners** — FX-pending banner (once rendered, see Bugs), notif-permission denied banner, any future over-budget or traffic-light-driven banners. Fade/slide in instead of pop.
+- **Progress bar fill animation** — `animateFloatAsState` on the dashboard spend-progress value so new txns ease in rather than jump-cut to the new width.
+- **Money counter on hero** — ₹ figure counts up when a new tx lands, rather than hard-updating. More effort than the others (needs a key-change-driven `Animatable` or a `rememberUpdatedState` + coroutine). Strongest emotional payoff; aligns with the name direction.
+- **Screen transitions** — no enter/exit animation on screen change. Every push/pop is an instant cut because the hand-rolled `List<Screen>` nav stack doesn't wrap the current screen in `AnimatedContent`. Two implementation paths: (a) wrap the stack in `AnimatedContent` keyed on top-of-stack with slide-horizontal enter / reverse exit — ~20 lines in `MainActivity`, throwaway; (b) wait for the Navigation-Compose migration (already a Conscious deferral below) and get enter/exit transitions for free via `composable { enterTransition = … }`. Prefer (b) — doing (a) now creates code the nav migration will rip out.
 
 ## Conscious deferrals (revisit when they earn their weight)
 
