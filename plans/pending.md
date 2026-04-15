@@ -170,5 +170,12 @@ Rejected framings worth naming so they don't sneak back in:
 
 ## Distribution & updates
 
-- **In-app autoupdater**, Tachiyomi-style: periodic GitHub Releases check, download APK, invoke `PackageInstaller`. Requires `REQUEST_INSTALL_PACKAGES`.
+- **In-app autoupdater**, Tachiyomi-style: periodic GitHub Releases check, download APK, invoke `PackageInstaller`. Requires `REQUEST_INSTALL_PACKAGES`. Reads release body for in-app changelog dialog — see next item for what that body should look like.
+- **Release-body changelog automation** — current release body is GitHub's default blurb. For the autoupdater dialog to be readable, ship a grouped Markdown changelog generated automatically per release. Plan:
+  - **Layer 1: `git-cliff` in the workflow.** Single binary, single config (`cliff.toml`). Groups commits by prefix into Features / Bug fixes / Performance / Internal / Other. Pre-existing un-prefixed commits get bucketed via regex map (e.g. `^(Fix|Drop|Scrub)` → Bug fixes / Internal; `^(Dashboard|Nav|Auto-detect|Add|Post-spend|Implement)` → Features). Path filter hides commits touching only `plans/pending.md`.
+  - **Layer 2: going-forward conventional-commit prefixes** (`feat:` / `fix:` / `perf:` / `refactor:` / `chore:` / `docs:`). No enforcement hook — cliff's regex fallback covers un-prefixed.
+  - **Layer 3: human-written tag annotation** as the release-body header. `git tag -a vX.Y.Z` already prompts for it; cliff prepends it above the auto-generated sections.
+  - **APK SHA-256 appended** to the body so the autoupdater can verify download integrity before install.
+  - **Backfill v0.1.0 body** by running cliff locally and `gh release edit v0.1.0 --notes "$(...)"` once cliff is configured.
+  - Skipped for now: per-release min-DB-version marker (only matters when we ship a one-way Room migration; revisit then).
 - **Publish the repo + first release.** Workflow + keystore config shipped (`docs/RELEASING.md`). Remaining: create the GitHub repo, `git remote add origin …`, push, optionally add the 4 `SIGNING_*` secrets, tag `v0.1.0`.
