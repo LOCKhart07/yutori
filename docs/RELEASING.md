@@ -1,0 +1,116 @@
+# Releasing SpendWise
+
+SpendWise ships as a side-loaded APK. There is no Play Store listing. A
+GitHub Actions workflow (`.github/workflows/release.yml`) builds a
+release APK and attaches it to a GitHub Release whenever a `v*` tag is
+pushed.
+
+## Cutting a release
+
+1. Bump `versionCode` and `versionName` in
+   `android/app/build.gradle.kts` and commit.
+2. Tag and push:
+
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   # or: git push --tags
+   ```
+
+3. GitHub Actions runs `:app:assembleRelease`, creates a release named
+   after the tag, and uploads `spendwise-<tag>.apk` as an asset.
+
+The app's in-app autoupdater (Tachiyomi-style) polls the GitHub
+Releases API for new tags and offers to download the APK.
+
+## Signing modes
+
+The workflow supports two modes:
+
+### Release-signed (recommended once you have a keystore)
+
+Requires these four repo secrets (Settings → Secrets and variables →
+Actions → New repository secret):
+
+| Secret | Contents |
+| --- | --- |
+| `SIGNING_KEYSTORE_BASE64`   | base64-encoded JKS keystore |
+| `SIGNING_KEYSTORE_PASSWORD` | keystore password |
+| `SIGNING_KEY_ALIAS`         | alias of the key inside the keystore |
+| `SIGNING_KEY_PASSWORD`      | password of that key |
+
+When all four are present, the workflow decodes the keystore into the
+runner's temp dir and passes the other three through as environment
+variables. `android/app/build.gradle.kts` picks them up and uses them
+for the `release` signingConfig.
+
+### Debug-signed (default until a keystore exists)
+
+If any of the four secrets are missing, the workflow still produces a
+release APK but falls back to Android's auto-generated debug
+signingConfig. The APK is installable via side-load, but:
+
+- Android tags it as a debug build.
+- Every developer machine produces a different debug key, so updates
+  built on a new machine will fail to install over an older
+  debug-signed APK (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
+- **Do not distribute debug-signed builds to anyone but yourself.**
+
+The workflow emits a GitHub Actions warning on every debug-signed
+release so you can't miss it.
+
+## Generating a keystore
+
+One-time setup on your local machine (not in the repo — the keystore
+itself must never be committed; `*.jks` and `*.keystore` are in
+`.gitignore`):
+
+```bash
+keytool -genkey -v \
+    -keystore spendwise-release.jks \
+    -alias spendwise \
+    -keyalg RSA -keysize 4096 \
+    -validity 10000
+```
+
+Pick a strong keystore password and key password. Store them in a
+password manager — **if you lose these, you cannot ship updates** to
+anyone who installed a previous release-signed APK (Android will
+refuse to replace the app because the signatures won't match).
+
+## Adding the keystore to GitHub Actions
+
+```bash
+# 1. base64-encode the keystore (macOS/Linux):
+base64 -w0 spendwise-release.jks > spendwise-release.jks.b64
+# (on macOS, `base64 -i spendwise-release.jks` produces the same thing
+#  without the -w0 flag.)
+
+# 2. Copy the contents of spendwise-release.jks.b64 into the
+#    SIGNING_KEYSTORE_BASE64 secret in the GitHub repo settings.
+
+# 3. Add SIGNING_KEYSTORE_PASSWORD, SIGNING_KEY_ALIAS, and
+#    SIGNING_KEY_PASSWORD as separate secrets.
+
+# 4. Delete the .b64 file once it's in GitHub:
+rm spendwise-release.jks.b64
+```
+
+The keystore itself (`spendwise-release.jks`) should live in your
+personal backup — **not** in the repo.
+
+## Local release builds
+
+You don't normally need to build a release APK locally, but if you do:
+
+```bash
+cd android
+export SPENDWISE_KEYSTORE_PATH=/path/to/spendwise-release.jks
+export SPENDWISE_KEYSTORE_PASSWORD=...
+export SPENDWISE_KEY_ALIAS=spendwise
+export SPENDWISE_KEY_PASSWORD=...
+./gradlew :app:assembleRelease
+```
+
+Without the env vars set, the build falls back to the debug key (same
+behaviour as CI).
