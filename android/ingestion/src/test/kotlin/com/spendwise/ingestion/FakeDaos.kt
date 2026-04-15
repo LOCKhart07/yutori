@@ -51,6 +51,15 @@ class FakeSmsLogDao : SmsLogDao {
     override suspend fun findByAndroidSmsId(androidSmsId: Long): SmsLogEntity? =
         all.firstOrNull { it.androidSmsId == androidSmsId }
 
+    override suspend fun findByContentWithin(
+        sender: String,
+        body: String,
+        minMs: Long,
+        maxMs: Long,
+    ): SmsLogEntity? = all.firstOrNull {
+        it.sender == sender && it.body == body && it.receivedAtMs in minMs..maxMs
+    }
+
     override suspend fun findRowsMissingAndroidSmsId(): List<SmsLogEntity> =
         all.filter { it.androidSmsId == null }
 

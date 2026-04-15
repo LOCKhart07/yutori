@@ -33,6 +33,29 @@ interface SmsLogDao {
     @Query("SELECT * FROM sms_log WHERE android_sms_id = :androidSmsId LIMIT 1")
     suspend fun findByAndroidSmsId(androidSmsId: Long): SmsLogEntity?
 
+    /**
+     * Content-level dedup: the live receiver and the historical-import
+     * worker can both pick up the same SMS (one with a null androidSmsId,
+     * one with a real id). A ±10 minute window on receivedAtMs avoids
+     * collapsing genuinely-repeated merchant messages that differ only
+     * by timestamp / UPI ref.
+     */
+    @Query(
+        """
+        SELECT * FROM sms_log
+         WHERE sender = :sender
+           AND body = :body
+           AND received_at_ms BETWEEN :minMs AND :maxMs
+         LIMIT 1
+        """,
+    )
+    suspend fun findByContentWithin(
+        sender: String,
+        body: String,
+        minMs: Long,
+        maxMs: Long,
+    ): SmsLogEntity?
+
     @Query(
         """
         SELECT * FROM sms_log
