@@ -6,7 +6,6 @@ Reconciled snapshot. Delete rows as they ship.
 
 - **"KOTAK UPI" shows 2 similar sources** — user-flagged on device, needs a screenshot to diagnose. Probably two merchant-key variants (spacing, casing) that should normalize to one.
 - **Back from Subscriptions drill-down kicks the user out of the app** (reported on device, 2026-04-16). Suspected Compose group-stack imbalance or missing BackHandler branch for the new SUBSCRIPTIONS category. Pull logcat next session.
-- **Tapping a transaction inside the Subscriptions drill-down returns to the app's Dashboard** instead of opening TransactionDetail (reported 2026-04-16). User confirmed it's the app's home screen, not the phone launcher — so not a crash, a nav bug. Tried to repro on emulator by patching a tx to SUBSCRIPTIONS; repro FAILED (detail opens fine). So the trigger is specific to the real phone tx's data shape (likely CC_TRANSACTION with USD originalAmount + exchange rate, which the patched row doesn't exercise). Next step: pull phone DB + inspect the exact row, or attach logcat during a phone repro.
 - **Subscriptions category total on dashboard ≠ sum of txs in drill-down** (reported 2026-04-16). Happens even after the OTHER-null-coalesce fix (d4458c0), so this is a separate second bug — possibly duplicated rows, stale entities lingering with legacy ENTERTAINMENT category while new ingests go to SUBSCRIPTIONS, or another grouping discrepancy. Needs DB inspection.
 
 ## Branding / identity
