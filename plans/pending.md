@@ -17,6 +17,9 @@ Reconciled snapshot. Delete rows as they ship.
 - **Onboarding 4-step flow** (welcome, permissions, import prompt, budget prompt). Only permissions exists.
 - **CardDrillDown filter chips** — All / Spend / Refunds / Bills / Self-transfers (ui-spec §7).
 - **Tx-detail Edit / Mark as payback** (v1.1 per spec).
+- **View previous months** — dashboard shows current month only. Add month picker or swipeable month navigator so user can scroll backwards.
+- **Budget suggestions from history** — seed BudgetSetup's limit field from the user's median net-spend over the prior 3 months (skip months before the app had data). Offer as a tap-to-fill, not auto-applied.
+- **Surfacing suggested accounts** — the SUGGESTED section lives inside Settings → My accounts. Consider: a dashboard one-liner (e.g. "1 new account detected") that deep-links into it, or a pull-down on the Accounts list to also review DISMISSED history.
 
 ## Spec-linked screens not yet built
 
@@ -25,7 +28,6 @@ Reconciled snapshot. Delete rows as they ship.
 - Rerun parser
 - Purge non-financial
 - Review unmatched
-- `RecipientRulesScreen` — compiles against theme tokens but not retrofitted to Copilot aesthetic.
 
 ## Visually unverified (code exists, no eyes on)
 
@@ -37,7 +39,7 @@ Reconciled snapshot. Delete rows as they ship.
 - **Carry-over math** uses only current-month transactions (TODO in `DashboardViewModel`). Prior-month REFUNDs that alter surplus aren't reflected.
 - **`DashboardDerived.computeBanner`** untested branches — approaching / surplus / early-month paths.
 - **Compose render tests** are thin — only `TransactionListItem`. Dashboard / TransactionDetail state-change paths have no regression net.
-- **Loading / empty / error states** on drill-down screens fall back to default Material text.
+- **Profile the app end-to-end** — measure ingest-per-SMS time (parse + classify + merge + persist), dashboard initial render (Flow cold-start to first frame), and large-drill-down scroll (LazyColumn recomposition on 1000+ txns). Look for synchronous DB reads on the main thread and unnecessary recompositions via the Compose layout inspector.
 
 ## Distribution & updates
 

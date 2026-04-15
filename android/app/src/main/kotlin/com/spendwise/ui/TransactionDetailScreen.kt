@@ -95,12 +95,7 @@ private fun LoadingView(onBack: () -> Unit) {
             .padding(horizontal = 24.dp),
     ) {
         BackRow(label = "Back", onBack = onBack)
-        Spacer(Modifier.height(24.dp))
-        Text(
-            text = "Loading…",
-            style = MaterialTheme.typography.bodyLarge,
-            color = SpendWiseTheme.colors.onMuted,
-        )
+        LoadingSpinner()
     }
 }
 
