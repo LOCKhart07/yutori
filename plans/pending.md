@@ -10,7 +10,28 @@ Reconciled snapshot. Delete rows as they ship.
 ## Branding / identity
 
 - **App name** — "SpendWise" is placeholder. Pick a real name (affects AndroidManifest label, string resources, splash, in-app copy).
+  - **Direction settled (2026-04-16):** borrowed word from another language, written in English script, that names a *philosophy* — not a literal finance term. The app's emotional payoff is *earned permission to spend without guilt* (mindful tracking → freedom / breathing room), not austerity. Names should reflect that.
+  - **Constraints:** ≤8 chars ideal for launcher label; avoid fintech-trademarked words (Spend, Money, Budget); avoid -ify/-ly/-wise/-hub; must read clearly in English.
+  - **Top three contenders:**
+    - **Yutori** *(Japanese — "spaciousness, breathing room, slack in the budget")* — most precise match to the app's purpose. 6 letters, no fintech overlap.
+    - **Lagom** *(Swedish — "just the right amount, not too much, not too little")* — broadest appeal, names the philosophy of enough without preachiness.
+    - **Sukoon** *(Hindi/Urdu — "peace, calm of mind")* — most personal / native to user's context; names the *feeling* the app produces rather than the mechanism.
+  - **Other strong runners-up explored:** Tsumi (JP, "to stack/accumulate"), Mottainai (JP, "what a waste"), Santosha (Sanskrit, "contentment"), Khulla (Hindi, "open/free"), Mukti (Sanskrit, "liberation"), Spielraum/Spiel (German, "room to play, slack"), Khwah (Hindi/Urdu, "wish, desire").
+  - **Rejected directions:** literal finance translations (Hisab, Khata, Bachat, Conto, Soldi); generic English finance words (Tally, Ledger, Margin, Reckon); invented-sound names with no meaning (Kori, Nuvo, Aro).
 - **Launcher icon / logo** — currently the default Android icon. Need an adaptive icon (foreground + background layer) at the standard density buckets.
+  - **Logo direction deferred until name is locked** (concept depends on which name lands). Sketches explored: tally-mark glyph, lowercase letterform monogram, horizon/balance-line with amber dot, ember dot, gnomon/sundial wedge, sumi ink-stroke, stacked-bar monogram. All amber-on-near-black (#F5B547 on #0E0E0E), single-glyph, must read at 48dp inside the 66dp safe zone of a 108dp adaptive icon.
+
+## Behavioral awareness (remote-control brief, 2026-04-16)
+
+Framing: the real problem isn't budgeting accuracy, it's *awareness at the moment of spending*. SpendWise is SMS-reactive so we can't gate a spend pre-confirm — the closest we get is a push notification within seconds of the SMS. Features below lean into that reality.
+
+- **Post-spend "impact" notification** — when a parsed debit is ≥ some % of the monthly budget (start at 10%), fire a push: "₹2,400 at BLINKIT — 12% of April budget. ₹18,300 left." Opens the tx detail. Distinct from the existing threshold-% alerts, which fire on cumulative totals; this fires per-transaction above a size threshold. Configurable threshold; off by default to avoid spam.
+- **Traffic-light dashboard state** — map the existing budget-used % to explicit green/yellow/red color treatments on the hero (not just a number). Thresholds ideally align with alert thresholds (default 60% / 80% / 100%). Already halfway there via `DashboardDerived.computeBanner`; lift the color up to the whole hero card, not just the banner.
+- **Frequency insight on dashboard** — alongside "₹X spent", show "N transactions under ₹300 this month" or "42 small txns · median ₹180". Small-debit count hits harder than a lump total. Derive from existing tx rows; no schema change.
+- **Annual-cost smoothing buckets** — let the user declare irregular yearly expenses ("Travel ₹60k/yr", "Insurance ₹24k/yr"); app divides by 12 and subtracts from the month's effective budget (or shows as a separate "reserved" line). New entity `annual_allocation(name, amount_paise, start_month)`; BudgetCalculator subtracts the monthly slice from the headline limit. Different from carry-over: this is forward-smoothing of known lumpy spend, not backward reconciliation.
+- **Goal-linked savings framing** — user defines a goal (amount + target date, e.g. "House down-payment ₹X by 2028-06"); dashboard shows surplus months as "₹10k saved → 2 days closer". Needs a `goals` entity + a translator from surplus paise to goal-progress units. Motivation layer, not accounting — keep it optional and off by default.
+- **Hard-stop / lock-screen when over budget** — when net spend crosses 100%, dashboard swaps to a full-screen red "STOP — over budget by ₹X" state instead of a soft banner. Dismissible for the session. Opt-in in settings; the whole point is that it's aggressive.
+- **Bucket simplification mode** — optional UI toggle to collapse all categories into three super-buckets (Daily / Lifestyle / Fixed) for users who don't want to see the fine-grained classifier output. Classifier keeps emitting today's categories underneath; this is a presentation-layer rollup in the dashboard + drilldowns. Mapping table from current `Classification` enum → {Daily, Lifestyle, Fixed}.
 
 ## Features not yet built
 
