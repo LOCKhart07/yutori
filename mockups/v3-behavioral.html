@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SpendWise — v3 mockups: traffic-light hero + impact notification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --accent:        #F5B547;
+    --pos:           #6FB07E;
+    --info:          #7BA9D1;
+    --warn:          #E0A260;
+    --neg:           #E06C61;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 80px;
+    min-height: 100vh;
+  }
+
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 56px 0 18px; font-size: 17px; color: #C9CACD; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 32px; font-size: 13px; line-height: 1.6; }
+
+  .row-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 28px;
+    max-width: 1400px;
+  }
+
+  /* ─── Phone frame ─── */
+  .frame {
+    width: 280px;
+    border-radius: 28px;
+    background: var(--surface);
+    color: var(--on);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 24px 48px -16px rgba(0,0,0,0.6);
+    padding-bottom: 18px;
+  }
+  .frame .label {
+    position: absolute;
+    top: -22px;
+    left: 4px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8A8E96;
+    font-weight: 500;
+  }
+  .statusbar {
+    height: 26px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 18px 4px;
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 18px 0;
+  }
+  .topbar .month {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--on-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .topbar .actions { display: inline-flex; gap: 12px; align-items: center; font-size: 11px; opacity: 0.85; }
+
+  /* ─── Hero (traffic-light variants) ─── */
+  .hero {
+    margin: 16px 16px 0;
+    border-radius: 14px;
+    padding: 18px 16px 16px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+  }
+  .hero .amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+  .hero .sub {
+    font-size: 11px;
+    color: var(--on-muted);
+    margin-top: 6px;
+  }
+  .hero .ring {
+    height: 4px;
+    border-radius: 3px;
+    background: var(--surface-el2);
+    margin-top: 14px;
+    overflow: hidden;
+    position: relative;
+  }
+  .hero .ring > i {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+  }
+
+  /* Current — no card, just amount on bg */
+  .hero.current { background: transparent; border-color: transparent; padding: 18px 0 0; margin: 16px 16px 0; }
+  .hero.current .ring > i { background: var(--accent); width: 32%; }
+  .hero.current .amount { color: var(--on); }
+
+  /* Pace-driven variants — bucket = actual_pct − elapsed_pct.
+     The ring fills to actual_pct so it still reads as "% of budget";
+     the colour reflects whether you're under-pace, on-pace, or over-pace. */
+  .hero.under   { background: rgba(111,176,126,0.08); border-color: rgba(111,176,126,0.18); }
+  .hero.under   .amount   { color: var(--on); }
+
+  .hero.ontrack { background: var(--surface-el); border-color: var(--divider); }
+  .hero.ontrack .amount   { color: var(--on); }
+
+  .hero.warn    { background: rgba(224,162,96,0.10); border-color: rgba(224,162,96,0.28); }
+  .hero.warn    .amount   { color: var(--warn); }
+
+  .hero.over    { background: rgba(224,108,97,0.12); border-color: rgba(224,108,97,0.32); }
+  .hero.over    .amount   { color: var(--neg); }
+
+  /* Per-variant ring: width = actual_pct, colour = pace bucket */
+  .hero.under-d25-32 .ring > i { background: var(--pos);    width: 32%; }
+  .hero.ontrack-d15-50 .ring > i { background: var(--accent); width: 50%; }
+  .hero.warn-d05-32 .ring > i { background: var(--warn);   width: 32%; }
+  .hero.warn-d15-70 .ring > i { background: var(--warn);   width: 70%; }
+  .hero.over-d15-105 .ring > i { background: var(--neg);   width: 100%; }
+  /* Pace-tick on the ring — shows where you "should" be by today */
+  .hero .ring { position: relative; }
+  .hero .ring .pace {
+    position: absolute;
+    top: -3px;
+    width: 2px;
+    height: 10px;
+    background: var(--on-faint);
+    opacity: 0.85;
+    border-radius: 1px;
+  }
+
+  /* Stat strip + categories — toned-down so the hero is the focus */
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 14px 16px 0;
+  }
+  .strip .pill {
+    background: var(--surface-el);
+    border-radius: 10px;
+    padding: 10px;
+  }
+  .strip .pill .k {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--on-faint);
+  }
+  .strip .pill .v {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  /* Category mini-list */
+  .cats { padding: 18px 16px 0; }
+  .cats .h {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--on-faint);
+    margin-bottom: 8px;
+  }
+  .cats .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+    border-top: 1px solid var(--divider);
+  }
+  .cats .row:first-of-type { border-top: 0; }
+  .cats .row .mono { font-family: 'JetBrains Mono', monospace; opacity: 0.85; }
+  .cats .row .name { display: inline-flex; align-items: center; gap: 8px; }
+  .cats .row .name::before {
+    content: '';
+    width: 3px; height: 16px;
+    background: var(--accent);
+    border-radius: 1px;
+    opacity: 0.7;
+  }
+
+  /* ─── Notification mockup ─── */
+  .notif-stage {
+    background: linear-gradient(180deg, #2a3140 0%, #15181f 100%);
+    border-radius: 24px;
+    padding: 18px 14px 26px;
+    width: 320px;
+    color: #FAFAFA;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 24px 48px -16px rgba(0,0,0,0.6);
+  }
+  .notif-stage .lock {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .notif-stage .lock .time {
+    font-size: 36px;
+    font-weight: 200;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  .notif-stage .lock .date {
+    font-size: 12px;
+    opacity: 0.7;
+    margin: 2px 0 0;
+  }
+  .notif {
+    background: rgba(20,22,28,0.78);
+    backdrop-filter: blur(10px);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .notif .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+  .notif .head .app {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .notif .head .app::before {
+    content: '';
+    width: 14px; height: 14px;
+    background: var(--accent);
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .notif .title {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 2px;
+  }
+  .notif .body {
+    font-size: 12px;
+    opacity: 0.85;
+    line-height: 1.35;
+    margin: 0;
+  }
+  .notif .body .amt {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+  .notif .meta {
+    margin-top: 6px;
+    font-size: 10px;
+    opacity: 0.55;
+    display: inline-flex;
+    gap: 6px;
+  }
+
+  /* Settings row mockup */
+  .settings-frame {
+    width: 280px;
+    border-radius: 18px;
+    background: var(--surface);
+    border: 1px solid var(--divider);
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 16px 32px -16px rgba(0,0,0,0.6);
+  }
+  .settings-frame .h {
+    padding: 14px 16px 6px;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--on-faint);
+  }
+  .settings-row {
+    padding: 14px 16px;
+    border-top: 1px solid var(--divider);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .settings-row:first-of-type { border-top: 0; }
+  .settings-row .l { font-size: 13px; font-weight: 500; }
+  .settings-row .l .sub { font-size: 11px; color: var(--on-muted); margin-top: 2px; font-weight: 400; }
+  .settings-row .switch {
+    width: 36px; height: 20px;
+    background: var(--accent);
+    border-radius: 12px;
+    position: relative;
+    flex: 0 0 auto;
+  }
+  .settings-row .switch::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    background: var(--surface);
+    border-radius: 50%;
+    top: 2px; right: 2px;
+  }
+  .settings-row .switch.off { background: var(--surface-el2); border: 1px solid var(--divider); }
+  .settings-row .switch.off::after { left: 2px; right: auto; background: var(--on-muted); }
+  .settings-row .input {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    width: 56px;
+    text-align: right;
+    color: var(--on);
+  }
+
+</style>
+</head>
+<body>
+
+<h1>SpendWise — v3 behavioral mockups</h1>
+<p class="blurb">
+Two ideas from <code>plans/pending.md</code> § Behavioral awareness. Mockups only; nothing wired yet.
+The dashboard hero variants below all use the same sample data (April 2026 budget ₹45,000, ring shows fraction used) — only the colour treatment changes with the bucket.
+</p>
+
+<h2>① Traffic-light dashboard hero — <em>pace-driven</em></h2>
+<p class="blurb">
+Bucket isn't raw <em>% of budget</em>; it's <strong>(actual % used) − (% of month elapsed)</strong>. Same 32% used reads
+green on day 25 and warn-orange on day 5 — the colour tells you whether your <em>pace</em> is sustainable, not just
+how full the tank is.
+</p>
+<p class="blurb">
+Buckets: <strong>green</strong> ≤ −10pp (under-pace, surplus brewing) · <strong>neutral</strong> ±10pp (on track) ·
+<strong>warn-orange</strong> +10 to +25pp <em>or</em> 80–100% raw · <strong>red</strong> &gt; +25pp <em>or</em> ≥ 100%.
+Each ring shows a faint tick at "today's expected position" so the user can see pace at a glance — the gap between fill
+and tick is the surplus/deficit story.
+</p>
+
+<div class="row-wrap">
+
+  <!-- Baseline: current shipping look -->
+  <div class="frame">
+    <span class="label">0 · CURRENT (today's shipping look)</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="topbar">
+      <span class="month">‹ April 2026 ›</span>
+      <span class="actions"><span>Import</span><span>⚙</span></span>
+    </div>
+    <div class="hero current">
+      <div class="amount">₹14,400</div>
+      <div class="sub">of ₹45,000 · 32% used</div>
+      <div class="ring"><i></i></div>
+    </div>
+    <div class="strip">
+      <div class="pill"><div class="k">CARRY-OVER</div><div class="v">₹0</div></div>
+      <div class="pill"><div class="k">DAYS LEFT</div><div class="v">15</div></div>
+      <div class="pill"><div class="k">DAILY BURN</div><div class="v">₹960</div></div>
+    </div>
+    <div class="cats">
+      <div class="h">Spend by category</div>
+      <div class="row"><span class="name">UPI Transfer</span><span class="mono">₹5,444</span></div>
+      <div class="row"><span class="name">Groceries</span><span class="mono">₹2,500</span></div>
+    </div>
+  </div>
+
+  <!-- A: under-pace green — day 25, 32% used, big positive surplus -->
+  <div class="frame">
+    <span class="label">A · day 25 · 32% used — GREEN (under pace)</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="topbar">
+      <span class="month">‹ April 2026 ›</span>
+      <span class="actions"><span>Import</span><span>⚙</span></span>
+    </div>
+    <div class="hero under under-d25-32">
+      <div class="amount">₹14,400</div>
+      <div class="sub">of ₹45,000 · 32% used · on track to save ₹17.5k</div>
+      <div class="ring"><i></i><span class="pace" style="left: 83%;"></span></div>
+    </div>
+    <div class="strip">
+      <div class="pill"><div class="k">CARRY-OVER</div><div class="v">₹0</div></div>
+      <div class="pill"><div class="k">DAYS LEFT</div><div class="v">5</div></div>
+      <div class="pill"><div class="k">DAILY BURN</div><div class="v">₹576</div></div>
+    </div>
+    <div class="cats">
+      <div class="h">Spend by category</div>
+      <div class="row"><span class="name">UPI Transfer</span><span class="mono">₹5,444</span></div>
+      <div class="row"><span class="name">Groceries</span><span class="mono">₹2,500</span></div>
+    </div>
+  </div>
+
+  <!-- B: on-pace neutral — day 15, 50% used, exactly on track -->
+  <div class="frame">
+    <span class="label">B · day 15 · 50% used — NEUTRAL (on track)</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="topbar">
+      <span class="month">‹ April 2026 ›</span>
+      <span class="actions"><span>Import</span><span>⚙</span></span>
+    </div>
+    <div class="hero ontrack ontrack-d15-50">
+      <div class="amount">₹22,500</div>
+      <div class="sub">of ₹45,000 · 50% used · pace matches budget</div>
+      <div class="ring"><i></i><span class="pace" style="left: 50%;"></span></div>
+    </div>
+    <div class="strip">
+      <div class="pill"><div class="k">CARRY-OVER</div><div class="v">₹0</div></div>
+      <div class="pill"><div class="k">DAYS LEFT</div><div class="v">15</div></div>
+      <div class="pill"><div class="k">DAILY BURN</div><div class="v">₹1,500</div></div>
+    </div>
+    <div class="cats">
+      <div class="h">Spend by category</div>
+      <div class="row"><span class="name">UPI Transfer</span><span class="mono">₹10,800</span></div>
+      <div class="row"><span class="name">Groceries</span><span class="mono">₹4,800</span></div>
+    </div>
+  </div>
+
+  <!-- C: pace warning early — day 5, 32% used (would have been "green" naively) -->
+  <div class="frame">
+    <span class="label">C · day 5 · 32% used — WARN (burning fast)</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="topbar">
+      <span class="month">‹ April 2026 ›</span>
+      <span class="actions"><span>Import</span><span>⚙</span></span>
+    </div>
+    <div class="hero warn warn-d05-32">
+      <div class="amount">₹14,400</div>
+      <div class="sub">of ₹45,000 · 32% used by day 5 · slow down</div>
+      <div class="ring"><i></i><span class="pace" style="left: 17%;"></span></div>
+    </div>
+    <div class="strip">
+      <div class="pill"><div class="k">CARRY-OVER</div><div class="v">₹0</div></div>
+      <div class="pill"><div class="k">DAYS LEFT</div><div class="v">25</div></div>
+      <div class="pill"><div class="k">DAILY BURN</div><div class="v">₹2,880</div></div>
+    </div>
+    <div class="cats">
+      <div class="h">Spend by category</div>
+      <div class="row"><span class="name">UPI Transfer</span><span class="mono">₹5,444</span></div>
+      <div class="row"><span class="name">Groceries</span><span class="mono">₹2,500</span></div>
+    </div>
+  </div>
+
+  <!-- D: late-month over-pace — day 15, 70% used -->
+  <div class="frame">
+    <span class="label">D · day 15 · 70% used — WARN (over pace)</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="topbar">
+      <span class="month">‹ April 2026 ›</span>
+      <span class="actions"><span>Import</span><span>⚙</span></span>
+    </div>
+    <div class="hero warn warn-d15-70">
+      <div class="amount">₹31,500</div>
+      <div class="sub">of ₹45,000 · 70% used · ₹900/day for 15d</div>
+      <div class="ring"><i></i><span class="pace" style="left: 50%;"></span></div>
+    </div>
+    <div class="strip">
+      <div class="pill"><div class="k">CARRY-OVER</div><div class="v">₹0</div></div>
+      <div class="pill"><div class="k">DAYS LEFT</div><div class="v">15</div></div>
+      <div class="pill"><div class="k">DAILY BURN</div><div class="v">₹2,100</div></div>
+    </div>
+    <div class="cats">
+      <div class="h">Spend by category</div>
+      <div class="row"><span class="name">UPI Transfer</span><span class="mono">₹15,000</span></div>
+      <div class="row"><span class="name">Groceries</span><span class="mono">₹6,800</span></div>
+    </div>
+  </div>
+
+  <!-- E: actually over budget — red regardless of date -->
+  <div class="frame">
+    <span class="label">E · day 15 · 105% used — RED (over budget)</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="topbar">
+      <span class="month">‹ April 2026 ›</span>
+      <span class="actions"><span>Import</span><span>⚙</span></span>
+    </div>
+    <div class="hero over over-d15-105">
+      <div class="amount">₹47,300</div>
+      <div class="sub">of ₹45,000 · 105% · over by ₹2,300</div>
+      <div class="ring"><i></i><span class="pace" style="left: 50%;"></span></div>
+    </div>
+    <div class="strip">
+      <div class="pill"><div class="k">CARRY-OVER</div><div class="v">₹0</div></div>
+      <div class="pill"><div class="k">DAYS LEFT</div><div class="v">15</div></div>
+      <div class="pill"><div class="k">DAILY BURN</div><div class="v">₹3,150</div></div>
+    </div>
+    <div class="cats">
+      <div class="h">Spend by category</div>
+      <div class="row"><span class="name">UPI Transfer</span><span class="mono">₹22,000</span></div>
+      <div class="row"><span class="name">Groceries</span><span class="mono">₹9,300</span></div>
+    </div>
+  </div>
+
+</div>
+
+
+<h2>② Post-spend "impact" notification</h2>
+<p class="blurb">
+Per-transaction push that fires when a single SPEND is ≥ X% of the monthly effective budget (default 10%, configurable, off by default).
+Distinct from the existing cumulative-threshold alerts (50/80/100% of <em>total</em> spend).
+The push lands within seconds of the SMS so the user gets the impact moment <em>after</em> the swipe but before they've forgotten.
+Tap → opens TransactionDetail. The settings card on the right shows where the threshold lives.
+</p>
+
+<div class="row-wrap" style="grid-template-columns: minmax(320px, 360px) minmax(280px, 320px); gap: 36px;">
+
+  <!-- Lock-screen with notification -->
+  <div>
+    <div class="notif-stage">
+      <div class="lock">
+        <p class="time">9:41</p>
+        <p class="date">Wed, Apr 16</p>
+      </div>
+
+      <!-- Big-impact: tx ≥ 10% of monthly budget -->
+      <div class="notif">
+        <div class="head"><span class="app">SpendWise</span><span>now</span></div>
+        <div class="title">₹4,800 at BLINKIT</div>
+        <div class="body"><span class="amt">11%</span> of April · ₹16,500 left for 14 days</div>
+        <div class="meta"><span>Tap to open</span></div>
+      </div>
+
+      <!-- Existing-style threshold alert (for comparison, dimmed) -->
+      <div class="notif" style="opacity: 0.78;">
+        <div class="head"><span class="app">SpendWise</span><span>2h</span></div>
+        <div class="title">Budget: Approaching limit</div>
+        <div class="body">You've used <span class="amt">80%</span> of your April budget (₹36,000 of ₹45,000).</div>
+        <div class="meta"><span>Existing cumulative alert · for comparison</span></div>
+      </div>
+    </div>
+    <p class="blurb" style="margin-top: 14px; max-width: 360px;">
+      Lock-screen view. Top notification is <strong>new</strong> — fires per-tx when impact ≥ threshold.
+      Bottom one is the existing 80% cumulative alert; new feature is additive, not a replacement.
+    </p>
+  </div>
+
+  <!-- Settings card -->
+  <div>
+    <div class="settings-frame">
+      <div class="h">Per-transaction alerts</div>
+      <div class="settings-row">
+        <div class="l">Notify on big spends
+          <div class="sub">When a single tx is a noticeable chunk of your budget.</div>
+        </div>
+        <span class="switch"></span>
+      </div>
+      <div class="settings-row">
+        <div class="l">Threshold
+          <div class="sub">Fire when tx ≥ this % of monthly limit.</div>
+        </div>
+        <input class="input" type="text" value="10%" readonly />
+      </div>
+      <div class="settings-row">
+        <div class="l">Quiet hours
+          <div class="sub">No pushes between 22:00 and 08:00.</div>
+        </div>
+        <span class="switch off"></span>
+      </div>
+    </div>
+    <p class="blurb" style="margin-top: 14px; max-width: 320px;">
+      New settings group. Lives in <strong>Settings → Alert thresholds</strong> next to the cumulative-percentage settings.
+      Default <strong>off</strong> to avoid spam on first install; user opts in.
+    </p>
+  </div>
+
+</div>
+
+</body>
+</html>
