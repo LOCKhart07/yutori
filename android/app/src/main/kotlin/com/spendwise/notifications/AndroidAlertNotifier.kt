@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import com.spendwise.MainActivity
 import com.spendwise.ingestion.AlertEvaluation
 import com.spendwise.ingestion.AlertNotifier
+import com.spendwise.ingestion.ImpactNotification
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -28,7 +29,8 @@ import java.util.Locale
 class AndroidAlertNotifier(private val context: Context) : AlertNotifier {
 
     init {
-        ensureChannel()
+        ensureChannel(CHANNEL_ID, CHANNEL_NAME, CHANNEL_DESCRIPTION)
+        ensureChannel(IMPACT_CHANNEL_ID, IMPACT_CHANNEL_NAME, IMPACT_CHANNEL_DESCRIPTION)
     }
 
     override fun notify(thresholdPct: Int, evaluation: AlertEvaluation) {
@@ -63,17 +65,15 @@ class AndroidAlertNotifier(private val context: Context) : AlertNotifier {
         NotificationManagerCompat.from(context).notify(id, notification)
     }
 
-    private fun ensureChannel() {
+    private fun ensureChannel(id: String, name: String, description: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = context.getSystemService(NotificationManager::class.java)
-            val existing = manager?.getNotificationChannel(CHANNEL_ID)
+            val existing = manager?.getNotificationChannel(id)
             if (existing == null) {
                 val channel = NotificationChannel(
-                    CHANNEL_ID,
-                    CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_LOW,
+                    id, name, NotificationManager.IMPORTANCE_LOW,
                 ).apply {
-                    description = CHANNEL_DESCRIPTION
+                    this.description = description
                 }
                 manager?.createNotificationChannel(channel)
             }
@@ -109,10 +109,61 @@ class AndroidAlertNotifier(private val context: Context) : AlertNotifier {
         }
     }
 
+    override fun notifyImpact(impact: ImpactNotification) {
+        if (!hasPostNotificationsPermission()) return
+        val inr = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+
+        val merchantBit = impact.merchantLabel
+            ?.takeIf { it.isNotBlank() }
+            ?.let { " at $it" } ?: ""
+        val title = "${inr.format(impact.txInrAmount)}$merchantBit"
+
+        val pctRounded = impact.percentOfBudget.let { kotlin.math.round(it).toInt() }
+        val daysLeftBit = if (impact.daysLeft > 0) {
+            " for ${impact.daysLeft} days"
+        } else ""
+        val body = if (impact.remainingInr >= 0) {
+            "$pctRounded% of this month · ${inr.format(impact.remainingInr)} left$daysLeftBit"
+        } else {
+            "$pctRounded% of this month · over by ${inr.format(-impact.remainingInr)}"
+        }
+
+        val contentIntent = PendingIntent.getActivity(
+            context,
+            impact.transactionId.toInt(),
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+
+        val notification = NotificationCompat.Builder(context, IMPACT_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_sys_warning)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(contentIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+
+        // Unique per tx — multiple impacts coexist instead of overwriting.
+        val id = IMPACT_NOTIFICATION_ID_BASE + impact.transactionId.toInt()
+        NotificationManagerCompat.from(context).notify(id, notification)
+    }
+
     companion object {
         const val CHANNEL_ID = "budget_alerts"
         private const val CHANNEL_NAME = "Budget alerts"
         private const val CHANNEL_DESCRIPTION =
             "Alerts when monthly spend crosses a threshold."
+
+        const val IMPACT_CHANNEL_ID = "impact_alerts"
+        private const val IMPACT_CHANNEL_NAME = "Big-spend alerts"
+        private const val IMPACT_CHANNEL_DESCRIPTION =
+            "Notifies when a single transaction is a meaningful chunk of your monthly budget."
+
+        // Offset to keep impact IDs from colliding with cumulative-alert IDs.
+        private const val IMPACT_NOTIFICATION_ID_BASE = 1_000_000
     }
 }

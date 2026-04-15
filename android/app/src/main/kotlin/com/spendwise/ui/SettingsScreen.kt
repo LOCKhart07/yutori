@@ -37,6 +37,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onAccounts: () -> Unit,
     onRecipientRules: () -> Unit,
+    onAlertSettings: () -> Unit = {},
     accountSuggestionCount: Int = 0,
 ) {
     val backup = rememberBackupActions()
@@ -79,6 +80,15 @@ fun SettingsScreen(
                     subtitle = "Reclassification rules for CC bill payments " +
                         "and self-transfers.",
                     onClick = onRecipientRules,
+                )
+            }
+
+            SettingsSection(title = "Alerts") {
+                SettingsItem(
+                    title = "Alert thresholds",
+                    subtitle = "Tune the per-transaction \"impact\" push and " +
+                        "(later) the cumulative budget alerts.",
+                    onClick = onAlertSettings,
                 )
             }
 

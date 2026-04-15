@@ -41,6 +41,10 @@ class SpendWiseApp : Application() {
             .build()
     }
 
+    val impactAlertSettings: com.spendwise.settings.ImpactAlertSettings by lazy {
+        com.spendwise.settings.ImpactAlertSettings(applicationContext)
+    }
+
     override fun onCreate() {
         super.onCreate()
 
@@ -52,6 +56,13 @@ class SpendWiseApp : Application() {
             recipientRuleDao = database.recipientRuleDao(),
             budgetDao = database.budgetDao(),
             budgetAlertStateDao = database.budgetAlertStateDao(),
+            impactConfigProvider = {
+                val s = impactAlertSettings.get()
+                com.spendwise.ingestion.ImpactConfig(
+                    enabled = s.enabled,
+                    thresholdPct = s.thresholdPct,
+                )
+            },
         )
         val notifier = AndroidAlertNotifier(applicationContext)
         IngestionCoordinator.instance = IngestionCoordinator(

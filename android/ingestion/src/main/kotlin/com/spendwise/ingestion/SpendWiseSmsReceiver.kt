@@ -138,14 +138,27 @@ class IngestionCoordinator(
 
     private fun dispatchAlertsIfNeeded(outcome: IngestionOutcome) {
         if (outcome !is IngestionOutcome.Ingested) return
-        val eval = outcome.alertEvaluation ?: return
-        if (!eval.isCurrentMonth) return
-        val notifier = alertNotifier ?: return
-        for (pct in eval.newlyFired) {
-            try {
-                notifier.notify(pct, eval)
-            } catch (e: Throwable) {
-                Log.e(TAG, "Alert dispatch failed for pct=$pct", e)
+        val notifier = alertNotifier
+        // Cumulative threshold alerts.
+        outcome.alertEvaluation?.let { eval ->
+            if (eval.isCurrentMonth && notifier != null) {
+                for (pct in eval.newlyFired) {
+                    try {
+                        notifier.notify(pct, eval)
+                    } catch (e: Throwable) {
+                        Log.e(TAG, "Alert dispatch failed for pct=$pct", e)
+                    }
+                }
+            }
+        }
+        // Per-tx impact alert (independent of cumulative).
+        outcome.impactNotification?.let { impact ->
+            if (notifier != null) {
+                try {
+                    notifier.notifyImpact(impact)
+                } catch (e: Throwable) {
+                    Log.e(TAG, "Impact dispatch failed for tx=${impact.transactionId}", e)
+                }
             }
         }
     }
