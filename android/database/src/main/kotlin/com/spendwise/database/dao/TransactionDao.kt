@@ -33,6 +33,21 @@ interface TransactionDao {
     )
     fun observeByMonth(monthKey: String): Flow<List<TransactionEntity>>
 
+    /**
+     * All money-moving transactions from months strictly before
+     * [monthKey]. Needed by BudgetCalculator.carryOver to compute per-
+     * prior-month surplus/deficit. Drops and incomes don't affect
+     * carry so we filter them at the query to keep the payload small.
+     */
+    @Query(
+        """
+        SELECT * FROM transactions
+         WHERE month_key < :monthKey
+           AND budget_effect IN ('SPEND', 'REFUND')
+        """,
+    )
+    suspend fun getBeforeMonth(monthKey: String): List<TransactionEntity>
+
     @Query(
         """
         SELECT * FROM transactions

@@ -139,6 +139,41 @@ class DashboardViewModelTest {
     }
 
     @Test
+    fun `prior-month spend is folded into carry-over`() = runTest(dispatcher) {
+        // March: budget ₹10,000, spent ₹6,500 net ⇒ surplus ₹3,500.
+        // April: budget ₹10,000, no spend yet.
+        // Expected April effective budget: 10,000 + 3,500 carry = 13,500.
+        val txs = listOf(
+            txEntity(id = 1, inrAmount = 4_000.0, monthKey = "2026-03"),
+            txEntity(id = 2, inrAmount = 3_000.0, monthKey = "2026-03"),
+            txEntity(id = 3, inrAmount = 500.0, effect = "REFUND", monthKey = "2026-03"),
+            txEntity(id = 4, inrAmount = 100.0, monthKey = "2026-04"),
+        )
+        val vm = DashboardViewModel(
+            transactionDao = FakeTxDao(txs),
+            budgetDao = FakeBudgetDao(
+                month = BudgetEntity(
+                    monthKey = "2026-04", limitInr = 10_000.0,
+                    createdAtMs = 0, updatedAtMs = 0,
+                ),
+                priors = listOf(
+                    BudgetEntity(
+                        monthKey = "2026-03", limitInr = 10_000.0,
+                        createdAtMs = 0, updatedAtMs = 0,
+                    ),
+                ),
+            ),
+            hasPermissionProvider = { true },
+            nowMs = { epoch("2026-04-15") },
+        )
+        val state = vm.uiState.first { it is DashboardUiState.Ready }
+            as DashboardUiState.Ready
+        state.snapshot.carryOverInr shouldBe 3_500.0
+        state.snapshot.effectiveBudgetInr shouldBe 13_500.0
+        state.snapshot.netSpendInr shouldBe 100.0
+    }
+
+    @Test
     fun `pending forex count is exposed`() = runTest(dispatcher) {
         val txs = listOf(
             txEntity(id = 1, inrAmount = 500.0),
@@ -210,6 +245,8 @@ class DashboardViewModelTest {
     ) : TransactionDao {
         override fun observeByMonth(monthKey: String): Flow<List<TransactionEntity>> =
             MutableStateFlow(all.filter { it.monthKey == monthKey }).asStateFlow()
+        override suspend fun getBeforeMonth(monthKey: String): List<TransactionEntity> =
+            all.filter { it.monthKey < monthKey && it.budgetEffect in setOf("SPEND", "REFUND") }
         override fun observePendingForex(): Flow<List<TransactionEntity>> =
             MutableStateFlow(pending).asStateFlow()
 
