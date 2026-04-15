@@ -42,6 +42,7 @@ Reconciled snapshot. Delete rows as they ship.
 
 ## Tech debt
 
+- **Dashboard flashes "₹0" when re-entered** — `stateIn(WhileSubscribed(5s))` means the upstream Flow restarts with `initialValue = Loading` after the Dashboard leaves composition for >5 s. Switching screens and coming back briefly shows 0 before the real net-spend renders. Options: widen the SharingStarted timeout, cache the last emission as the initial value, or prime `uiState` with `runBlocking` from a cold DB read (only safe off-main).
 - **Carry-over math** uses only current-month transactions (TODO in `DashboardViewModel`). Prior-month REFUNDs that alter surplus aren't reflected.
 - **`DashboardDerived.computeBanner`** untested branches — approaching / surplus / early-month paths.
 - **Compose render tests** are thin — only `TransactionListItem`. Dashboard / TransactionDetail state-change paths have no regression net.

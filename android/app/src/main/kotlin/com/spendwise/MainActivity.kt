@@ -27,7 +27,6 @@ import com.spendwise.database.entities.BudgetEntity
 import com.spendwise.database.entities.RecipientRuleEntity
 import com.spendwise.database.mappers.BudgetMapper
 import com.spendwise.importing.HistoricalImportWorker
-import com.spendwise.transactions.MonthKeyComputer
 import com.spendwise.ui.AccountDraft
 import com.spendwise.ui.AccountEditScreen
 import com.spendwise.ui.AccountsScreen
@@ -68,9 +67,9 @@ class MainActivity : ComponentActivity() {
 /** v1 MVP screens. Swap for Navigation-Compose when it earns its weight. */
 private sealed interface Screen {
     data object Dashboard : Screen
-    data object BudgetSetup : Screen
-    data class CategoryDrill(val category: String) : Screen
-    data class CardDrill(val last4: String) : Screen
+    data class BudgetSetup(val monthKey: String) : Screen
+    data class CategoryDrill(val monthKey: String, val category: String) : Screen
+    data class CardDrill(val monthKey: String, val last4: String) : Screen
     data class TransactionDetail(val transactionId: Long) : Screen
     data object Settings : Screen
     data object Accounts : Screen
@@ -118,10 +117,6 @@ private fun AppContent() {
         goBack()
     }
 
-    val currentMonthKey = remember {
-        MonthKeyComputer.ofDevice(System.currentTimeMillis())
-    }
-
     when (val s = screen) {
         is Screen.Dashboard -> {
             val viewModel: DashboardViewModel = viewModel(
@@ -143,11 +138,11 @@ private fun AppContent() {
             DashboardScreen(
                 state = state,
                 importStatus = importStatus,
-                onSetBudget = { goTo(Screen.BudgetSetup) },
+                onSetBudget = { goTo(Screen.BudgetSetup(viewedMonthKey)) },
                 onImport = { importDialogOpen = true },
                 onSettings = { goTo(Screen.Settings) },
-                onCategoryClick = { cat -> goTo(Screen.CategoryDrill(cat)) },
-                onCardClick = { last4 -> goTo(Screen.CardDrill(last4)) },
+                onCategoryClick = { cat -> goTo(Screen.CategoryDrill(viewedMonthKey, cat)) },
+                onCardClick = { last4 -> goTo(Screen.CardDrill(viewedMonthKey, last4)) },
                 hasSettingsBadge = suggestedCount > 0,
                 onMonthPrev = { viewModel.navigateMonth(-1) },
                 onMonthNext = { viewModel.navigateMonth(1) },
@@ -172,14 +167,14 @@ private fun AppContent() {
 
             val currentBudgetEntity: BudgetEntity? by produceState<BudgetEntity?>(
                 initialValue = null,
-                currentMonthKey,
+                s.monthKey,
             ) {
-                value = budgetDao.getByMonth(currentMonthKey)
+                value = budgetDao.getByMonth(s.monthKey)
             }
             val currentBudget = currentBudgetEntity?.let(BudgetMapper::toDomain)
 
             BudgetSetupScreen(
-                monthKey = currentMonthKey,
+                monthKey = s.monthKey,
                 currentBudget = currentBudget,
                 onSave = { budget ->
                     scope.launch {
@@ -200,10 +195,10 @@ private fun AppContent() {
 
         is Screen.CategoryDrill -> {
             CategoryDrillDownScreen(
-                monthKey = currentMonthKey,
+                monthKey = s.monthKey,
                 category = s.category,
                 transactionsFlow = database.transactionDao()
-                    .observeByMonthAndCategory(currentMonthKey, s.category),
+                    .observeByMonthAndCategory(s.monthKey, s.category),
                 onBack = { goBack() },
                 onTransactionClick = { id -> goTo(Screen.TransactionDetail(id)) },
             )
@@ -225,16 +220,16 @@ private fun AppContent() {
 
             val txDao = database.transactionDao()
             val flow = if (resolvedAccountId != null) {
-                txDao.observeByMonthAndAccount(currentMonthKey, resolvedAccountId!!)
+                txDao.observeByMonthAndAccount(s.monthKey, resolvedAccountId!!)
             } else {
                 // No registered account — show all transactions this month
                 // with matching last4 by filtering the broader flow.
-                txDao.observeByMonth(currentMonthKey)
+                txDao.observeByMonth(s.monthKey)
                     .map { list -> list.filter { it.last4 == s.last4 } }
             }
 
             CardDrillDownScreen(
-                monthKey = currentMonthKey,
+                monthKey = s.monthKey,
                 last4 = s.last4,
                 issuerLabel = issuer,
                 transactionsFlow = flow,
