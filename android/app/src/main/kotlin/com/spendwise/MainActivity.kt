@@ -94,25 +94,28 @@ private fun AppContent() {
         return
     }
 
-    var screen: Screen by remember { mutableStateOf(Screen.Dashboard) }
+    // Nav stack. Push on forward nav, pop on back. Dashboard always
+    // sits at the bottom so the system back button never finishes the
+    // activity from a deeper screen — it unwinds to Dashboard first.
+    var navStack: List<Screen> by remember {
+        mutableStateOf(listOf(Screen.Dashboard))
+    }
+    val screen: Screen = navStack.last()
+
+    fun goTo(next: Screen) {
+        navStack = navStack + next
+    }
+    fun goBack() {
+        val popped = navStack.dropLast(1)
+        navStack = popped.ifEmpty { listOf(Screen.Dashboard) }
+    }
+
     var importDialogOpen by remember { mutableStateOf(false) }
 
-    // Route the system back button to our Screen state instead of
-    // letting Android finish the activity. Back from any non-root
-    // screen pops to its parent; back from Dashboard is disabled so
-    // Android's default (exit app) takes over.
-    androidx.activity.compose.BackHandler(enabled = screen != Screen.Dashboard) {
-        screen = when (val s = screen) {
-            is Screen.Dashboard          -> Screen.Dashboard  // disabled — won't fire
-            is Screen.BudgetSetup        -> Screen.Dashboard
-            is Screen.CategoryDrill      -> Screen.Dashboard
-            is Screen.CardDrill          -> Screen.Dashboard
-            is Screen.TransactionDetail  -> Screen.Dashboard  // v1 MVP has no tx-nav stack
-            is Screen.Settings           -> Screen.Dashboard
-            is Screen.Accounts           -> Screen.Settings
-            is Screen.AccountEdit        -> Screen.Accounts
-            is Screen.RecipientRules     -> Screen.Settings
-        }
+    // System back button unwinds the stack; disabled on the root
+    // (Dashboard) so Android's default (exit app) takes over.
+    androidx.activity.compose.BackHandler(enabled = navStack.size > 1) {
+        goBack()
     }
 
     val currentMonthKey = remember {
@@ -140,11 +143,11 @@ private fun AppContent() {
             DashboardScreen(
                 state = state,
                 importStatus = importStatus,
-                onSetBudget = { screen = Screen.BudgetSetup },
+                onSetBudget = { goTo(Screen.BudgetSetup) },
                 onImport = { importDialogOpen = true },
-                onSettings = { screen = Screen.Settings },
-                onCategoryClick = { cat -> screen = Screen.CategoryDrill(cat) },
-                onCardClick = { last4 -> screen = Screen.CardDrill(last4) },
+                onSettings = { goTo(Screen.Settings) },
+                onCategoryClick = { cat -> goTo(Screen.CategoryDrill(cat)) },
+                onCardClick = { last4 -> goTo(Screen.CardDrill(last4)) },
                 hasSettingsBadge = suggestedCount > 0,
                 onMonthPrev = { viewModel.navigateMonth(-1) },
                 onMonthNext = { viewModel.navigateMonth(1) },
@@ -188,10 +191,10 @@ private fun AppContent() {
                             updatedAtMs = now,
                         )
                         budgetDao.upsert(entity)
-                        screen = Screen.Dashboard
+                        goBack()
                     }
                 },
-                onCancel = { screen = Screen.Dashboard },
+                onCancel = { goBack() },
             )
         }
 
@@ -201,8 +204,8 @@ private fun AppContent() {
                 category = s.category,
                 transactionsFlow = database.transactionDao()
                     .observeByMonthAndCategory(currentMonthKey, s.category),
-                onBack = { screen = Screen.Dashboard },
-                onTransactionClick = { id -> screen = Screen.TransactionDetail(id) },
+                onBack = { goBack() },
+                onTransactionClick = { id -> goTo(Screen.TransactionDetail(id)) },
             )
         }
 
@@ -235,8 +238,8 @@ private fun AppContent() {
                 last4 = s.last4,
                 issuerLabel = issuer,
                 transactionsFlow = flow,
-                onBack = { screen = Screen.Dashboard },
-                onTransactionClick = { id -> screen = Screen.TransactionDetail(id) },
+                onBack = { goBack() },
+                onTransactionClick = { id -> goTo(Screen.TransactionDetail(id)) },
             )
         }
 
@@ -246,10 +249,7 @@ private fun AppContent() {
                 transactionDao = database.transactionDao(),
                 sourceDao = database.transactionSourceDao(),
                 smsLogDao = database.smsLogDao(),
-                onBack = {
-                    // Back to dashboard for v1 MVP — no history stack yet.
-                    screen = Screen.Dashboard
-                },
+                onBack = { goBack() },
             )
         }
 
@@ -258,9 +258,9 @@ private fun AppContent() {
                 .observeCountByStatus("SUGGESTED")
                 .collectAsStateWithLifecycle(initialValue = 0)
             SettingsScreen(
-                onBack = { screen = Screen.Dashboard },
-                onAccounts = { screen = Screen.Accounts },
-                onRecipientRules = { screen = Screen.RecipientRules },
+                onBack = { goBack() },
+                onAccounts = { goTo(Screen.Accounts) },
+                onRecipientRules = { goTo(Screen.RecipientRules) },
                 accountSuggestionCount = suggestedCount,
             )
         }
@@ -270,14 +270,14 @@ private fun AppContent() {
             val accountDao = database.accountDao()
             AccountsScreen(
                 accountsFlow = accountDao.observeAll(),
-                onBack = { screen = Screen.Settings },
-                onAdd = { screen = Screen.AccountEdit(accountId = null) },
-                onEdit = { id -> screen = Screen.AccountEdit(accountId = id) },
+                onBack = { goBack() },
+                onAdd = { goTo(Screen.AccountEdit(accountId = null)) },
+                onEdit = { id -> goTo(Screen.AccountEdit(accountId = id)) },
                 onConfirmSuggestion = { id ->
                     // Reuse the edit form so the user can tweak display
                     // name + default-spend before committing. Status
                     // flips to CONFIRMED on Save (see persistAccount).
-                    screen = Screen.AccountEdit(accountId = id)
+                    goTo(Screen.AccountEdit(accountId = id))
                 },
                 onIgnoreSuggestion = { id ->
                     scope.launch { accountDao.setStatus(id, "DISMISSED") }
@@ -344,17 +344,17 @@ private fun AppContent() {
                                     android.widget.Toast.LENGTH_LONG,
                                 ).show()
                             }
-                            screen = Screen.Accounts
+                            goBack()
                         }
                     },
-                    onCancel = { screen = Screen.Accounts },
+                    onCancel = { goBack() },
                     onDelete = if (s.accountId != null) {
                         {
                             scope.launch {
                                 ruleDao.findByAccountId(s.accountId)
                                     .forEach { ruleDao.delete(it) }
                                 accountDao.getById(s.accountId)?.let { accountDao.delete(it) }
-                                screen = Screen.Accounts
+                                goBack()
                             }
                         }
                     } else null,
@@ -368,7 +368,7 @@ private fun AppContent() {
 
             RecipientRulesScreen(
                 rulesFlow = ruleDao.observeAll(),
-                onBack = { screen = Screen.Settings },
+                onBack = { goBack() },
                 onToggleEnabled = { rule, enabled ->
                     scope.launch { ruleDao.update(rule.copy(isEnabled = enabled)) }
                 },
