@@ -26,27 +26,28 @@ Reconciled snapshot. Delete rows as they ship.
 15. Release-body changelog automation *(git-cliff + APK SHA-256 + tag-annotation header; prereq for a useful in-app autoupdater dialog)*
 16. Decimal-display consistency in money amounts *(strip `.00` everywhere on dashboard / category rows; cleanly fixes column-scan misreads)*
 17. Restricted-settings onboarding helper *(detect Android-13+ permanently-denied state on first install; deep-link to App info → ⋮ → Allow restricted settings; first-install blocker we hit on 2026-04-16)*
+18. CI gate on release *(run the JVM + Android unit suites as a prerequisite job inside `release.yml` so a red build can't publish an APK; optionally also run on push to main for faster feedback — see Tech debt)*
 
 **Tier 2 — behavior-change core (medium effort)**
-18. Hard-stop over-budget state (opt-in)
-19. Per-tx notes + Ignore-a-transaction
-20. Manual recipient-rule add/edit form
-21. "Add rule from this transaction" entry point
-22. Reparse pipeline
-23. "Offer" reclassify confirm dialog
-24. Review unmatched screen
+19. Hard-stop over-budget state (opt-in)
+20. Per-tx notes + Ignore-a-transaction
+21. Manual recipient-rule add/edit form
+22. "Add rule from this transaction" entry point
+23. Reparse pipeline
+24. "Offer" reclassify confirm dialog
+25. Review unmatched screen
 
-Note: 20–24 form a tight cluster — treat as one mini-milestone.
+Note: 21–25 form a tight cluster — treat as one mini-milestone.
 
 (Shipped this session: traffic-light hero `e1db251`, post-spend impact notif `ddd51ec`, notification-permission banner `6afefe7`, repo published + `v0.1.0` released 2026-04-15 (private, debug-signed).)
 
 **Tier 3 — structurally important, bigger lifts**
-25. Historical-import worker checkpointing + foreground notification
-26. Add `source` field to `sms_log` + `transactions` *(prereq for 27)*
-27. PDF/CSV statement import
-28. Goals entity + translator
-29. Annual-cost smoothing buckets
-30. Per-category pacing baseline
+26. Historical-import worker checkpointing + foreground notification
+27. Add `source` field to `sms_log` + `transactions` *(prereq for 28)*
+28. PDF/CSV statement import
+29. Goals entity + translator
+30. Annual-cost smoothing buckets
+31. Per-category pacing baseline
 
 **Tier 4 — nice-to-have polish**
 Onboarding 4-step flow · CardDrillDown filter chips · ring/donut decision · carry-over per-prior-month breakdown · dashboard state variants visual check · forex tx-detail visual check · bucket simplification mode · surfacing suggested accounts · BudgetSetup pace anchor · card drill-down pace · Tx-detail Edit / Mark as payback · animation polish (color transitions, banner fades, progress-bar tween, money counter) · Play Protect install-warning mitigation (release-signing for reputation, autoupdater first-run dialog explainer)
@@ -141,6 +142,10 @@ The traffic-light hero (mocked in `mockups/v3-behavioral.html` §1) buckets by `
 - **`DashboardDerived.computeBanner`** untested branches — approaching / surplus / early-month paths.
 - **Compose render tests** are thin — only `TransactionListItem`. Dashboard / TransactionDetail state-change paths have no regression net.
 - **Profile the app end-to-end** — user wants a round soon. Measure ingest-per-SMS time (parse + classify + merge + persist), dashboard initial render (Flow cold-start to first frame), and large-drill-down scroll (LazyColumn recomposition on 1000+ txns). Look for synchronous DB reads on the main thread and unnecessary recompositions via the Compose layout inspector. Do this *before* adding animations — motion on top of janky frame pacing reads as broken; profile-then-animate is the right order.
+- **CI runs no tests.** Only `.github/workflows/release.yml` exists — it fires on `v*` tag push and assembles the APK without running a single test first. So v0.1.0 shipped without automated test verification, and any regression in `:parser` / `:classifier` / dedup / budget math slips through until caught locally. Shape of the fix (single-dev private repo, no PR flow):
+  - **Minimum: gate release on tests.** Add a `test` job to `release.yml` that runs `./gradlew :parser:test :classifier:test :budget:test :transactions:test :ingestion:test :database:test :app:testDebugUnitTest` (or just `./gradlew testDebugUnitTest test` at the root — the pure-JVM modules ignore `testDebug*` and Android modules ignore `test`). Make `build-release` declare `needs: test`. A red suite aborts the release; no APK gets published from broken code.
+  - **Nicer: also run on push to main.** Split the test job into a `ci.yml` that triggers on `push` to any branch, so you catch regressions while coding instead of only at tag time. `release.yml` still runs its own `test` job as belt-and-suspenders (or uses `workflow_run` to require `ci.yml` green — more moving parts, skip unless the duplication bothers you).
+  - **Out of scope for first pass:** emulator-dependent `:database:connectedAndroidTest` (migration verification). Needs a macOS or KVM-enabled runner, or the Gradle managed-device plugin. Worth a separate workflow once migrations start landing.
 
 ## Animations (all absent — app snaps instantly everywhere)
 
