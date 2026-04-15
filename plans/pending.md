@@ -4,7 +4,6 @@ Reconciled snapshot. Delete rows as they ship.
 
 ## UX / layout gaps
 
-- **Over-budget hero overflows on large deficits.** Example: `₹−30,027` at the display font size — confirm exact layout break and either shrink font, use compact format (`30k`), or wrap. (Needs repro amount.)
 - **"KOTAK UPI" shows 2 similar sources** — user-flagged on device, needs a screenshot to diagnose. Probably two merchant-key variants (spacing, casing) that should normalize to one.
 
 ## Branding / identity
