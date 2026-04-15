@@ -33,7 +33,41 @@ sealed interface IngestionOutcome {
         val classifiedOutcome: ClassificationOutcome,
         val transactionDecision: MergeDecision?,
         val alertEvaluation: AlertEvaluation? = null,
+        /**
+         * Per-transaction "impact" notification payload. Populated only
+         * when the new tx is a SPEND with a known INR amount that is
+         * ≥ the user's per-tx threshold % of the effective budget.
+         * Decoupled from [alertEvaluation] (which is cumulative) — the
+         * dispatcher fires both independently when both are populated.
+         */
+        val impactNotification: ImpactNotification? = null,
     ) : IngestionOutcome
+}
+
+/**
+ * Per-transaction impact: a single SPEND was a meaningful chunk of the
+ * monthly budget. UI uses [percentOfBudget] for the headline; the rest
+ * helps the notifier render a useful body.
+ */
+data class ImpactNotification(
+    val monthKey: String,
+    val txInrAmount: Double,
+    val effectiveBudgetInr: Double,
+    val percentOfBudget: Double,
+    val remainingInr: Double,
+    val daysLeft: Int,
+    val merchantLabel: String?,
+    val transactionId: Long,
+)
+
+/** User-controlled config for the impact-notification feature. */
+data class ImpactConfig(
+    val enabled: Boolean,
+    val thresholdPct: Int,
+) {
+    companion object {
+        val OFF = ImpactConfig(enabled = false, thresholdPct = 10)
+    }
 }
 
 /**

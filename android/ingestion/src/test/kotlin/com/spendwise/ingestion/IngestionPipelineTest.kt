@@ -118,6 +118,94 @@ class IngestionPipelineTest {
         transactions.all.size shouldBe 1
     }
 
+    // --- impact notification: per-tx push when a single SPEND is a
+    //     meaningful chunk of the monthly budget ---
+
+    @Test
+    fun `impact notif emits when SPEND meets threshold and feature is on`() = runTest {
+        budgets.upsert(
+            com.spendwise.database.entities.BudgetEntity(
+                monthKey = "2026-03", limitInr = 10_000.0,
+                createdAtMs = 0, updatedAtMs = 0,
+            ),
+        )
+        val impactPipeline = IngestionPipeline(
+            smsLogDao = smsLog, transactionDao = transactions,
+            transactionSourceDao = sources, accountDao = accounts,
+            recipientRuleDao = rules, budgetDao = budgets,
+            budgetAlertStateDao = alertState,
+            zone = ZoneId.of("Asia/Kolkata"),
+            nowMs = { 1_774_918_800_000L },
+            impactConfigProvider = { ImpactConfig(enabled = true, thresholdPct = 10) },
+        )
+
+        val raw = rawSms(
+            sender = "JD-KOTAKB-S",
+            body = "Sent Rs.1500.00 from Kotak Bank AC X0000 to " +
+                "merchant@oksbi on 27-03-26.UPI Ref 000000000000. " +
+                "Not you, URL",
+        )
+        val outcome = impactPipeline.ingest(raw)
+
+        outcome.shouldBeInstanceOf<IngestionOutcome.Ingested>()
+        val impact = outcome.impactNotification
+        impact.shouldNotBeNull()
+        impact.txInrAmount shouldBe 1500.0
+        impact.percentOfBudget shouldBe 15.0
+        impact.merchantLabel shouldBe "merchant@oksbi"
+    }
+
+    @Test
+    fun `impact notif suppressed when below threshold`() = runTest {
+        budgets.upsert(
+            com.spendwise.database.entities.BudgetEntity(
+                monthKey = "2026-03", limitInr = 10_000.0,
+                createdAtMs = 0, updatedAtMs = 0,
+            ),
+        )
+        val impactPipeline = IngestionPipeline(
+            smsLogDao = smsLog, transactionDao = transactions,
+            transactionSourceDao = sources, accountDao = accounts,
+            recipientRuleDao = rules, budgetDao = budgets,
+            budgetAlertStateDao = alertState,
+            zone = ZoneId.of("Asia/Kolkata"),
+            nowMs = { 1_774_918_800_000L },
+            impactConfigProvider = { ImpactConfig(enabled = true, thresholdPct = 10) },
+        )
+
+        // 5% of 10k → below 10% threshold
+        val raw = rawSms(
+            sender = "JD-KOTAKB-S",
+            body = "Sent Rs.500.00 from Kotak Bank AC X0000 to " +
+                "merchant@oksbi on 27-03-26.UPI Ref 000000000000. " +
+                "Not you, URL",
+        )
+        val outcome = impactPipeline.ingest(raw)
+        outcome.shouldBeInstanceOf<IngestionOutcome.Ingested>()
+        outcome.impactNotification.shouldBeNull()
+    }
+
+    @Test
+    fun `impact notif suppressed when feature is off (default)`() = runTest {
+        budgets.upsert(
+            com.spendwise.database.entities.BudgetEntity(
+                monthKey = "2026-03", limitInr = 10_000.0,
+                createdAtMs = 0, updatedAtMs = 0,
+            ),
+        )
+        // Default pipeline (impact OFF) — same SMS that fired in the
+        // first test should produce no impact.
+        val raw = rawSms(
+            sender = "JD-KOTAKB-S",
+            body = "Sent Rs.1500.00 from Kotak Bank AC X0000 to " +
+                "merchant@oksbi on 27-03-26.UPI Ref 000000000000. " +
+                "Not you, URL",
+        )
+        val outcome = pipeline.ingest(raw)
+        outcome.shouldBeInstanceOf<IngestionOutcome.Ingested>()
+        outcome.impactNotification.shouldBeNull()
+    }
+
     @Test
     fun `live-then-import of the same SMS dedups on content`() = runTest {
         // Live path: SMS_RECEIVED fired with no provider id yet.

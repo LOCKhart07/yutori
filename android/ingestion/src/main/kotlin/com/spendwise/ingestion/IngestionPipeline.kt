@@ -53,6 +53,8 @@ class IngestionPipeline(
     private val budgetAlertStateDao: BudgetAlertStateDao,
     private val zone: ZoneId = ZoneId.systemDefault(),
     private val nowMs: () -> Long = { System.currentTimeMillis() },
+    /** User config for the per-tx "impact" notification. Off → no impacts produced. */
+    private val impactConfigProvider: () -> ImpactConfig = { ImpactConfig.OFF },
 ) {
 
     suspend fun ingest(raw: RawSms): IngestionOutcome {
@@ -135,12 +137,69 @@ class IngestionPipeline(
             null
         }
 
+        val impact = maybeBuildImpact(
+            classified = classified,
+            decision = decision,
+            alertEvaluation = alertEvaluation,
+            monthKey = monthKeyOfEvent,
+        )
+
         return IngestionOutcome.Ingested(
             smsLogId = smsLogId,
             classifiedOutcome = classified,
             transactionDecision = decision,
             alertEvaluation = alertEvaluation,
+            impactNotification = impact,
         )
+    }
+
+    private fun maybeBuildImpact(
+        classified: com.spendwise.classifier.ClassificationOutcome,
+        decision: MergeDecision?,
+        alertEvaluation: AlertEvaluation?,
+        monthKey: String,
+    ): ImpactNotification? {
+        val cfg = impactConfigProvider()
+        if (!cfg.enabled) return null
+        // Only fresh SPEND with a known amount qualifies; merges into an
+        // existing tx don't count (the user already knows about it) and
+        // refunds/drops aren't "impacts."
+        if (classified.budgetEffect != BudgetEffect.SPEND) return null
+        val txId = (decision as? MergeDecision.CreatedNew)?.transactionId
+            ?: return null
+        val amount = classified.amount ?: return null
+        val eval = alertEvaluation ?: return null
+        if (!eval.isCurrentMonth) return null
+        val snap = eval.snapshot
+        if (snap.effectiveBudgetInr <= 0.0) return null
+        val pct = (amount / snap.effectiveBudgetInr) * 100.0
+        if (pct < cfg.thresholdPct) return null
+        val remaining = snap.effectiveBudgetInr - snap.netSpendInr
+        val daysLeft = computeDaysLeft(monthKey)
+        return ImpactNotification(
+            monthKey = monthKey,
+            txInrAmount = amount,
+            effectiveBudgetInr = snap.effectiveBudgetInr,
+            percentOfBudget = pct,
+            remainingInr = remaining,
+            daysLeft = daysLeft,
+            merchantLabel = classified.merchant,
+            transactionId = txId,
+        )
+    }
+
+    private fun computeDaysLeft(monthKey: String): Int {
+        return try {
+            val ym = java.time.YearMonth.parse(monthKey)
+            val today = java.time.LocalDate.now(zone)
+            if (today.year == ym.year && today.monthValue == ym.monthValue) {
+                ym.lengthOfMonth() - today.dayOfMonth + 1
+            } else {
+                0
+            }
+        } catch (_: Exception) {
+            0
+        }
     }
 
     // --- transaction builder path ---------------------------------------

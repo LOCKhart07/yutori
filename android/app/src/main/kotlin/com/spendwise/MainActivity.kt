@@ -29,6 +29,7 @@ import com.spendwise.database.mappers.BudgetMapper
 import com.spendwise.importing.HistoricalImportWorker
 import com.spendwise.ui.AccountDraft
 import com.spendwise.ui.AccountEditScreen
+import com.spendwise.ui.AlertSettingsScreen
 import com.spendwise.ui.AccountsScreen
 import com.spendwise.ui.BudgetSetupScreen
 import com.spendwise.ui.CardDrillDownScreen
@@ -75,6 +76,7 @@ private sealed interface Screen {
     data object Accounts : Screen
     data class AccountEdit(val accountId: Long?) : Screen       // null = new
     data object RecipientRules : Screen
+    data object AlertSettings : Screen
 }
 
 @Composable
@@ -291,6 +293,7 @@ private fun AppContent() {
                 onBack = { goBack() },
                 onAccounts = { goTo(Screen.Accounts) },
                 onRecipientRules = { goTo(Screen.RecipientRules) },
+                onAlertSettings = { goTo(Screen.AlertSettings) },
                 accountSuggestionCount = suggestedCount,
             )
         }
@@ -405,6 +408,13 @@ private fun AppContent() {
                 onDeleteUserRule = { rule ->
                     scope.launch { ruleDao.delete(rule) }
                 },
+            )
+        }
+
+        is Screen.AlertSettings -> {
+            AlertSettingsScreen(
+                settings = app.impactAlertSettings,
+                onBack = { goBack() },
             )
         }
     }
