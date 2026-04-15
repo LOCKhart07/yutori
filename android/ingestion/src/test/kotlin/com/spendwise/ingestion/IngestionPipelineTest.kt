@@ -125,7 +125,7 @@ class IngestionPipelineTest {
             androidSmsId = null,
             sender = "AX-KOTAKB-S",
             body = "Sent Rs.1.00 from Kotak Bank AC X0000 to " +
-                "friend-1@okaxis on 15-04-26.UPI Ref 000000000000. Not you, URL",
+                "friend-1@okaxis on 01-01-26.UPI Ref 000000000000. Not you, URL",
         )
         pipeline.ingest(live)
 
