@@ -1,0 +1,397 @@
+package com.spendwise.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.spendwise.database.dao.SmsLogDao
+import com.spendwise.database.dao.TransactionDao
+import com.spendwise.database.dao.TransactionSourceDao
+import com.spendwise.database.entities.SmsLogEntity
+import com.spendwise.database.entities.TransactionEntity
+import com.spendwise.database.entities.TransactionSourceEntity
+import com.spendwise.ui.theme.SpendWiseTextStyles
+import com.spendwise.ui.theme.SpendWiseTheme
+import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+/**
+ * Transaction detail — v2 per mockups/v2.html frames 5, 6, 10.
+ * Hero amount in mono, merchant + when, classification pill with
+ * effect color dot, forex "original + rate" block if applicable,
+ * meta rows, source SMS block (monospace raw body).
+ */
+private data class Details(
+    val tx: TransactionEntity,
+    val sources: List<Pair<TransactionSourceEntity, SmsLogEntity?>>,
+)
+
+@Composable
+fun TransactionDetailScreen(
+    transactionId: Long,
+    transactionDao: TransactionDao,
+    sourceDao: TransactionSourceDao,
+    smsLogDao: SmsLogDao,
+    onBack: () -> Unit,
+) {
+    val details: Details? by produceState<Details?>(null, transactionId) {
+        val tx = transactionDao.getById(transactionId) ?: return@produceState
+        val sources = sourceDao.findByTransactionId(transactionId)
+        val withBodies = sources.map { src -> src to smsLogDao.getById(src.smsLogId) }
+        value = Details(tx, withBodies)
+    }
+
+    // Branch at the top with `when` — no early returns. The Compose
+    // compiler wraps each branch in its own group, so the group count
+    // stays balanced across the null → loaded state change.
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        when (val d = details) {
+            null -> LoadingView(onBack = onBack)
+            else -> ReadyView(details = d, onBack = onBack)
+        }
+    }
+}
+
+@Composable
+private fun LoadingView(onBack: () -> Unit) {
+    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = statusInset.calculateTopPadding() + 8.dp)
+            .padding(horizontal = 24.dp),
+    ) {
+        BackRow(label = "Back", onBack = onBack)
+        Spacer(Modifier.height(24.dp))
+        Text(
+            text = "Loading…",
+            style = MaterialTheme.typography.bodyLarge,
+            color = SpendWiseTheme.colors.onMuted,
+        )
+    }
+}
+
+@Composable
+private fun ReadyView(details: Details, onBack: () -> Unit) {
+    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(top = statusInset.calculateTopPadding() + 8.dp)
+            .padding(horizontal = 24.dp),
+    ) {
+        BackRow(label = "Back", onBack = onBack)
+        Hero(details.tx)
+        Spacer(Modifier.height(24.dp))
+        MetaSection(details.tx)
+        Spacer(Modifier.height(24.dp))
+        if (details.sources.isNotEmpty()) {
+            SourcesSection(details.sources)
+            Spacer(Modifier.height(32.dp))
+        }
+    }
+}
+
+// ───────────────────────── Hero ─────────────────────────
+
+@Composable
+private fun Hero(tx: TransactionEntity) {
+    val inr = remember { NumberFormat.getCurrencyInstance(Locale("en", "IN")) }
+    val timeFmt = remember {
+        SimpleDateFormat("d MMM yyyy · HH:mm", Locale.getDefault())
+    }
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = timeFmt.format(Date(tx.occurredAtMs)).uppercase(),
+        style = SpendWiseTextStyles.Caps,
+        color = SpendWiseTheme.colors.onMuted,
+    )
+    Spacer(Modifier.height(10.dp))
+
+    // Primary amount — original currency if forex, INR otherwise.
+    // Pull into locals — cross-module `val` isn't smart-cast-safe.
+    val originalAmt = tx.originalAmount
+    val inrAmt = tx.inrAmount
+    val primary = when {
+        tx.originalCurrency != "INR" && originalAmt != null ->
+            "${tx.originalCurrency} ${"%.2f".format(originalAmt)}"
+        inrAmt != null -> inr.formatCompact(inrAmt)
+        else -> "Pending"
+    }
+    // Read theme tokens unconditionally — reading @Composable getters
+    // inside `when` branches imbalances the Compose group stack.
+    val colors = SpendWiseTheme.colors
+    val onBackground = MaterialTheme.colorScheme.onBackground
+    val primaryColor = when (tx.budgetEffect) {
+        "REFUND" -> colors.positive
+        "INCOME" -> colors.info
+        "DROP"   -> colors.onFaint
+        else     -> onBackground
+    }
+    Text(
+        text = primary,
+        style = MaterialTheme.typography.displayMedium,
+        color = primaryColor,
+    )
+
+    // Forex sub-line
+    val rate = tx.exchangeRate
+    if (tx.originalCurrency != "INR" && inrAmt != null && rate != null) {
+        Spacer(Modifier.height(4.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "≈ ${inr.formatCompact(inrAmt)}  at  ${"%.4f".format(rate)}  ",
+                style = MaterialTheme.typography.bodySmall,
+                color = SpendWiseTheme.colors.onMuted,
+            )
+            Text(
+                text = tx.rateSource ?: "—",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+    } else if (tx.rateSource == "pending") {
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "INR conversion pending.",
+            style = MaterialTheme.typography.bodySmall,
+            color = SpendWiseTheme.colors.info,
+        )
+    }
+
+    Spacer(Modifier.height(14.dp))
+    Text(
+        text = tx.merchant?.takeIf { it.isNotBlank() } ?: "(no merchant)",
+        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Medium),
+    )
+
+    Spacer(Modifier.height(14.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        ClassificationPill(tx.classification, tx.budgetEffect)
+        if (tx.originalCurrency != "INR") {
+            InfoPill(label = "Forex", tint = SpendWiseTheme.colors.info)
+        }
+    }
+    val origClass = tx.classificationOriginal
+    if (origClass != null && origClass != tx.classification) {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "was ${prettyClassification(origClass)}",
+            style = MaterialTheme.typography.labelSmall,
+            color = SpendWiseTheme.colors.onFaint,
+        )
+    }
+}
+
+@Composable
+private fun ClassificationPill(classification: String, budgetEffect: String) {
+    val colors = SpendWiseTheme.colors
+    val tint = when (budgetEffect) {
+        "SPEND"  -> colors.onMuted
+        "REFUND" -> colors.positive
+        "INCOME" -> colors.info
+        "DROP"   -> colors.onFaint
+        else     -> colors.onMuted
+    }
+    Pill(
+        label = "${prettyClassification(classification)} · $budgetEffect",
+        tint = tint,
+    )
+}
+
+@Composable
+private fun InfoPill(label: String, tint: Color) {
+    Pill(label = label, tint = tint)
+}
+
+@Composable
+private fun Pill(label: String, tint: Color) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(SpendWiseTheme.colors.surfaceElevated)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(tint),
+        )
+        Spacer(Modifier.size(6.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = SpendWiseTheme.colors.onMuted,
+        )
+    }
+}
+
+// ───────────────────────── Meta rows ─────────────────────────
+
+@Composable
+private fun MetaSection(tx: TransactionEntity) {
+    Column {
+        HorizontalDivider(color = SpendWiseTheme.colors.divider)
+        MetaRow(
+            label = "Account",
+            value = buildString {
+                tx.issuer?.let { append(it) }
+                if (tx.issuer != null && tx.last4 != null) append(" ")
+                tx.last4?.let { append("••").append(it) }
+                if (tx.issuer == null && tx.last4 == null) append("—")
+            },
+            mono = true,
+        )
+        tx.category?.let { MetaRow("Category", prettyCategory(it)) }
+        MetaRow("Month", tx.monthKey, mono = true)
+        val origAmt = tx.originalAmount
+        if (tx.originalCurrency != "INR" && origAmt != null) {
+            MetaRow(
+                label = "Original",
+                value = "${tx.originalCurrency} ${"%.2f".format(origAmt)}",
+                mono = true,
+            )
+        }
+        val rate = tx.exchangeRate
+        if (rate != null && tx.originalCurrency != "INR") {
+            MetaRow(
+                label = "Rate",
+                value = "${"%.4f".format(rate)} INR/${tx.originalCurrency}",
+                mono = true,
+            )
+        }
+        if (tx.manuallyAdjusted) MetaRow("Manually adjusted", "Yes")
+        tx.notes?.let { MetaRow("Notes", it) }
+    }
+}
+
+@Composable
+private fun MetaRow(label: String, value: String, mono: Boolean = false) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = SpendWiseTheme.colors.onMuted,
+        )
+        Text(
+            text = value,
+            style = if (mono) SpendWiseTextStyles.Mono.copy(fontWeight = FontWeight.Normal) else MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+// ───────────────────────── Sources ─────────────────────────
+
+@Composable
+private fun SourcesSection(sources: List<Pair<TransactionSourceEntity, SmsLogEntity?>>) {
+    Text(
+        text = if (sources.size == 1) "SOURCE SMS" else "BUILT FROM ${sources.size} SOURCES",
+        style = SpendWiseTextStyles.Caps,
+        color = SpendWiseTheme.colors.onFaint,
+    )
+    Spacer(Modifier.height(10.dp))
+    sources.forEach { (src, log) ->
+        SourceBlock(src, log)
+        Spacer(Modifier.height(10.dp))
+    }
+}
+
+@Composable
+private fun SourceBlock(src: TransactionSourceEntity, log: SmsLogEntity?) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(10.dp),
+        color = SpendWiseTheme.colors.surfaceElevated,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = SpendWiseTheme.colors.divider,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = src.role.uppercase(),
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = SpendWiseTheme.colors.onMuted,
+                )
+                if (src.isPrimary) {
+                    Text(
+                        text = "PRIMARY",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+            if (log != null) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = log.body,
+                    style = SpendWiseTextStyles.MonoSmall,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "From ${log.sender} · ${log.classification}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SpendWiseTheme.colors.onFaint,
+                )
+            } else {
+                Text(
+                    text = "(sms_log row ${src.smsLogId} not found)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SpendWiseTheme.colors.onFaint,
+                )
+            }
+        }
+    }
+}
+
+private fun prettyClassification(name: String): String =
+    name.lowercase().split("_")
+        .joinToString(" ") { it.replaceFirstChar { c -> c.titlecase() } }

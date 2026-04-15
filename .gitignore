@@ -1,0 +1,86 @@
+# Claude Code local state
+.claude
+
+# Feasibility dataset — used to contain real SMS bodies. Whole directory
+# deleted from the repo; any future dumps of real SMS data should stay
+# local-only under this path.
+feasibility/
+# Parser/classifier JSON fixtures — previously seeded from real SMS data
+# and scrubbed from the repo. Keep any local-only dumps gitignored.
+android/parser/src/test/resources/fixtures/
+
+# ---------------------------------------------------------------------------
+# Gradle / Kotlin JVM
+# ---------------------------------------------------------------------------
+.gradle/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/**/build/
+.kotlin/
+
+# Local Gradle properties (may contain per-machine overrides, SDK paths)
+local.properties
+
+# ---------------------------------------------------------------------------
+# Android Studio / IntelliJ IDEA
+# ---------------------------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Android SDK + build outputs
+.externalNativeBuild/
+.cxx/
+captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Proguard / R8 mapping files
+release/
+mapping.txt
+
+# Signing (never commit keystores or secrets)
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# Navigation / build-time generated
+generated/
+
+# ---------------------------------------------------------------------------
+# macOS / Linux / Windows OS droppings
+# ---------------------------------------------------------------------------
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+
+# ---------------------------------------------------------------------------
+# Editor backups / swap files
+# ---------------------------------------------------------------------------
+*.swp
+*.swo
+*~
+.vscode/
+*.orig
+
+# ---------------------------------------------------------------------------
+# Python (feasibility scripts use Python; venv or pyc files shouldn't commit)
+# ---------------------------------------------------------------------------
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.python-version
+
+# ---------------------------------------------------------------------------
+# Secrets / local-only config
+# ---------------------------------------------------------------------------
+.env
+.env.local
+*.local
