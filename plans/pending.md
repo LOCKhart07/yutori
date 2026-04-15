@@ -23,17 +23,18 @@ Reconciled snapshot. Delete rows as they ship.
 12. Rebuild database screen
 13. End-to-end profiling round *(user wants soon; prereq for any animation work — profile before animating)*
 14. Swipe between months on dashboard *(user wants; pairs with screen-transition animations)*
+15. Release-body changelog automation *(git-cliff + APK SHA-256 + tag-annotation header; prereq for a useful in-app autoupdater dialog)*
 
 **Tier 2 — behavior-change core (medium effort)**
-15. Hard-stop over-budget state (opt-in)
-16. Per-tx notes + Ignore-a-transaction
-17. Manual recipient-rule add/edit form
-18. "Add rule from this transaction" entry point
-19. Reparse pipeline
-20. "Offer" reclassify confirm dialog
-21. Review unmatched screen
+16. Hard-stop over-budget state (opt-in)
+17. Per-tx notes + Ignore-a-transaction
+18. Manual recipient-rule add/edit form
+19. "Add rule from this transaction" entry point
+20. Reparse pipeline
+21. "Offer" reclassify confirm dialog
+22. Review unmatched screen
 
-Note: 17–21 form a tight cluster — treat as one mini-milestone.
+Note: 18–22 form a tight cluster — treat as one mini-milestone.
 
 (Shipped this session: traffic-light hero `e1db251`, post-spend impact notif `ddd51ec`, notification-permission banner `6afefe7`.)
 
