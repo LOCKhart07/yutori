@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Minimal app theme. Compose supplies real theming via
+         MaterialTheme; this base exists so the manifest has something
+         to reference. -->
+    <style name="Theme.SpendWise" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- SMS permissions. Dangerous/runtime; user must grant at runtime. -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+
+    <application>
+        <!--
+            Registered manifest-wide per ingestion-spec §5.1. `exported`
+            must be true because the system fires the broadcast. Priority
+            is 999 to stay high in the chain without aborting other
+            receivers (we are not the default SMS app).
+        -->
+        <receiver
+            android:name="com.spendwise.ingestion.SpendWiseSmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter android:priority="999">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

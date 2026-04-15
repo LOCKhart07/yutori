@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SpendWise — v2 mockups (per-category tints)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* Dark — primary */
+    --d-surface:       #0F0F10;
+    --d-surface-el:    #17171A;
+    --d-surface-el2:   #1E1E22;
+    --d-on:            #EDEEF0;
+    --d-on-muted:      #8A8E96;
+    --d-on-faint:      #5A5D63;
+    --d-divider:       rgba(237,238,240,0.08);
+    --d-accent:        #F5B547;  /* warm amber */
+    --d-pos:           #6FB07E;
+    --d-info:          #7BA9D1;
+    --d-warn:          #E0A260;
+    --d-neg:           #E06C61;
+
+    /* Light */
+    --l-surface:       #FAFAF7;
+    --l-surface-el:    #FFFFFF;
+    --l-surface-el2:   #F3F3EE;
+    --l-on:            #15161A;
+    --l-on-muted:      #6B6F76;
+    --l-on-faint:      #A5A8AD;
+    --l-divider:       rgba(21,22,26,0.08);
+    --l-accent:        #C48919;
+    --l-pos:           #3E7E4F;
+    --l-info:          #3B6E9A;
+    --l-warn:          #A66217;
+    --l-neg:           #B7433A;
+
+    /* Per-category tints — dark mode. Muted, similar lightness, no
+       single category screaming. Reused: Food shares tint-weight with
+       Groceries but distinguishable hue. Neutrals (UPI Transfer, Cash,
+       Uncategorized, Other) stay gray — they're meant to feel
+       "unsorted," not themselves a category. */
+    --c-food-d:   #C47E5E; /* warm tangerine */
+    --c-groc-d:   #7DAB8F; /* sage */
+    --c-travel-d: #7A8FB8; /* dusty indigo */
+    --c-bills-d:  #B59A63; /* mustard-tan */
+    --c-shop-d:   #B88A92; /* dusty rose */
+    --c-ent-d:    #9B8FB5; /* muted violet */
+    --c-health-d: #6FA6A1; /* desaturated teal */
+    --c-neutral-d:#8A8E96; /* on-surface muted */
+
+    --c-food-l:   #A96A46;
+    --c-groc-l:   #4F8068;
+    --c-travel-l: #4F678D;
+    --c-bills-l:  #8E7134;
+    --c-shop-l:   #8E5E67;
+    --c-ent-l:    #716389;
+    --c-health-l: #3F7874;
+    --c-neutral-l:#6B6F76;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #0a0a0b; color: #EDEEF0; font-family: 'Inter', sans-serif; }
+  body {
+    padding: 48px 24px 96px;
+    font-size: 14px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page-header {
+    max-width: 1400px;
+    margin: 0 auto 32px;
+    color: #EDEEF0;
+  }
+  .page-header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .page-header p {
+    color: #8A8E96;
+    font-size: 13px;
+  }
+
+  .canvas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 40px 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+    justify-items: center;
+  }
+
+  .frame {
+    width: 390px;
+    height: 844px;
+    border-radius: 36px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 32px 64px -24px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+  }
+  .frame .label {
+    position: absolute;
+    top: -28px;
+    left: 0;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8A8E96;
+    font-weight: 500;
+  }
+  .frame.dark {
+    background: var(--d-surface);
+    color: var(--d-on);
+  }
+  .frame.light {
+    background: var(--l-surface);
+    color: var(--l-on);
+  }
+
+  /* ───── Status bar + bottom gesture bar (token only) ───── */
+  .statusbar {
+    flex: 0 0 auto;
+    height: 52px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 28px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: inherit;
+    opacity: 0.9;
+  }
+  .statusbar .right { display: inline-flex; gap: 6px; opacity: 0.7; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .gesturebar {
+    flex: 0 0 auto;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .gesturebar::after {
+    content: '';
+    width: 134px;
+    height: 5px;
+    border-radius: 3px;
+    background: currentColor;
+    opacity: 0.25;
+  }
+
+  .screen {
+    flex: 1 1 auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ───── Typography helpers ───── */
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .caps {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .muted-d { color: var(--d-on-muted); }
+  .muted-l { color: var(--l-on-muted); }
+  .faint-d { color: var(--d-on-faint); }
+  .faint-l { color: var(--l-on-faint); }
+  .accent-d { color: var(--d-accent); }
+  .accent-l { color: var(--l-accent); }
+
+  /* ───── Shared rows / sections ───── */
+  .top-row {
+    padding: 8px 24px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .back {
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.8;
+  }
+  .back::before { content: '‹'; font-size: 22px; line-height: 0; position: relative; top: -1px; }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    min-height: 56px;
+  }
+  .row + .row { border-top: 1px solid var(--d-divider); }
+  .frame.light .row + .row { border-top-color: var(--l-divider); }
+
+  .section-head {
+    padding: 24px 24px 10px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .section-head .title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; opacity: 0.6; }
+  .section-head .meta  { font-size: 11px; opacity: 0.5; }
+
+  /* ───── Buttons / chips ───── */
+  .btn-text {
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0.75;
+  }
+  .icon-btn {
+    width: 32px; height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 999px;
+    font-size: 16px;
+    opacity: 0.8;
+  }
+  .btn-primary {
+    background: var(--d-accent); color: #1A1408;
+    font-weight: 600; font-size: 14px;
+    border-radius: 12px;
+    padding: 14px 20px;
+    width: 100%;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+  }
+  .frame.light .btn-primary { background: var(--l-accent); color: #FFF8EB; }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--d-surface-el);
+    color: var(--d-on-muted);
+    border: 1px solid var(--d-divider);
+  }
+  .frame.light .pill {
+    background: var(--l-surface-el);
+    color: var(--l-on-muted);
+    border-color: var(--l-divider);
+  }
+  .pill::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor;
+  }
+  .pill.pos::before { background: var(--d-pos); }
+  .pill.info::before { background: var(--d-info); }
+  .pill.neg::before { background: var(--d-neg); }
+  .pill.drop::before { background: var(--d-on-faint); }
+  .frame.light .pill.pos::before { background: var(--l-pos); }
+  .frame.light .pill.info::before { background: var(--l-info); }
+  .frame.light .pill.neg::before { background: var(--l-neg); }
+  .frame.light .pill.drop::before { background: var(--l-on-faint); }
+
+  /* ═══════ DASHBOARD ═══════ */
+  .dash-month { padding: 8px 24px 0; }
+  .dash-month .m { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; opacity: 0.6; }
+  .dash-month .actions { display: flex; gap: 10px; align-items: center; font-size: 13px; opacity: 0.8; }
+
+  .dash-hero { padding: 32px 24px 20px; }
+  .dash-hero .amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 48px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .dash-hero .sub {
+    margin-top: 6px;
+    font-size: 13px;
+    opacity: 0.55;
+  }
+
+  .progress {
+    margin: 16px 24px 0;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--d-surface-el2);
+    overflow: hidden;
+    position: relative;
+  }
+  .frame.light .progress { background: var(--l-surface-el2); }
+  .progress > span {
+    display: block;
+    height: 100%;
+    background: var(--d-on);
+    opacity: 0.7;
+  }
+  .frame.light .progress > span { background: var(--l-on); opacity: 0.5; }
+
+  .progress.warn > span { background: var(--d-warn); opacity: 1; }
+  .progress.over > span { background: var(--d-neg); opacity: 1; }
+
+  .stats {
+    margin-top: 20px;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .stat {
+    padding: 12px 12px;
+    background: var(--d-surface-el);
+    border-radius: 12px;
+    border: 1px solid var(--d-divider);
+  }
+  .frame.light .stat { background: var(--l-surface-el); border-color: var(--l-divider); }
+  .stat .k { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; }
+  .stat .v { margin-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 500; }
+  .stat .v.pos { color: var(--d-pos); }
+  .frame.light .stat .v.pos { color: var(--l-pos); }
+
+  .banner {
+    margin: 16px 24px 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(123,169,209,0.1);
+    border: 1px solid rgba(123,169,209,0.22);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 12px;
+  }
+  .banner .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--d-info); margin-top: 4px; flex-shrink: 0; }
+
+  .cat-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 12px 24px;
+    gap: 14px;
+  }
+  .cat-row .lhs {
+    display: flex; align-items: center; gap: 12px;
+    min-width: 0;
+  }
+  .cat-row .swatch {
+    width: 6px; height: 30px; border-radius: 3px;
+    background: var(--c-neutral-d);
+    flex-shrink: 0;
+  }
+  /* Per-category tint — dark */
+  .frame.dark  .cat-row .swatch[data-cat="food"]   { background: var(--c-food-d); }
+  .frame.dark  .cat-row .swatch[data-cat="groc"]   { background: var(--c-groc-d); }
+  .frame.dark  .cat-row .swatch[data-cat="travel"] { background: var(--c-travel-d); }
+  .frame.dark  .cat-row .swatch[data-cat="bills"]  { background: var(--c-bills-d); }
+  .frame.dark  .cat-row .swatch[data-cat="shop"]   { background: var(--c-shop-d); }
+  .frame.dark  .cat-row .swatch[data-cat="ent"]    { background: var(--c-ent-d); }
+  .frame.dark  .cat-row .swatch[data-cat="health"] { background: var(--c-health-d); }
+  /* Light */
+  .frame.light .cat-row .swatch                    { background: var(--c-neutral-l); }
+  .frame.light .cat-row .swatch[data-cat="food"]   { background: var(--c-food-l); }
+  .frame.light .cat-row .swatch[data-cat="groc"]   { background: var(--c-groc-l); }
+  .frame.light .cat-row .swatch[data-cat="travel"] { background: var(--c-travel-l); }
+  .frame.light .cat-row .swatch[data-cat="bills"]  { background: var(--c-bills-l); }
+  .frame.light .cat-row .swatch[data-cat="shop"]   { background: var(--c-shop-l); }
+  .frame.light .cat-row .swatch[data-cat="ent"]    { background: var(--c-ent-l); }
+  .frame.light .cat-row .swatch[data-cat="health"] { background: var(--c-health-l); }
+  .cat-row .name { font-size: 14px; font-weight: 500; }
+  .cat-row .count { font-size: 11px; opacity: 0.5; margin-top: 2px; }
+  .cat-row .rhs {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .account-strip {
+    margin-top: 4px;
+    padding: 0 24px 12px;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+  }
+  .account-chip {
+    flex-shrink: 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--d-surface-el);
+    border: 1px solid var(--d-divider);
+    min-width: 150px;
+  }
+  .frame.light .account-chip { background: var(--l-surface-el); border-color: var(--l-divider); }
+  .account-chip .issuer { font-size: 11px; letter-spacing: 0.05em; opacity: 0.6; text-transform: uppercase; }
+  .account-chip .num { font-family: 'JetBrains Mono', monospace; font-size: 13px; margin-top: 2px; opacity: 0.75; }
+  .account-chip .spent { font-family: 'JetBrains Mono', monospace; font-size: 15px; margin-top: 8px; font-weight: 500; }
+
+  .scroll { overflow-y: auto; flex: 1; }
+
+  /* ═══════ TRANSACTION DETAIL ═══════ */
+  .tx-hero { padding: 20px 24px 24px; }
+  .tx-hero .amount { font-family: 'JetBrains Mono', monospace; font-size: 40px; font-weight: 500; letter-spacing: -0.02em; }
+  .tx-hero .merchant { margin-top: 12px; font-size: 20px; font-weight: 500; }
+  .tx-hero .when { margin-top: 2px; font-size: 13px; opacity: 0.6; }
+  .tx-hero .pills { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .meta {
+    padding: 8px 0;
+    border-top: 1px solid var(--d-divider);
+  }
+  .frame.light .meta { border-top-color: var(--l-divider); }
+  .meta-row {
+    display: flex; justify-content: space-between;
+    padding: 10px 24px;
+    font-size: 13px;
+  }
+  .meta-row .k { opacity: 0.55; }
+  .meta-row .v.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+  .sms-block {
+    margin: 16px 24px 0;
+    padding: 14px;
+    border-radius: 10px;
+    background: var(--d-surface-el);
+    border: 1px solid var(--d-divider);
+  }
+  .frame.light .sms-block { background: var(--l-surface-el); border-color: var(--l-divider); }
+  .sms-block .hdr { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600; opacity: 0.65; margin-bottom: 10px; }
+  .sms-block .body { font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.55; opacity: 0.85; white-space: pre-wrap; }
+  .sms-block .sender { margin-top: 8px; font-size: 10px; opacity: 0.5; font-family: 'JetBrains Mono', monospace; }
+
+  /* ═══════ SETTINGS / LIST ROWS ═══════ */
+  .list-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    min-height: 64px;
+  }
+  .list-row + .list-row { border-top: 1px solid var(--d-divider); }
+  .frame.light .list-row + .list-row { border-top-color: var(--l-divider); }
+  .list-row .title { font-size: 15px; font-weight: 500; }
+  .list-row .desc { font-size: 12px; opacity: 0.55; margin-top: 2px; }
+  .chev { opacity: 0.35; font-size: 18px; }
+
+  /* ═══════ ONBOARDING ═══════ */
+  .onb {
+    padding: 48px 32px 32px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .onb .step {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.5;
+  }
+  .onb h1 {
+    margin-top: 16px;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .onb p {
+    margin-top: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    opacity: 0.7;
+  }
+  .perm-list { margin-top: 32px; display: flex; flex-direction: column; gap: 12px; }
+  .perm {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--d-surface-el);
+    border: 1px solid var(--d-divider);
+    border-radius: 12px;
+  }
+  .frame.light .perm { background: var(--l-surface-el); border-color: var(--l-divider); }
+  .perm .icn {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--d-surface-el2);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    opacity: 0.85;
+  }
+  .frame.light .perm .icn { background: var(--l-surface-el2); }
+  .perm .nm { font-size: 13px; font-weight: 500; }
+  .perm .ds { font-size: 11px; opacity: 0.6; margin-top: 2px; }
+
+  .cta-bar { padding: 0 24px 8px; }
+  .tertiary {
+    font-size: 13px;
+    opacity: 0.6;
+    text-align: center;
+    margin-top: 12px;
+    font-weight: 500;
+  }
+
+  /* ═══════ CATEGORY DRILL ═══════ */
+  .tx-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 14px 24px;
+    gap: 12px;
+  }
+  .tx-row + .tx-row { border-top: 1px solid var(--d-divider); }
+  .frame.light .tx-row + .tx-row { border-top-color: var(--l-divider); }
+  .tx-row .m { font-size: 14px; font-weight: 500; }
+  .tx-row .sub { font-size: 11px; opacity: 0.5; margin-top: 2px; }
+  .tx-row .a { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 500; }
+  .tx-row .a.drop { opacity: 0.4; text-decoration: line-through; }
+  .tx-row .a.pos { color: var(--d-pos); }
+  .frame.light .tx-row .a.pos { color: var(--l-pos); }
+
+  .infobox {
+    margin: 16px 24px 0;
+    padding: 12px 14px;
+    background: var(--d-surface-el);
+    border: 1px solid var(--d-divider);
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    opacity: 0.8;
+  }
+  .frame.light .infobox { background: var(--l-surface-el); border-color: var(--l-divider); }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>SpendWise — UI v2 mockups (per-category tints)</h1>
+  <p>Same frames as v1, but with muted per-category color. Compare: open v1.html in another tab.</p>
+</div>
+
+<div class="canvas">
+
+  <!-- ══════════════════════ 1. DASHBOARD — DARK (normal) ══════════════════════ -->
+  <div class="frame dark">
+    <span class="label">1 · Dashboard (dark, normal)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div>
+          <div class="caps muted-d">April 2026</div>
+        </div>
+        <div class="dash-month actions" style="padding: 0;">
+          <span class="btn-text">Import</span>
+          <span class="icon-btn" title="settings">⚙</span>
+        </div>
+      </div>
+
+      <div class="dash-hero">
+        <div class="amount">₹23,450<span style="opacity:0.35;font-size:28px">.00</span></div>
+        <div class="sub">of ₹45,000 · 52% used</div>
+      </div>
+
+      <div class="progress"><span style="width:52%"></span></div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="k">Carry-over</div>
+          <div class="v pos">+₹3,200</div>
+        </div>
+        <div class="stat">
+          <div class="k">Days left</div>
+          <div class="v">15</div>
+        </div>
+        <div class="stat">
+          <div class="k">Daily burn</div>
+          <div class="v">₹1,445</div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <span class="title">Spend by category</span>
+        <span class="meta">8 active</span>
+      </div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="food"></div><div><div class="name">Food &amp; Dining</div><div class="count">14 txns</div></div></div><div class="rhs">₹6,890</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="groc"></div><div><div class="name">Groceries</div><div class="count">9 txns</div></div></div><div class="rhs">₹4,520</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="travel"></div><div><div class="name">Travel &amp; Transport</div><div class="count">11 txns</div></div></div><div class="rhs">₹3,780</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="bills"></div><div><div class="name">Bills &amp; Utilities</div><div class="count">4 txns</div></div></div><div class="rhs">₹2,840</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="shop"></div><div><div class="name">Shopping</div><div class="count">6 txns</div></div></div><div class="rhs">₹2,210</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="ent"></div><div><div class="name">Entertainment</div><div class="count">3 txns</div></div></div><div class="rhs">₹1,650</div></div>
+
+      <div class="section-head">
+        <span class="title">Accounts</span>
+      </div>
+      <div class="account-strip">
+        <div class="account-chip">
+          <div class="issuer">Kotak savings</div>
+          <div class="num">••0000</div>
+          <div class="spent">₹14,240</div>
+        </div>
+        <div class="account-chip">
+          <div class="issuer">Axis CC</div>
+          <div class="num">••1111</div>
+          <div class="spent">₹9,210</div>
+        </div>
+        <div class="account-chip">
+          <div class="issuer">VJSB CC</div>
+          <div class="num">••4521</div>
+          <div class="spent">₹0</div>
+        </div>
+      </div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 1b. DASHBOARD — DARK (near budget, ~88%) ══════════════════════ -->
+  <div class="frame dark">
+    <span class="label">1b · Dashboard (dark, approaching limit)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div><div class="caps muted-d">April 2026</div></div>
+        <div class="dash-month actions" style="padding: 0;">
+          <span class="btn-text">Import</span>
+          <span class="icon-btn">⚙</span>
+        </div>
+      </div>
+
+      <div class="dash-hero">
+        <div class="amount">₹39,700<span style="opacity:0.35;font-size:28px">.00</span></div>
+        <div class="sub">of ₹45,000 · <span style="color: var(--d-warn); opacity: 0.95;">88% used · ₹5,300 left</span></div>
+      </div>
+
+      <div class="progress warn"><span style="width:88%"></span></div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="k">Carry-over</div>
+          <div class="v pos">+₹3,200</div>
+        </div>
+        <div class="stat">
+          <div class="k">Days left</div>
+          <div class="v">7</div>
+        </div>
+        <div class="stat">
+          <div class="k">Daily cap</div>
+          <div class="v" style="color: var(--d-warn);">₹757</div>
+        </div>
+      </div>
+
+      <div class="banner" style="background: rgba(224,162,96,0.09); border-color: rgba(224,162,96,0.25);">
+        <span class="dot" style="background: var(--d-warn);"></span>
+        <div>
+          <strong style="font-weight:600">Pacing hot.</strong>
+          <span style="opacity:0.75"> At ₹1,445/day you'll overshoot by ~₹4,800. Keep to <span class="mono" style="color:var(--d-warn);opacity:1">₹757/day</span> to land on budget.</span>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <span class="title">Spend by category</span>
+        <span class="meta">Latest · tap to drill in</span>
+      </div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="shop"></div><div><div class="name">Shopping</div><div class="count">9 txns</div></div></div><div class="rhs">₹12,450</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="food"></div><div><div class="name">Food &amp; Dining</div><div class="count">18 txns</div></div></div><div class="rhs">₹8,690</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="groc"></div><div><div class="name">Groceries</div><div class="count">11 txns</div></div></div><div class="rhs">₹6,820</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="travel"></div><div><div class="name">Travel &amp; Transport</div><div class="count">14 txns</div></div></div><div class="rhs">₹4,780</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="bills"></div><div><div class="name">Bills &amp; Utilities</div><div class="count">4 txns</div></div></div><div class="rhs">₹3,840</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="ent"></div><div><div class="name">Entertainment</div><div class="count">5 txns</div></div></div><div class="rhs">₹2,120</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="health"></div><div><div class="name">Health</div><div class="count">2 txns</div></div></div><div class="rhs">₹1,000</div></div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 1c. DASHBOARD — DARK (early month, calm) ══════════════════════ -->
+  <div class="frame dark">
+    <span class="label">1c · Dashboard (early month, calm)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div><div class="caps muted-d">April 2026 · Day 3</div></div>
+        <div class="dash-month actions" style="padding: 0;">
+          <span class="btn-text">Import</span>
+          <span class="icon-btn">⚙</span>
+        </div>
+      </div>
+
+      <div class="dash-hero">
+        <div class="amount">₹4,120<span style="opacity:0.35;font-size:28px">.00</span></div>
+        <div class="sub">of ₹45,000 · plenty of runway</div>
+      </div>
+
+      <div class="progress"><span style="width:9%"></span></div>
+
+      <!-- Daily burn chip hidden — noisy on day 3. Show upcoming fixed bills instead. -->
+      <div class="stats">
+        <div class="stat">
+          <div class="k">Carry-over</div>
+          <div class="v pos">+₹3,200</div>
+        </div>
+        <div class="stat">
+          <div class="k">Days left</div>
+          <div class="v">28</div>
+        </div>
+        <div class="stat">
+          <div class="k">Known bills</div>
+          <div class="v">₹6,400</div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <span class="title">Spend by category</span>
+        <span class="meta">Early month</span>
+      </div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="food"></div><div><div class="name">Food &amp; Dining</div><div class="count">4 txns</div></div></div><div class="rhs">₹1,820</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="groc"></div><div><div class="name">Groceries</div><div class="count">2 txns</div></div></div><div class="rhs">₹1,240</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="travel"></div><div><div class="name">Travel &amp; Transport</div><div class="count">3 txns</div></div></div><div class="rhs">₹680</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="shop"></div><div><div class="name">Shopping</div><div class="count">1 txn</div></div></div><div class="rhs">₹380</div></div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 1d. DASHBOARD — DARK (end of month, hot) ══════════════════════ -->
+  <div class="frame dark">
+    <span class="label">1d · Dashboard (end of month, hot)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div><div class="caps muted-d">April 2026 · Day 27</div></div>
+        <div class="dash-month actions" style="padding: 0;">
+          <span class="btn-text">Import</span>
+          <span class="icon-btn">⚙</span>
+        </div>
+      </div>
+
+      <div class="dash-hero">
+        <div class="amount">₹43,500<span style="opacity:0.35;font-size:28px">.00</span></div>
+        <div class="sub">of ₹45,000 · <span style="color: var(--d-warn); opacity:0.95;">₹1,500 for 3 days</span></div>
+      </div>
+
+      <div class="progress warn"><span style="width:97%"></span></div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="k">Carry-over</div>
+          <div class="v pos">+₹3,200</div>
+        </div>
+        <div class="stat">
+          <div class="k">Days left</div>
+          <div class="v" style="color: var(--d-warn);">3</div>
+        </div>
+        <div class="stat">
+          <div class="k">Daily cap</div>
+          <div class="v" style="color: var(--d-warn);">₹500</div>
+        </div>
+      </div>
+
+      <div class="banner" style="background: rgba(224,162,96,0.09); border-color: rgba(224,162,96,0.25);">
+        <span class="dot" style="background: var(--d-warn);"></span>
+        <div>
+          <strong style="font-weight:600">Last stretch.</strong>
+          <span style="opacity:0.75"> Keep to <span class="mono" style="color:var(--d-warn);opacity:1">₹500/day</span> for 3 days to land on budget.</span>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <span class="title">Spend by category</span>
+      </div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="food"></div><div><div class="name">Food &amp; Dining</div><div class="count">22 txns</div></div></div><div class="rhs">₹11,820</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="shop"></div><div><div class="name">Shopping</div><div class="count">9 txns</div></div></div><div class="rhs">₹10,400</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="groc"></div><div><div class="name">Groceries</div><div class="count">13 txns</div></div></div><div class="rhs">₹7,920</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="travel"></div><div><div class="name">Travel &amp; Transport</div><div class="count">16 txns</div></div></div><div class="rhs">₹6,140</div></div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 1e. DASHBOARD — DARK (end of month, surplus) ══════════════════════ -->
+  <div class="frame dark">
+    <span class="label">1e · Dashboard (end of month, surplus)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div><div class="caps muted-d">April 2026 · Day 27</div></div>
+        <div class="dash-month actions" style="padding: 0;">
+          <span class="btn-text">Import</span>
+          <span class="icon-btn">⚙</span>
+        </div>
+      </div>
+
+      <div class="dash-hero">
+        <div class="amount">₹28,120<span style="opacity:0.35;font-size:28px">.00</span></div>
+        <div class="sub">of ₹45,000 · <span style="color: var(--d-pos); opacity:0.95;">₹16,880 remaining, 3 days left</span></div>
+      </div>
+
+      <div class="progress"><span style="width:62%"></span></div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="k">Carry-over</div>
+          <div class="v pos">+₹3,200</div>
+        </div>
+        <div class="stat">
+          <div class="k">Days left</div>
+          <div class="v">3</div>
+        </div>
+        <div class="stat">
+          <div class="k">Projected surplus</div>
+          <div class="v pos">+₹12,500</div>
+        </div>
+      </div>
+
+      <div class="banner" style="background: rgba(111,176,126,0.09); border-color: rgba(111,176,126,0.22);">
+        <span class="dot" style="background: var(--d-pos);"></span>
+        <div>
+          <strong style="font-weight:600">On track.</strong>
+          <span style="opacity:0.75"> At your current pace you'll carry <span class="mono" style="color:var(--d-pos);opacity:1">+₹12,500</span> into May.</span>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <span class="title">Spend by category</span>
+      </div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="food"></div><div><div class="name">Food &amp; Dining</div><div class="count">16 txns</div></div></div><div class="rhs">₹8,120</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="groc"></div><div><div class="name">Groceries</div><div class="count">10 txns</div></div></div><div class="rhs">₹5,820</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="travel"></div><div><div class="name">Travel &amp; Transport</div><div class="count">12 txns</div></div></div><div class="rhs">₹4,380</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="bills"></div><div><div class="name">Bills &amp; Utilities</div><div class="count">5 txns</div></div></div><div class="rhs">₹3,640</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="shop"></div><div><div class="name">Shopping</div><div class="count">4 txns</div></div></div><div class="rhs">₹2,420</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="ent"></div><div><div class="name">Entertainment</div><div class="count">2 txns</div></div></div><div class="rhs">₹1,200</div></div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 2. DASHBOARD — DARK (over budget) ══════════════════════ -->
+  <div class="frame dark">
+    <span class="label">2 · Dashboard (dark, over-budget)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div><div class="caps muted-d">March 2026</div></div>
+        <div class="dash-month actions" style="padding: 0;">
+          <span class="btn-text">Import</span>
+          <span class="icon-btn">⚙</span>
+        </div>
+      </div>
+
+      <div class="dash-hero">
+        <div class="amount" style="color: var(--d-neg);">₹51,340<span style="opacity:0.45;font-size:28px">.00</span></div>
+        <div class="sub">of ₹45,000 · <span style="color:var(--d-neg); opacity: 0.9">114% · over by ₹6,340</span></div>
+      </div>
+
+      <div class="progress over"><span style="width:100%"></span></div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="k">Carry-over</div>
+          <div class="v" style="color:var(--d-neg)">−₹6,340</div>
+        </div>
+        <div class="stat">
+          <div class="k">Days left</div>
+          <div class="v">0</div>
+        </div>
+        <div class="stat">
+          <div class="k">Daily burn</div>
+          <div class="v">₹1,657</div>
+        </div>
+      </div>
+
+      <div class="banner" style="background: rgba(224,108,97,0.09); border-color: rgba(224,108,97,0.22);">
+        <span class="dot" style="background: var(--d-neg);"></span>
+        <div><strong style="font-weight:600">Budget exceeded.</strong><br><span style="opacity:0.75">You'll start April with a ₹6,340 deficit carried over.</span></div>
+      </div>
+
+      <div class="section-head">
+        <span class="title">Spend by category</span>
+      </div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="shop"></div><div><div class="name">Shopping</div><div class="count">12 txns · Vijay Sales, Amazon</div></div></div><div class="rhs">₹18,450</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="food"></div><div><div class="name">Food &amp; Dining</div><div class="count">22 txns</div></div></div><div class="rhs">₹9,820</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="travel"></div><div><div class="name">Travel &amp; Transport</div><div class="count">16 txns</div></div></div><div class="rhs">₹6,110</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="bills"></div><div><div class="name">Bills &amp; Utilities</div><div class="count">5 txns</div></div></div><div class="rhs">₹5,840</div></div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 3. DASHBOARD — DARK (no budget set) ══════════════════════ -->
+  <div class="frame dark">
+    <span class="label">3 · Dashboard (dark, no budget)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div><div class="caps muted-d">April 2026</div></div>
+        <div class="dash-month actions" style="padding: 0;">
+          <span class="btn-text">Import</span>
+          <span class="icon-btn">⚙</span>
+        </div>
+      </div>
+
+      <div class="dash-hero">
+        <div class="amount">₹23,450<span style="opacity:0.35;font-size:28px">.00</span></div>
+        <div class="sub">Spent this month</div>
+      </div>
+
+      <div class="banner">
+        <span class="dot" style="background: var(--d-accent);"></span>
+        <div>
+          <strong style="font-weight:600">No budget set.</strong><br>
+          <span style="opacity:0.75">Set a monthly limit to enable progress tracking and alerts.</span>
+        </div>
+      </div>
+      <div style="padding: 16px 24px 0;">
+        <button class="btn-primary">Set budget</button>
+      </div>
+
+      <div class="section-head">
+        <span class="title">Spend by category</span>
+      </div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="food"></div><div><div class="name">Food &amp; Dining</div><div class="count">14 txns</div></div></div><div class="rhs">₹6,890</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="groc"></div><div><div class="name">Groceries</div><div class="count">9 txns</div></div></div><div class="rhs">₹4,520</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="travel"></div><div><div class="name">Travel &amp; Transport</div><div class="count">11 txns</div></div></div><div class="rhs">₹3,780</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="bills"></div><div><div class="name">Bills &amp; Utilities</div><div class="count">4 txns</div></div></div><div class="rhs">₹2,840</div></div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 4. CATEGORY DRILL — DARK ══════════════════════ -->
+  <div class="frame dark">
+    <span class="label">4 · Category drill-down (dark)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div class="back">Dashboard</div>
+      </div>
+
+      <div class="dash-hero" style="padding-top: 16px; border-left: 3px solid var(--c-food-d); margin-right: 24px; padding-left: 21px;">
+        <div class="caps" style="color: var(--c-food-d); opacity: 0.95;">Food &amp; Dining · April 2026</div>
+        <div class="amount" style="margin-top: 10px;">₹6,890<span style="opacity:0.35;font-size:28px">.00</span></div>
+        <div class="sub">14 transactions</div>
+      </div>
+
+      <div class="section-head">
+        <span class="title">Transactions</span>
+        <span class="meta">Latest first</span>
+      </div>
+
+      <div class="tx-row"><div><div class="m">Zomato</div><div class="sub">12 Apr · UPI · Kotak ••0000</div></div><div class="a">₹485</div></div>
+      <div class="tx-row"><div><div class="m">Swiggy</div><div class="sub">11 Apr · UPI · Kotak ••0000</div></div><div class="a">₹320</div></div>
+      <div class="tx-row"><div><div class="m">Blue Tokai Coffee</div><div class="sub">10 Apr · Axis ••1111</div></div><div class="a">₹650</div></div>
+      <div class="tx-row"><div><div class="m">Swiggy <span class="pill pos" style="margin-left:6px; font-size:9px; padding: 2px 7px;">refund</span></div><div class="sub">09 Apr · UPI · Kotak ••0000</div></div><div class="a pos">+₹180</div></div>
+      <div class="tx-row"><div><div class="m">Theobroma</div><div class="sub">08 Apr · Axis ••1111</div></div><div class="a">₹940</div></div>
+      <div class="tx-row"><div><div class="m">Zomato</div><div class="sub">07 Apr · UPI · Kotak ••0000</div></div><div class="a">₹520</div></div>
+      <div class="tx-row"><div><div class="m">Starbucks</div><div class="sub">06 Apr · Axis ••1111</div></div><div class="a">₹410</div></div>
+      <div class="tx-row"><div><div class="m">Social Offline</div><div class="sub">05 Apr · Axis ••1111</div></div><div class="a">₹1,240</div></div>
+      <div class="tx-row"><div><div class="m">Swiggy</div><div class="sub">04 Apr · UPI · Kotak ••0000</div></div><div class="a">₹295</div></div>
+      <div class="tx-row"><div><div class="m">Chaayos</div><div class="sub">03 Apr · UPI · Kotak ••0000</div></div><div class="a">₹260</div></div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 5. TRANSACTION DETAIL — DARK ══════════════════════ -->
+  <div class="frame dark">
+    <span class="label">5 · Transaction detail (dark)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div class="back">Food &amp; Dining</div>
+      </div>
+      <div class="tx-hero">
+        <div class="caps muted-d">10 Apr 2026 · 14:23</div>
+        <div class="amount" style="margin-top:10px;">₹650<span style="opacity:0.35;font-size:24px">.00</span></div>
+        <div class="merchant">Blue Tokai Coffee</div>
+        <div class="pills">
+          <span class="pill">CC Transaction · SPEND</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div class="meta-row"><span class="k">Account</span><span class="v mono">Axis ••1111</span></div>
+        <div class="meta-row"><span class="k">Category</span><span class="v">Food &amp; Dining</span></div>
+        <div class="meta-row"><span class="k">Month</span><span class="v mono">2026-04</span></div>
+        <div class="meta-row"><span class="k">Source</span><span class="v">1 SMS</span></div>
+      </div>
+
+      <div class="section-head"><span class="title">Source SMS</span></div>
+      <div class="sms-block">
+        <div class="hdr"><span>Primary · Bank debit</span><span class="accent-d">Primary</span></div>
+        <div class="body">Thank you for using your Axis Bank CREDIT CARD XX1111 for INR 100.00 at BLUE TOKAI COFFEE on 01-01-26. Avl Bal INR 10,000.00.</div>
+        <div class="sender">From: VK-AXISCC-S · 10 Apr 14:24</div>
+      </div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 6. TRANSACTION DETAIL — FOREX ══════════════════════ -->
+  <div class="frame dark">
+    <span class="label">6 · Transaction detail (forex, dark)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div class="back">Bills &amp; Utilities</div>
+      </div>
+      <div class="tx-hero">
+        <div class="caps muted-d">08 Apr 2026 · 03:12</div>
+        <div class="amount mono" style="margin-top:10px;">USD 10<span style="opacity:0.4;font-size:24px">.00</span></div>
+        <div style="font-size: 14px; opacity: 0.6; margin-top: 4px;">≈ ₹1,670.40 at rate 83.5200 · <span class="accent-d">exchangerate-api.com</span></div>
+        <div class="merchant" style="margin-top: 14px;">Claude.ai</div>
+        <div class="pills">
+          <span class="pill">CC Transaction · SPEND</span>
+          <span class="pill info">Forex</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div class="meta-row"><span class="k">Account</span><span class="v mono">Axis ••1111</span></div>
+        <div class="meta-row"><span class="k">Category</span><span class="v">Bills &amp; Utilities</span></div>
+        <div class="meta-row"><span class="k">Original</span><span class="v mono">USD 10.00</span></div>
+        <div class="meta-row"><span class="k">Rate</span><span class="v mono">83.5200 INR/USD</span></div>
+      </div>
+
+      <div class="section-head"><span class="title">Source SMS</span></div>
+      <div class="sms-block">
+        <div class="hdr"><span>Primary · Bank debit</span><span class="accent-d">Primary</span></div>
+        <div class="body">Txn of USD 10.00 on Axis Bank CREDIT CARD XX1111 at ANTHROPIC* CLAUDE.AI on 01-01-26. Forex markup applies.</div>
+        <div class="sender">From: VK-AXISCC-S · 08 Apr 03:13</div>
+      </div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 7. SETTINGS — DARK ══════════════════════ -->
+  <div class="frame dark">
+    <span class="label">7 · Settings hub (dark)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div class="back">Dashboard</div>
+      </div>
+      <div class="dash-hero" style="padding: 16px 24px 12px;">
+        <div style="font-size: 28px; font-weight: 600;">Settings</div>
+      </div>
+
+      <div class="section-head"><span class="title">Data &amp; accounts</span></div>
+      <div class="list-row">
+        <div><div class="title">My accounts</div><div class="desc">Banks and cards · 3 registered</div></div>
+        <span class="chev">›</span>
+      </div>
+      <div class="list-row">
+        <div><div class="title">Recipient rules</div><div class="desc">Self-transfers, CC bill rails · 7 rules</div></div>
+        <span class="chev">›</span>
+      </div>
+      <div class="list-row">
+        <div><div class="title">Alert thresholds</div><div class="desc">50% · 80% · 100% · +10% over</div></div>
+        <span class="chev">›</span>
+      </div>
+
+      <div class="section-head"><span class="title">Import / export</span></div>
+      <div class="list-row">
+        <div><div class="title">Import past SMS</div><div class="desc">From phone inbox, by date range</div></div>
+        <span class="chev">›</span>
+      </div>
+      <div class="list-row">
+        <div><div class="title">Export settings</div><div class="desc">Accounts + rules, JSON</div></div>
+        <span class="chev">›</span>
+      </div>
+      <div class="list-row">
+        <div><div class="title">Export CSV</div><div class="desc">Transactions for date range</div></div>
+        <span class="chev">›</span>
+      </div>
+
+      <div class="section-head"><span class="title">Maintenance</span></div>
+      <div class="list-row">
+        <div><div class="title">Rerun parser</div><div class="desc">Re-classify every SMS in the log</div></div>
+        <span class="chev">›</span>
+      </div>
+      <div class="list-row">
+        <div><div class="title">Purge non-financial</div><div class="desc">Delete OTPs, balance alerts</div></div>
+        <span class="chev">›</span>
+      </div>
+      <div class="list-row">
+        <div><div class="title">Permissions</div><div class="desc">SMS · Notifications</div></div>
+        <span class="chev">›</span>
+      </div>
+      <div class="list-row">
+        <div><div class="title">About</div><div class="desc">v0.1.0 · open-source</div></div>
+        <span class="chev">›</span>
+      </div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 8. ONBOARDING — DARK ══════════════════════ -->
+  <div class="frame dark">
+    <span class="label">8 · Onboarding · permissions (dark)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen">
+      <div class="onb">
+        <div class="step">Step 2 of 3</div>
+        <h1>Let SpendWise<br>read your SMSes.</h1>
+        <p>Everything stays on this device. SpendWise never sends your SMSes anywhere — bank messages are parsed locally to build your spending record.</p>
+
+        <div class="perm-list">
+          <div class="perm">
+            <div class="icn">✉</div>
+            <div>
+              <div class="nm">Receive SMS</div>
+              <div class="ds">Catch new bank messages as they arrive.</div>
+            </div>
+          </div>
+          <div class="perm">
+            <div class="icn">✓</div>
+            <div>
+              <div class="nm">Read SMS inbox</div>
+              <div class="ds">Import past transactions from your phone's SMS history.</div>
+            </div>
+          </div>
+          <div class="perm">
+            <div class="icn">!</div>
+            <div>
+              <div class="nm">Post notifications</div>
+              <div class="ds">Alert you at 50%, 80%, and 100% of your budget.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cta-bar">
+        <button class="btn-primary">Grant permissions</button>
+        <div class="tertiary">Skip for now</div>
+      </div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 9. DASHBOARD — LIGHT (same normal state) ══════════════════════ -->
+  <div class="frame light">
+    <span class="label">9 · Dashboard (light, normal)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div><div class="caps muted-l">April 2026</div></div>
+        <div class="dash-month actions" style="padding: 0;">
+          <span class="btn-text">Import</span>
+          <span class="icon-btn">⚙</span>
+        </div>
+      </div>
+
+      <div class="dash-hero">
+        <div class="amount">₹23,450<span style="opacity:0.35;font-size:28px">.00</span></div>
+        <div class="sub">of ₹45,000 · 52% used</div>
+      </div>
+
+      <div class="progress"><span style="width:52%"></span></div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="k">Carry-over</div>
+          <div class="v pos">+₹3,200</div>
+        </div>
+        <div class="stat">
+          <div class="k">Days left</div>
+          <div class="v">15</div>
+        </div>
+        <div class="stat">
+          <div class="k">Daily burn</div>
+          <div class="v">₹1,445</div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <span class="title">Spend by category</span>
+        <span class="meta">8 active</span>
+      </div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="food"></div><div><div class="name">Food &amp; Dining</div><div class="count">14 txns</div></div></div><div class="rhs">₹6,890</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="groc"></div><div><div class="name">Groceries</div><div class="count">9 txns</div></div></div><div class="rhs">₹4,520</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="travel"></div><div><div class="name">Travel &amp; Transport</div><div class="count">11 txns</div></div></div><div class="rhs">₹3,780</div></div>
+      <div class="cat-row"><div class="lhs"><div class="swatch" data-cat="bills"></div><div><div class="name">Bills &amp; Utilities</div><div class="count">4 txns</div></div></div><div class="rhs">₹2,840</div></div>
+
+      <div class="section-head">
+        <span class="title">Accounts</span>
+      </div>
+      <div class="account-strip">
+        <div class="account-chip">
+          <div class="issuer">Kotak savings</div>
+          <div class="num">••0000</div>
+          <div class="spent">₹14,240</div>
+        </div>
+        <div class="account-chip">
+          <div class="issuer">Axis CC</div>
+          <div class="num">••1111</div>
+          <div class="spent">₹9,210</div>
+        </div>
+      </div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+  <!-- ══════════════════════ 10. TRANSACTION DETAIL — LIGHT ══════════════════════ -->
+  <div class="frame light">
+    <span class="label">10 · Transaction detail (light)</span>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="right">·)) 100%</span>
+    </div>
+    <div class="screen scroll">
+      <div class="top-row">
+        <div class="back">Food &amp; Dining</div>
+      </div>
+      <div class="tx-hero">
+        <div class="caps muted-l">10 Apr 2026 · 14:23</div>
+        <div class="amount" style="margin-top:10px;">₹650<span style="opacity:0.35;font-size:24px">.00</span></div>
+        <div class="merchant">Blue Tokai Coffee</div>
+        <div class="pills">
+          <span class="pill">CC Transaction · SPEND</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div class="meta-row"><span class="k">Account</span><span class="v mono">Axis ••1111</span></div>
+        <div class="meta-row"><span class="k">Category</span><span class="v">Food &amp; Dining</span></div>
+        <div class="meta-row"><span class="k">Month</span><span class="v mono">2026-04</span></div>
+      </div>
+
+      <div class="section-head"><span class="title">Source SMS</span></div>
+      <div class="sms-block">
+        <div class="hdr"><span>Primary · Bank debit</span><span class="accent-l">Primary</span></div>
+        <div class="body">Thank you for using your Axis Bank CREDIT CARD XX1111 for INR 100.00 at BLUE TOKAI COFFEE on 01-01-26. Avl Bal INR 10,000.00.</div>
+        <div class="sender">From: VK-AXISCC-S · 10 Apr 14:24</div>
+      </div>
+    </div>
+    <div class="gesturebar"></div>
+  </div>
+
+</div>
+
+</body>
+</html>
