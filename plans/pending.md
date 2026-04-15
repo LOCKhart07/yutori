@@ -2,6 +2,54 @@
 
 Reconciled snapshot. Delete rows as they ship.
 
+## Priority snapshot
+
+*Last reviewed: 2026-04-16. Assume stale. This repo ships ~15 real commits per working day (check `git log --since="<last-reviewed-date>"` to confirm); a priority list from a previous session is almost certainly out of date. Regenerate from scratch at the start of each planning session rather than patching this snapshot — don't trust ordinal numbers, don't assume "Tier 0 item 1" still means what it did yesterday.* Ordered by value-per-hour, not strict rank. Items within a tier are roughly equivalent. Full context for each bullet lives in its section below.
+
+**Tier 0 — ship-blockers / foundational**
+1. Publish repo + first release
+2. App name lock-in (Yutori / Lagom / Sukoon)
+3. DB migration failure handler
+
+**Tier 1 — easy wins (hours, no schema)**
+4. Pending-FX banner on dashboard
+5. Traffic-light hero color state
+6. Mid-month overshoot projection *(net-new from external suggestions)*
+7. Frequency insight ("N small txns · median ₹X")
+8. Budgets roll forward by default (option b)
+9. Budget suggestions from history
+10. Daily-burn pill `· target ₹Y` + pace tint
+11. Sharper notification copy (`· +Zpp over pace`)
+12. Late-arriving past-month alert stamping
+13. Rebuild database screen
+
+**Tier 2 — behavior-change core (medium effort)**
+14. Post-spend "impact" notification
+15. Hard-stop over-budget state (opt-in)
+16. Per-tx notes + Ignore-a-transaction
+17. Manual recipient-rule add/edit form
+18. "Add rule from this transaction" entry point
+19. Reparse pipeline
+20. "Offer" reclassify confirm dialog
+21. Review unmatched screen
+22. Notification-permission banner *(verify — may have shipped in 213b762)*
+
+Note: 17–21 form a tight cluster — treat as one mini-milestone.
+
+**Tier 3 — structurally important, bigger lifts**
+23. Historical-import worker checkpointing + foreground notification
+24. Add `source` field to `sms_log` + `transactions` *(prereq for 25)*
+25. PDF/CSV statement import
+26. Goals entity + translator
+27. Annual-cost smoothing buckets
+28. Per-category pacing baseline
+
+**Tier 4 — nice-to-have polish**
+Onboarding 4-step flow · CardDrillDown filter chips · swipe between months · ring/donut decision · carry-over per-prior-month breakdown · dashboard state variants visual check · forex tx-detail visual check · bucket simplification mode · surfacing suggested accounts · BudgetSetup pace anchor · card drill-down pace · Tx-detail Edit / Mark as payback
+
+**Tier 5 — deferred / low urgency**
+Dashboard ₹0 flash · `computeBanner` untested branches · Compose render tests · end-to-end profiling · Navigation-Compose migration · historical-import → Settings · carry-over genesis month · AI-assisted rule creation · launcher icon (blocked on name) · About screen · Alert thresholds / CSV export / Purge non-financial / Rerun parser screens · in-app autoupdater *(blocked on Tier 0 item 1)*
+
 ## Bugs / silent gaps
 
 - **Pending-FX banner missing on dashboard** — `DashboardUiState.Ready.pendingForexCount` is computed but no banner composable renders it (ui-spec §5.2 item 5). User has no in-app indication when forex conversions are queued.
