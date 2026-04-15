@@ -4,9 +4,8 @@ Reconciled snapshot. Delete rows as they ship.
 
 ## Bugs / silent gaps
 
-- **Budget alerts never fire** — `AlertStateMachine` and `AndroidAlertNotifier` are implemented and unit-tested, but no caller wires them into the ingestion pipeline, so threshold crossings never produce notifications. Spec (business-logic §7) treats this as v1. Biggest silent divergence in the app today.
 - **Pending-FX banner missing on dashboard** — `DashboardUiState.Ready.pendingForexCount` is computed but no banner composable renders it (ui-spec §5.2 item 5). User has no in-app indication when forex conversions are queued.
-- **Late-arriving past-month silent alert reconciliation** (business-logic §7.6) — when a tx for an older month arrives, alerts shouldn't re-fire silently.
+- **Late-arriving past-month silent alert reconciliation** (business-logic §7.6) — when a tx for an older month arrives, alerts shouldn't re-fire silently. `dispatchAlertsIfNeeded` already filters on `isCurrentMonth`, so we suppress correctly; the spec wants us to *also* mark the past-month thresholds as fired so they're stamped in `budget_alert_state` for accuracy. Thin gap.
 
 ## Branding / identity
 
