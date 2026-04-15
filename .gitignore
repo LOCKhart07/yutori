@@ -1,6 +1,9 @@
 # Claude Code local state
 .claude
 
+# Local audit / signoff artifacts that name the PII patterns we scrubbed
+PII_AUDIT_SIGNOFF.md
+
 # Feasibility dataset — used to contain real SMS bodies. Whole directory
 # deleted from the repo; any future dumps of real SMS data should stay
 # local-only under this path.
