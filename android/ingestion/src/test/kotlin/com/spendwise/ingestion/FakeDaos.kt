@@ -103,6 +103,8 @@ class FakeTransactionDao : TransactionDao {
     override fun observeByMonth(monthKey: String) = flowOf(
         all.filter { it.monthKey == monthKey }.sortedByDescending { it.occurredAtMs }
     )
+    override suspend fun getBeforeMonth(monthKey: String): List<TransactionEntity> =
+        all.filter { it.monthKey < monthKey && it.budgetEffect in setOf("SPEND", "REFUND") }
     override fun observeByMonthAndAccount(monthKey: String, accountId: Long) = flowOf(
         all.filter { it.monthKey == monthKey && it.accountId == accountId }
     )

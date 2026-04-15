@@ -104,12 +104,13 @@ class DashboardViewModel(
             budgetEntity?.let { add(it.toDomainBudget()) }
         }
 
-        // Budget calculator operates over ALL transactions (prior + this
-        // month), not just the month in view, because carry-over walks
-        // prior months. For v1 MVP, passing only this month's txs limits
-        // carry-over accuracy — we'd miss prior-month REFUNDs that
-        // change the surplus. TODO (v1.1): widen this query.
-        val priorTxFlat = emptyList<Transaction>()  // see note above
+        // Budget calculator operates over ALL money-moving transactions
+        // (prior + this month) because carryOver walks every prior
+        // month's (limit − net spend) contribution. Without priors in
+        // the list, BudgetCalculator treats prior months as zero-spend
+        // and the full prior limit becomes fake surplus.
+        val priorTxFlat = transactionDao.getBeforeMonth(monthKey)
+            .map { it.toDomainTransaction() }
         val thisMonthTxs = txEntities.map { it.toDomainTransaction() }
         val snapshot = BudgetCalculator.snapshot(
             transactions = priorTxFlat + thisMonthTxs,
