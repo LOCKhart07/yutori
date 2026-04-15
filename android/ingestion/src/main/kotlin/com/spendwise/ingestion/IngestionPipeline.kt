@@ -62,6 +62,22 @@ class IngestionPipeline(
             }
         }
 
+        // Content-level dedup. The androidSmsId check above is exact but
+        // only works once the id is known on both paths. A real SMS often
+        // gets picked up first by the live receiver (androidSmsId = null,
+        // filled in by the reconciler later) and a few seconds later by
+        // the historical-import worker (with the real id). Without this
+        // second check the same physical message lands twice.
+        val dedupWindow = CONTENT_DEDUP_WINDOW_MS
+        smsLogDao.findByContentWithin(
+            sender = raw.sender,
+            body = raw.body,
+            minMs = raw.receivedAtMs - dedupWindow,
+            maxMs = raw.receivedAtMs + dedupWindow,
+        )?.let { existing ->
+            return IngestionOutcome.Duplicate(existingSmsLogId = existing.id)
+        }
+
         val parseResult = Parser.parse(SmsInput(sender = raw.sender, body = raw.body))
 
         val smsLogRow = SmsLogEntity(
@@ -339,5 +355,14 @@ class IngestionPipeline(
         private const val NEW_ID = -1L
         private const val DEDUP_WINDOW_MS: Long = 5L * 60 * 1000L
         private const val DEDUP_AMOUNT_TOLERANCE_INR: Double = 0.5
+
+        /**
+         * Window for content-level sms_log dedup. Wide enough to span
+         * the delay between SMS_RECEIVED broadcast and SMS Provider
+         * insert (seconds to minutes), narrow enough that legitimate
+         * recurring merchant templates (e.g. a scheduled standing
+         * instruction SMS) don't get collapsed across sends.
+         */
+        private const val CONTENT_DEDUP_WINDOW_MS: Long = 10L * 60 * 1000L
     }
 }

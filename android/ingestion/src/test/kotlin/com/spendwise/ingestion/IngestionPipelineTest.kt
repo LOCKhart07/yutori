@@ -118,6 +118,31 @@ class IngestionPipelineTest {
         transactions.all.size shouldBe 1
     }
 
+    @Test
+    fun `live-then-import of the same SMS dedups on content`() = runTest {
+        // Live path: SMS_RECEIVED fired with no provider id yet.
+        val live = rawSms(
+            androidSmsId = null,
+            sender = "AX-KOTAKB-S",
+            body = "Sent Rs.1.00 from Kotak Bank AC X0000 to " +
+                "friend-1@okaxis on 01-01-26.UPI Ref 000000000000. Not you, URL",
+        )
+        pipeline.ingest(live)
+
+        // Import path: a few seconds later the provider has assigned
+        // an id and the import worker picks up the same physical SMS.
+        val import = live.copy(
+            androidSmsId = 7760L,
+            receivedAtMs = live.receivedAtMs + 5_000,
+        )
+        val outcome = pipeline.ingest(import)
+
+        outcome.shouldBeInstanceOf<IngestionOutcome.Duplicate>()
+        smsLog.all.size shouldBe 1
+        transactions.all.size shouldBe 1
+        sources.all.size shouldBe 1
+    }
+
     // --- UNMATCHED: personal SMS lands in sms_log with no transaction ---
 
     @Test
