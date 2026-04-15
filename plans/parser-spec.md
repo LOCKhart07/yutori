@@ -587,7 +587,7 @@ The canonical parser test:
 
 ```kotlin
 @Test fun `parser matches labels across the feasibility dataset`() {
-    val rows = loadRawSmses()             // 500 items (sample)
+    val rows = loadRawSmses()
     val labels = loadLabels()
     var correct = 0
     var wrong = 0

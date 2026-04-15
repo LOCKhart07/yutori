@@ -738,9 +738,8 @@ Against a fresh in-memory Room DB:
 1. Preload the feasibility dataset.
 2. Register known accounts + recipient rules (seeded per accounts memo, local-only).
 3. Run the full ingestion → classifier → transactions pipeline.
-4. Assert: monthly spend totals match the corrected post-CRED-fix
-   numbers (~40,000 / month post-fix from the sample
-   analysis).
+4. Assert: monthly spend totals match the expected post-CRED-fix
+   numbers from the feasibility analysis.
 
 This is the "does the real-world math come out right" smoke test.
 

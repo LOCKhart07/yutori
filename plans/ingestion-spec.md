@@ -438,18 +438,18 @@ Instrumentation tests live in `androidTest/`.
 
 The historical import path is tested by:
 1. Preload an empty Room DB.
-2. Mock `content://sms` to return the 500-SMS sample.
+2. Mock `content://sms` to return the feasibility SMSes.
 3. Run the import worker.
-4. Assert `sms_log.count == 500`.
+4. Assert `sms_log.count` equals the fixture size.
 5. Assert the per-classification histogram matches the labeled
    distribution exactly.
 
 ### 13.4 Resume correctness test
 
-1. Start import worker with the 500-SMS sample mock.
-2. After 150 SMSes processed, forcibly cancel the worker.
+1. Start import worker with the feasibility-SMS mock.
+2. Partway through processing, forcibly cancel the worker.
 3. Restart the worker.
-4. Assert final count is still 500 (no duplicates, no missed).
+4. Assert final count equals the fixture size (no duplicates, no missed).
 
 ### 13.5 Permission-state matrix
 

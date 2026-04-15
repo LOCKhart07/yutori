@@ -448,9 +448,8 @@ It only nets out cleanly because both sides happen to be
 - Add a Settings screen: "My Accounts." User registers their own accounts
   once — `(bank, masked_last4)` plus optional UPI VPAs and beneficiary
   names. Seed shape (placeholders): Kotak Bank `XX0000` (savings), Axis
-  Bank `XX2222` (savings), Vasai Janata Bank `006666` (savings —
-  low-volume, secondary), Axis Bank CC `XX1111`, Kotak CC `x3333`,
-  Paytm Money `X5555`
+  Bank `XX2222` (savings), Vasai Janata Bank `006666` (savings), Axis
+  Bank CC `XX1111`, Kotak CC `x3333`, Paytm Money `X5555`
   (investments — inflows via IMPS are self-transfers, not spend).
   Own UPI handle pattern follows `examplename-*@oksbi`. Heuristic
   matching on a surname root is unsafe — family members often share it.
@@ -548,10 +547,9 @@ The CC transactions that make up this bill were *already* counted at
 transaction time (§4.2). Counting the UPI leg too = same double-count that
 §4.1 warns about, just via a different channel.
 
-**Sample-dataset evidence:** ~10 UPI payments to `cred.club@axisb`
-over a 3-month window totaling ~INR 90,000. When reclassified correctly,
-counted spend drops by ~20K / ~40K / ~60K across those months — material
-distortion (up to ~30% of a month's spend).
+**Feasibility dataset evidence:** recurring UPI payments to `cred.club@axisb`
+over several months. When reclassified correctly, reported spend drops
+materially month-on-month — up to roughly a third of a month's spend.
 
 **Fix:**
 

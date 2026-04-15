@@ -526,8 +526,8 @@ Kotlin. Full unit coverage:
 - **Category ring: theme palette.** 11 accents derived from Material
   dynamic color. No brand colors — they'd fight the primary accent.
 - **Month-over-month comparisons: off in v1 MVP.** Volatility makes
-  simple deltas misleading (sample data shows ~2× swing across a
-  3-month window). Revisit when smoothing approaches are designed.
+  simple deltas misleading across the sample data. Revisit when
+  smoothing approaches are designed.
 - **Tablet/landscape: phone-only, portrait for v1 MVP.** Accessibility
   §14 still calls out dynamic type + TalkBack; dimensional flexibility
   is a later concern.
