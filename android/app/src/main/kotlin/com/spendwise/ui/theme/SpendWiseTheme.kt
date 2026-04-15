@@ -34,6 +34,7 @@ data class SpendWiseColorExtras(
     val categoryBills: Color,
     val categoryShopping: Color,
     val categoryEntertainment: Color,
+    val categorySubscriptions: Color,
     val categoryHealth: Color,
     val categoryNeutral: Color,
 ) {
@@ -49,6 +50,7 @@ data class SpendWiseColorExtras(
         "BILLS_UTILITIES"    -> categoryBills
         "SHOPPING"           -> categoryShopping
         "ENTERTAINMENT"      -> categoryEntertainment
+        "SUBSCRIPTIONS"      -> categorySubscriptions
         "HEALTH"             -> categoryHealth
         else                 -> categoryNeutral
     }
@@ -70,6 +72,7 @@ private val DarkExtras = SpendWiseColorExtras(
     categoryBills         = SpendWiseColors.DarkCatBills,
     categoryShopping      = SpendWiseColors.DarkCatShopping,
     categoryEntertainment = SpendWiseColors.DarkCatEnt,
+    categorySubscriptions = SpendWiseColors.DarkCatSubs,
     categoryHealth        = SpendWiseColors.DarkCatHealth,
     categoryNeutral       = SpendWiseColors.DarkOnMuted,
 )
@@ -90,6 +93,7 @@ private val LightExtras = SpendWiseColorExtras(
     categoryBills         = SpendWiseColors.LightCatBills,
     categoryShopping      = SpendWiseColors.LightCatShopping,
     categoryEntertainment = SpendWiseColors.LightCatEnt,
+    categorySubscriptions = SpendWiseColors.LightCatSubs,
     categoryHealth        = SpendWiseColors.LightCatHealth,
     categoryNeutral       = SpendWiseColors.LightOnMuted,
 )

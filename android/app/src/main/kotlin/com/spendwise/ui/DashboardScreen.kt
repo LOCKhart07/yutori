@@ -181,6 +181,7 @@ private fun ReadyView(
             subText = heroSubLine(snap, derived, inr),
             primaryColor = if (overBudget) themeColors.negative else null,
             subColor = subLineColor(derived.banner),
+            onClick = if (hasBudget) onSetBudget else null,
         )
 
         if (hasBudget) {
@@ -338,18 +339,22 @@ private fun HeroAmount(
     subText: String,
     primaryColor: Color? = null,
     subColor: Color? = null,
+    onClick: (() -> Unit)? = null,
 ) {
-    Text(
-        text = primaryText,
-        style = MaterialTheme.typography.displayLarge,
-        color = primaryColor ?: MaterialTheme.colorScheme.onBackground,
-    )
-    Spacer(Modifier.height(6.dp))
-    Text(
-        text = subText,
-        style = MaterialTheme.typography.bodyMedium,
-        color = subColor ?: SpendWiseTheme.colors.onMuted,
-    )
+    val tapMod = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+    Column(modifier = tapMod) {
+        Text(
+            text = primaryText,
+            style = MaterialTheme.typography.displayLarge,
+            color = primaryColor ?: MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = subText,
+            style = MaterialTheme.typography.bodyMedium,
+            color = subColor ?: SpendWiseTheme.colors.onMuted,
+        )
+    }
 }
 
 private fun heroSubLine(

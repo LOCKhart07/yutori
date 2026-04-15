@@ -10,5 +10,6 @@ fun prettyCategory(name: String): String = when (name) {
     "TRAVEL_TRANSPORT" -> "Travel & Transport"
     "BILLS_UTILITIES" -> "Bills & Utilities"
     "UPI_TRANSFER" -> "UPI Transfer"
+    "SUBSCRIPTIONS" -> "Subscriptions"
     else -> name.lowercase().replaceFirstChar { it.titlecase() }
 }

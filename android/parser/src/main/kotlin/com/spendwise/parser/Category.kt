@@ -15,6 +15,7 @@ enum class Category {
     BILLS_UTILITIES,
     HEALTH,
     ENTERTAINMENT,
+    SUBSCRIPTIONS,
     UPI_TRANSFER,
     CASH,
     UNCATEGORIZED,

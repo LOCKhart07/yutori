@@ -145,10 +145,17 @@ class CategorizerTest {
     }
 
     @Test
-    fun `github → ENTERTAINMENT`() {
+    fun `github → SUBSCRIPTIONS`() {
         Categorizer.categoryFor(
             Classification.CC_TRANSACTION, null, "github, inc",
-        ) shouldBe Category.ENTERTAINMENT
+        ) shouldBe Category.SUBSCRIPTIONS
+    }
+
+    @Test
+    fun `claude → SUBSCRIPTIONS`() {
+        Categorizer.categoryFor(
+            Classification.CC_TRANSACTION, null, "anthropic claude",
+        ) shouldBe Category.SUBSCRIPTIONS
     }
 
     @Test
