@@ -5,6 +5,7 @@ Reconciled snapshot. Delete rows as they ship.
 ## UX / layout gaps
 
 - **"KOTAK UPI" shows 2 similar sources** — user-flagged on device, needs a screenshot to diagnose. Probably two merchant-key variants (spacing, casing) that should normalize to one.
+- **Back from Subscriptions drill-down kicks the user out of the app** (reported on device, 2026-04-16). Suspected Compose group-stack imbalance or missing BackHandler branch for the new SUBSCRIPTIONS category. Pull logcat next session.
 
 ## Branding / identity
 
