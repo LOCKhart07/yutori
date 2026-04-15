@@ -43,4 +43,17 @@ object Permissions {
         }
         return list.toTypedArray()
     }
+
+    /**
+     * On Android 13+ the user can revoke POST_NOTIFICATIONS at any
+     * time after install. Returns true on older APIs (notifications
+     * are install-time permission) or when the runtime permission
+     * is currently granted.
+     */
+    fun hasNotificationPermission(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+        return ContextCompat.checkSelfPermission(
+            context, Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
+    }
 }
