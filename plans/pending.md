@@ -54,6 +54,7 @@ Dashboard ₹0 flash · `computeBanner` untested branches · Compose render test
 
 ## Bugs / silent gaps
 
+- **Inconsistent decimal display in money amounts.** `NumberFormat.formatCompact` strips `.00` from whole-rupee amounts and keeps decimals on others, so the dashboard mixes `₹21,386` and `₹9,255.83` and `₹1,155` and `₹288.33` in the same column. Visual scanning misreads the column order because the wider strings look "bigger" regardless of actual value. Fix: pick one — either always show 2 decimals on all money displays, or always strip them. Prefer **always strip** for the dashboard hero/category rows (cleaner) and keep 2 decimals only on TransactionDetail where exact amount matters.
 - **Pending-FX banner missing on dashboard** — `DashboardUiState.Ready.pendingForexCount` is computed but no banner composable renders it (ui-spec §5.2 item 5). User has no in-app indication when forex conversions are queued.
 - **Late-arriving past-month silent alert reconciliation** (business-logic §7.6) — when a tx for an older month arrives, alerts shouldn't re-fire silently. `dispatchAlertsIfNeeded` already filters on `isCurrentMonth`, so we suppress correctly; the spec wants us to *also* mark the past-month thresholds as fired so they're stamped in `budget_alert_state` for accuracy. Thin gap.
 
@@ -171,6 +172,11 @@ Rejected framings worth naming so they don't sneak back in:
 
 ## Distribution & updates
 
+- **Play Protect "App scan recommended" install warning.** First-install of the side-loaded APK triggers Google's Play Protect dialog ("Play Protect hasn't seen this app before. Scan app / Don't install app"). Side-load reality. Mitigations:
+  - Ship a **release-signed** APK (set the four `SIGNING_*` repo secrets per `docs/RELEASING.md`) — same key across builds gives the install a stable identity that Play Protect can build reputation against over time.
+  - Optionally **register the package** in Google Play Console (even without publishing) so Play Protect knows the package + signing cert pair. Free, requires a Play Console account.
+  - Document the "Install without scanning" path in the autoupdater's first-run dialog so the user knows the warning is expected and benign.
+  - Accept the warning as a permanent side-load tax if none of the above feel worth the cost.
 - **In-app autoupdater**, Tachiyomi-style: periodic GitHub Releases check, download APK, invoke `PackageInstaller`. Requires `REQUEST_INSTALL_PACKAGES`. Reads release body for in-app changelog dialog — see next item for what that body should look like.
 - **Release-body changelog automation** — current release body is GitHub's default blurb. For the autoupdater dialog to be readable, ship a grouped Markdown changelog generated automatically per release. Plan:
   - **Layer 1: `git-cliff` in the workflow.** Single binary, single config (`cliff.toml`). Groups commits by prefix into Features / Bug fixes / Performance / Internal / Other. Pre-existing un-prefixed commits get bucketed via regex map (e.g. `^(Fix|Drop|Scrub)` → Bug fixes / Internal; `^(Dashboard|Nav|Auto-detect|Add|Post-spend|Implement)` → Features). Path filter hides commits touching only `plans/pending.md`.
