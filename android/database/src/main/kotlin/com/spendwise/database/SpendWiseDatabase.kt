@@ -3,6 +3,8 @@ package com.spendwise.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.spendwise.database.dao.AccountDao
 import com.spendwise.database.dao.BudgetAlertStateDao
 import com.spendwise.database.dao.BudgetDao
@@ -35,7 +37,7 @@ import com.spendwise.database.entities.TransactionSourceEntity
         BudgetEntity::class,
         BudgetAlertStateEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(EnumConverters::class)
@@ -50,5 +52,24 @@ abstract class SpendWiseDatabase : RoomDatabase() {
 
     companion object {
         const val NAME = "spendwise.db"
+
+        /**
+         * v2 adds auto-detected account suggestions. Three new columns
+         * on `accounts`; existing rows default to CONFIRMED so routing
+         * keeps working untouched.
+         */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE accounts ADD COLUMN status TEXT " +
+                        "NOT NULL DEFAULT 'CONFIRMED'",
+                )
+                db.execSQL("ALTER TABLE accounts ADD COLUMN first_seen_ms INTEGER")
+                db.execSQL(
+                    "ALTER TABLE accounts ADD COLUMN seen_count INTEGER " +
+                        "NOT NULL DEFAULT 0",
+                )
+            }
+        }
     }
 }

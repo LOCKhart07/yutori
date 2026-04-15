@@ -3,33 +3,38 @@ package com.spendwise.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.spendwise.database.entities.AccountEntity
+import com.spendwise.ui.theme.SpendWiseTextStyles
 import com.spendwise.ui.theme.SpendWiseTheme
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Accounts list per settings-spec §2.4. Tapping a row opens the edit
- * form; the "+" button creates a new account.
+ * Accounts list. Confirmed rows show flat; SUGGESTED rows land in a
+ * "Suggested" section above with Add / Ignore actions (auto-detect).
  */
 @Composable
 fun AccountsScreen(
@@ -37,8 +42,13 @@ fun AccountsScreen(
     onBack: () -> Unit,
     onAdd: () -> Unit,
     onEdit: (Long) -> Unit,
+    onConfirmSuggestion: (Long) -> Unit,
+    onIgnoreSuggestion: (Long) -> Unit,
 ) {
     val accounts by accountsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
+    val suggested = accounts.filter { it.status == "SUGGESTED" }
+    val confirmed = accounts.filter { it.status == "CONFIRMED" }
+    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -47,13 +57,13 @@ fun AccountsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(top = statusInset.calculateTopPadding() + 8.dp)
                 .padding(horizontal = 24.dp),
         ) {
+            BackRow(label = "Settings", onBack = onBack)
             Spacer(Modifier.height(16.dp))
-            TextButton(onClick = onBack) { Text("← Back") }
-
-            Text("My accounts", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(8.dp))
+            Text("My accounts", style = MaterialTheme.typography.headlineLarge)
+            Spacer(Modifier.height(20.dp))
 
             if (accounts.isEmpty()) {
                 Text(
@@ -63,17 +73,43 @@ fun AccountsScreen(
                     color = SpendWiseTheme.colors.onMuted,
                 )
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = onAdd) { Text("Add your first account") }
+                AddAccountLink(onAdd)
             } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(onClick = onAdd) { Text("+ Add account") }
-                }
-                Spacer(Modifier.height(8.dp))
                 LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    items(items = accounts, key = { it.id }) { acc ->
+                    if (suggested.isNotEmpty()) {
+                        item {
+                            SectionCaps(
+                                "SUGGESTED (${suggested.size})",
+                                subtitle = "Detected from your SMS inbox. Add to " +
+                                    "route future transactions automatically.",
+                            )
+                        }
+                        items(items = suggested, key = { it.id }) { acc ->
+                            SuggestionRow(
+                                entity = acc,
+                                onAdd = { onConfirmSuggestion(acc.id) },
+                                onIgnore = { onIgnoreSuggestion(acc.id) },
+                            )
+                        }
+                        item { Spacer(Modifier.height(16.dp)) }
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "CONFIRMED" + if (confirmed.isNotEmpty()) " (${confirmed.size})" else "",
+                                style = SpendWiseTextStyles.Caps,
+                                color = SpendWiseTheme.colors.onFaint,
+                            )
+                            AddAccountLink(onAdd)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                    }
+                    items(items = confirmed, key = { it.id }) { acc ->
                         AccountRow(acc, onClick = { onEdit(acc.id) })
                         HorizontalDivider(color = SpendWiseTheme.colors.divider)
                     }
@@ -81,6 +117,36 @@ fun AccountsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun AddAccountLink(onAdd: () -> Unit) {
+    Text(
+        text = "+ Add account",
+        modifier = Modifier
+            .clickable(onClick = onAdd)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
+        color = MaterialTheme.colorScheme.primary,
+    )
+}
+
+@Composable
+private fun SectionCaps(title: String, subtitle: String? = null) {
+    Text(
+        text = title,
+        style = SpendWiseTextStyles.Caps,
+        color = SpendWiseTheme.colors.onFaint,
+    )
+    if (subtitle != null) {
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = SpendWiseTheme.colors.onMuted,
+        )
+    }
+    Spacer(Modifier.height(8.dp))
 }
 
 @Composable
@@ -106,6 +172,55 @@ private fun AccountRow(entity: AccountEntity, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = SpendWiseTheme.colors.onMuted,
             )
+        }
+    }
+}
+
+@Composable
+private fun SuggestionRow(
+    entity: AccountEntity,
+    onAdd: () -> Unit,
+    onIgnore: () -> Unit,
+) {
+    val colors = SpendWiseTheme.colors
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        color = colors.surfaceElevated,
+        shape = RoundedCornerShape(12.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.divider),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+            Text(
+                text = "${entity.issuer} ••${entity.last4}",
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = prettyKind(entity.kind) + " · seen ${entity.seenCount}×",
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onMuted,
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Add",
+                    modifier = Modifier
+                        .clickable(onClick = onAdd)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    "Ignore",
+                    modifier = Modifier
+                        .clickable(onClick = onIgnore)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colors.onMuted,
+                )
+            }
         }
     }
 }

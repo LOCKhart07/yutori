@@ -36,6 +36,7 @@ class SpendWiseApp : Application() {
             SpendWiseDatabase::class.java,
             SpendWiseDatabase.NAME,
         )
+            .addMigrations(SpendWiseDatabase.MIGRATION_1_2)
             // No destructive fallback — user data is the point.
             .build()
     }

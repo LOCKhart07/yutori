@@ -132,6 +132,9 @@ private fun AppContent() {
             val state: DashboardUiState by viewModel.uiState.collectAsState()
             val importStatus: ImportStatus by importStatusFlow(app)
                 .collectAsStateWithLifecycle(initialValue = ImportStatus.Idle)
+            val suggestedCount: Int by database.accountDao()
+                .observeCountByStatus("SUGGESTED")
+                .collectAsStateWithLifecycle(initialValue = 0)
 
             DashboardScreen(
                 state = state,
@@ -141,6 +144,7 @@ private fun AppContent() {
                 onSettings = { screen = Screen.Settings },
                 onCategoryClick = { cat -> screen = Screen.CategoryDrill(cat) },
                 onCardClick = { last4 -> screen = Screen.CardDrill(last4) },
+                hasSettingsBadge = suggestedCount > 0,
             )
 
             if (importDialogOpen) {
@@ -245,19 +249,34 @@ private fun AppContent() {
         }
 
         is Screen.Settings -> {
+            val suggestedCount: Int by database.accountDao()
+                .observeCountByStatus("SUGGESTED")
+                .collectAsStateWithLifecycle(initialValue = 0)
             SettingsScreen(
                 onBack = { screen = Screen.Dashboard },
                 onAccounts = { screen = Screen.Accounts },
                 onRecipientRules = { screen = Screen.RecipientRules },
+                accountSuggestionCount = suggestedCount,
             )
         }
 
         is Screen.Accounts -> {
+            val scope = androidx.compose.runtime.rememberCoroutineScope()
+            val accountDao = database.accountDao()
             AccountsScreen(
-                accountsFlow = database.accountDao().observeAll(),
+                accountsFlow = accountDao.observeAll(),
                 onBack = { screen = Screen.Settings },
                 onAdd = { screen = Screen.AccountEdit(accountId = null) },
                 onEdit = { id -> screen = Screen.AccountEdit(accountId = id) },
+                onConfirmSuggestion = { id ->
+                    // Reuse the edit form so the user can tweak display
+                    // name + default-spend before committing. Status
+                    // flips to CONFIRMED on Save (see persistAccount).
+                    screen = Screen.AccountEdit(accountId = id)
+                },
+                onIgnoreSuggestion = { id ->
+                    scope.launch { accountDao.setStatus(id, "DISMISSED") }
+                },
             )
         }
 
@@ -402,6 +421,9 @@ private suspend fun persistAccount(
                 last4 = draft.last4,
                 displayName = draft.displayName,
                 isDefaultSpend = draft.isDefaultSpend,
+                // Saving a SUGGESTED row through the edit form is how
+                // the user confirms it.
+                status = "CONFIRMED",
             ),
         )
         draft.id

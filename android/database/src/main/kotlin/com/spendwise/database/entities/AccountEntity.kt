@@ -34,4 +34,14 @@ data class AccountEntity(
 
     @ColumnInfo(name = "created_at_ms")
     val createdAtMs: Long,
+
+    /** CONFIRMED | SUGGESTED | DISMISSED. CONFIRMED is the pre-v2 default. */
+    @ColumnInfo(name = "status", defaultValue = "CONFIRMED")
+    val status: String = "CONFIRMED",
+
+    @ColumnInfo(name = "first_seen_ms")
+    val firstSeenMs: Long? = null,
+
+    @ColumnInfo(name = "seen_count", defaultValue = "0")
+    val seenCount: Int = 0,
 )

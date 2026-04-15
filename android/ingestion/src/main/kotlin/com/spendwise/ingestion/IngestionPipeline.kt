@@ -6,6 +6,7 @@ import com.spendwise.budget.Budget
 import com.spendwise.budget.BudgetCalculator
 import com.spendwise.budget.MonthSnapshot
 import com.spendwise.budget.Transaction as BudgetTx
+import com.spendwise.classifier.AccountAutoDetector
 import com.spendwise.classifier.BudgetEffect
 import com.spendwise.classifier.Classifier
 import com.spendwise.database.dao.AccountDao
@@ -84,6 +85,12 @@ class IngestionPipeline(
 
         val accounts = accountDao.getAll().map(AccountMapper::toDomain)
         val rules = recipientRuleDao.getEnabled().map(RecipientRuleMapper::toDomain)
+
+        // Auto-detect: if this SMS references an account we don't know
+        // yet, stage a SUGGESTED row. Never blocks the pipeline and
+        // never changes the classifier's view of the world (resolver
+        // ignores non-CONFIRMED rows).
+        applyAutoDetect(raw.sender, parseResult, accounts)
 
         val classified = Classifier.classify(parseResult, accounts, rules)
 
@@ -289,6 +296,44 @@ class IngestionPipeline(
         } catch (_: NoSuchElementException) {
             null
         }
+
+    private suspend fun applyAutoDetect(
+        sender: String,
+        parseResult: com.spendwise.parser.ParseResult,
+        accounts: List<com.spendwise.classifier.Account>,
+    ) {
+        val action = AccountAutoDetector.detect(
+            sender = sender,
+            parserLast4 = parseResult.last4,
+            classification = parseResult.classification,
+            existingAccounts = accounts,
+        ) ?: return
+
+        when (action) {
+            is AccountAutoDetector.Action.Create -> {
+                val now = nowMs()
+                try {
+                    accountDao.insert(
+                        com.spendwise.database.entities.AccountEntity(
+                            kind = action.kind.name,
+                            issuer = action.issuer,
+                            last4 = action.last4,
+                            isDefaultSpend = false,
+                            createdAtMs = now,
+                            status = "SUGGESTED",
+                            firstSeenMs = now,
+                            seenCount = 1,
+                        ),
+                    )
+                } catch (_: SQLiteConstraintException) {
+                    // Race: another SMS beat us to insert. Ignore.
+                }
+            }
+            is AccountAutoDetector.Action.BumpSeen -> {
+                accountDao.bumpSeenCount(action.accountId)
+            }
+        }
+    }
 
     companion object {
         private const val NEW_ID = -1L

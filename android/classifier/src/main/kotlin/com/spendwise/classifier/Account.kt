@@ -11,7 +11,14 @@ data class Account(
     val last4: String,
     val displayName: String? = null,
     val isDefaultSpend: Boolean = false,
+    val status: AccountStatus = AccountStatus.CONFIRMED,
 )
+
+enum class AccountStatus {
+    CONFIRMED,
+    SUGGESTED,
+    DISMISSED,
+}
 
 enum class AccountKind {
     SAVINGS,

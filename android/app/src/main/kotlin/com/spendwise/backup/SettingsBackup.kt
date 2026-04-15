@@ -35,7 +35,11 @@ object SettingsBackup {
         ruleDao: RecipientRuleDao,
         nowMs: Long,
     ): String {
-        val accounts = accountDao.getAll()
+        // Only export user-confirmed accounts. SUGGESTED / DISMISSED
+        // are machine-generated proposals — re-importing them on a
+        // fresh install would surface stale suggestions from another
+        // moment in time.
+        val accounts = accountDao.getAll().filter { it.status == "CONFIRMED" }
         val accountsById = accounts.associateBy { it.id }
         // Snapshot of enabled + disabled user rules. getEnabled() only
         // returns enabled rows; for disabled we'd need a second path —
