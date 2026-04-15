@@ -28,6 +28,10 @@ data class DashboardDerived(
     val dailyCapInr: Double?,
     val projectedSurplusInr: Double?,
     val banner: DashboardBanner,
+    /** Where the user "should be" by today as a percent of the limit. Null when no budget. */
+    val expectedPercentByNow: Double? = null,
+    /** Bucket from `actual_pct − elapsed_pct`. Drives the hero card tint. */
+    val pace: PaceBucket = PaceBucket.OnTrack,
 ) {
     companion object {
         fun from(snap: MonthSnapshot, monthKey: String, nowMs: Long): DashboardDerived {
@@ -80,6 +84,15 @@ data class DashboardDerived(
                 dailyCap = dailyCap,
             )
 
+            val expectedPct = if (hasBudget) {
+                100.0 * dayOfMonth / daysInMonth
+            } else null
+            val pace = computePace(
+                hasBudget = hasBudget,
+                actualPct = snap.percentUsed,
+                expectedPct = expectedPct,
+            )
+
             return DashboardDerived(
                 dayOfMonth = dayOfMonth,
                 daysInMonth = daysInMonth,
@@ -88,7 +101,37 @@ data class DashboardDerived(
                 dailyCapInr = dailyCap,
                 projectedSurplusInr = projectedSurplus,
                 banner = banner,
+                expectedPercentByNow = expectedPct,
+                pace = pace,
             )
+        }
+
+        /**
+         * Pace bucket from `actual_pct − elapsed_pct`. Same colour grammar
+         * as the on-screen banner, but driven by *pace* (used vs elapsed)
+         * rather than raw percent.
+         *
+         *   - delta ≤ −10pp → Under (green): under-pace, surplus brewing
+         *   - −10pp..+10pp  → OnTrack (neutral): pace ≈ budget
+         *   - +10pp..+25pp  → OverPace (warn-orange)
+         *   - delta > +25pp OR actual ≥ 100% → Over (red)
+         *
+         * Returns OnTrack when no budget is set (no signal to give).
+         */
+        internal fun computePace(
+            hasBudget: Boolean,
+            actualPct: Double,
+            expectedPct: Double?,
+        ): PaceBucket {
+            if (!hasBudget || expectedPct == null) return PaceBucket.OnTrack
+            if (actualPct >= 100.0) return PaceBucket.Over
+            val delta = actualPct - expectedPct
+            return when {
+                delta <= -10.0 -> PaceBucket.Under
+                delta <=  10.0 -> PaceBucket.OnTrack
+                delta <=  25.0 -> PaceBucket.OverPace
+                else           -> PaceBucket.Over
+            }
         }
 
         private fun computeBanner(
@@ -122,6 +165,13 @@ data class DashboardDerived(
             return DashboardBanner.Normal
         }
     }
+}
+
+enum class PaceBucket {
+    Under,    // green — well under-pace, surplus brewing
+    OnTrack,  // neutral — pace matches budget
+    OverPace, // warn-orange — over-pace but not over-budget
+    Over,     // red — over budget OR egregiously over-pace
 }
 
 sealed interface DashboardBanner {

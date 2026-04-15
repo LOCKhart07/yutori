@@ -225,22 +225,30 @@ private fun ReadyView(
 
         Spacer(Modifier.height(24.dp))
 
-        // Hero
+        // Hero — wrapped in a pace-tinted card.
         val overBudget = snap.percentUsed >= 100.0
-        HeroAmount(
-            primaryText = inr.formatCompact(snap.netSpendInr),
-            subText = heroSubLine(snap, derived, inr),
-            primaryColor = if (overBudget) themeColors.negative else null,
-            subColor = subLineColor(derived.banner),
-            onClick = if (hasBudget) onSetBudget else null,
-        )
-
-        if (hasBudget) {
-            Spacer(Modifier.height(16.dp))
-            ProgressTrack(
-                fraction = (snap.percentUsed / 100.0).coerceIn(0.0, 1.0).toFloat(),
-                color = progressColor(snap.percentUsed),
+        PaceTintedHeroCard(pace = derived.pace) {
+            HeroAmount(
+                primaryText = inr.formatCompact(snap.netSpendInr),
+                subText = heroSubLine(snap, derived, inr),
+                primaryColor = when {
+                    derived.pace == PaceBucket.Over -> themeColors.negative
+                    derived.pace == PaceBucket.OverPace -> themeColors.warn
+                    else -> null
+                },
+                subColor = subLineColor(derived.banner),
+                onClick = if (hasBudget) onSetBudget else null,
             )
+
+            if (hasBudget) {
+                Spacer(Modifier.height(14.dp))
+                ProgressTrack(
+                    fraction = (snap.percentUsed / 100.0).coerceIn(0.0, 1.0).toFloat(),
+                    color = paceProgressColor(derived.pace),
+                    expectedFraction = derived.expectedPercentByNow
+                        ?.let { (it / 100.0).coerceIn(0.0, 1.0).toFloat() },
+                )
+            }
         }
 
         Spacer(Modifier.height(20.dp))
@@ -512,17 +520,90 @@ private fun progressColor(percentUsed: Double): Color {
 }
 
 @Composable
-private fun ProgressTrack(fraction: Float, color: Color) {
-    @Suppress("DEPRECATION")
-    LinearProgressIndicator(
-        progress = fraction.coerceIn(0f, 1f),
+private fun ProgressTrack(
+    fraction: Float,
+    color: Color,
+    expectedFraction: Float? = null,
+) {
+    val colors = SpendWiseTheme.colors
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(6.dp)
-            .clip(RoundedCornerShape(3.dp)),
-        color = color,
-        trackColor = SpendWiseTheme.colors.surfaceElevated2,
-    )
+            .height(8.dp),
+    ) {
+        @Suppress("DEPRECATION")
+        LinearProgressIndicator(
+            progress = fraction.coerceIn(0f, 1f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .align(Alignment.Center),
+            color = color,
+            trackColor = colors.surfaceElevated2,
+        )
+        // Faint vertical tick at "today's expected position" — the gap
+        // between the fill and the tick is the surplus/deficit story.
+        if (expectedFraction != null && expectedFraction in 0.001f..0.999f) {
+            androidx.compose.foundation.layout.BoxWithConstraints(
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                val tickX = maxWidth * expectedFraction
+                Box(
+                    modifier = Modifier
+                        .padding(start = tickX - 1.dp)
+                        .width(2.dp)
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(colors.onFaint),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Tints the hero block based on the pace bucket. Same colour grammar
+ * as the alert thresholds: green = under-pace (surplus brewing),
+ * neutral = on track, warn = over-pace, red = over budget.
+ */
+@Composable
+private fun PaceTintedHeroCard(
+    pace: PaceBucket,
+    content: @Composable () -> Unit,
+) {
+    val colors = SpendWiseTheme.colors
+    val tint = when (pace) {
+        PaceBucket.Under   -> colors.positive
+        PaceBucket.OnTrack -> colors.onMuted
+        PaceBucket.OverPace -> colors.warn
+        PaceBucket.Over    -> colors.negative
+    }
+    val (bg, border) = when (pace) {
+        PaceBucket.OnTrack -> colors.surfaceElevated to colors.divider
+        else -> tint.copy(alpha = 0.08f) to tint.copy(alpha = 0.20f)
+    }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = bg,
+        border = androidx.compose.foundation.BorderStroke(1.dp, border),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun paceProgressColor(pace: PaceBucket): Color {
+    val colors = SpendWiseTheme.colors
+    return when (pace) {
+        PaceBucket.Under   -> colors.positive
+        PaceBucket.OnTrack -> MaterialTheme.colorScheme.primary
+        PaceBucket.OverPace -> colors.warn
+        PaceBucket.Over    -> colors.negative
+    }
 }
 
 @Composable
