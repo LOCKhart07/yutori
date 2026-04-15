@@ -65,6 +65,10 @@ fun DashboardScreen(
     onCategoryClick: (String) -> Unit = {},
     onCardClick: (last4: String) -> Unit = {},
     hasSettingsBadge: Boolean = false,
+    onMonthPrev: () -> Unit = {},
+    onMonthNext: () -> Unit = {},
+    onResetMonth: () -> Unit = {},
+    isCurrentMonth: Boolean = true,
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -74,13 +78,18 @@ fun DashboardScreen(
             is DashboardUiState.Loading -> LoadingView()
             is DashboardUiState.NeedsPermission -> NeedsPermissionView()
             is DashboardUiState.Empty ->
-                EmptyView(state, onSetBudget, onImport, importStatus, onSettings, hasSettingsBadge)
+                EmptyView(
+                    state, onSetBudget, onImport, importStatus, onSettings,
+                    hasSettingsBadge,
+                    onMonthPrev, onMonthNext, onResetMonth, isCurrentMonth,
+                )
             is DashboardUiState.Ready ->
                 ReadyView(
                     state, importStatus,
                     onSetBudget, onImport, onSettings,
                     onCategoryClick, onCardClick,
                     hasSettingsBadge,
+                    onMonthPrev, onMonthNext, onResetMonth, isCurrentMonth,
                 )
         }
     }
@@ -110,6 +119,10 @@ private fun EmptyView(
     importStatus: ImportStatus,
     onSettings: () -> Unit,
     hasSettingsBadge: Boolean = false,
+    onMonthPrev: () -> Unit = {},
+    onMonthNext: () -> Unit = {},
+    onResetMonth: () -> Unit = {},
+    isCurrentMonth: Boolean = true,
 ) {
     ScrollingShell {
         TopBar(
@@ -117,6 +130,10 @@ private fun EmptyView(
             onImport = onImport,
             onSettings = onSettings,
             hasSettingsBadge = hasSettingsBadge,
+            onMonthPrev = onMonthPrev,
+            onMonthNext = onMonthNext,
+            onResetMonth = onResetMonth,
+            isCurrentMonth = isCurrentMonth,
         )
         Spacer(Modifier.height(24.dp))
         HeroAmount(primaryText = "₹0", subText = if (state.hasBudget) "No spend yet this month" else "Spent this month")
@@ -151,6 +168,10 @@ private fun ReadyView(
     onCategoryClick: (String) -> Unit,
     onCardClick: (String) -> Unit,
     hasSettingsBadge: Boolean = false,
+    onMonthPrev: () -> Unit = {},
+    onMonthNext: () -> Unit = {},
+    onResetMonth: () -> Unit = {},
+    isCurrentMonth: Boolean = true,
 ) {
     val inr = remember { NumberFormat.getCurrencyInstance(Locale("en", "IN")) }
     val snap = state.snapshot
@@ -164,11 +185,15 @@ private fun ReadyView(
         TopBar(
             monthLabel = prettyMonthKey(
                 state.monthKey,
-                dayLabel = if (derived.daysLeft in 1..3) "Day ${derived.dayOfMonth}" else null,
+                dayLabel = if (isCurrentMonth && derived.daysLeft in 1..3) "Day ${derived.dayOfMonth}" else null,
             ),
             onImport = onImport,
             onSettings = onSettings,
             hasSettingsBadge = hasSettingsBadge,
+            onMonthPrev = onMonthPrev,
+            onMonthNext = onMonthNext,
+            onResetMonth = onResetMonth,
+            isCurrentMonth = isCurrentMonth,
         )
 
         Spacer(Modifier.height(24.dp))
@@ -306,17 +331,56 @@ private fun TopBar(
     onImport: () -> Unit,
     onSettings: () -> Unit,
     hasSettingsBadge: Boolean = false,
+    onMonthPrev: () -> Unit = {},
+    onMonthNext: () -> Unit = {},
+    onResetMonth: () -> Unit = {},
+    isCurrentMonth: Boolean = true,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = monthLabel,
-            style = SpendWiseTextStyles.Caps,
-            color = SpendWiseTheme.colors.onMuted,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "‹",
+                modifier = Modifier
+                    .clickable(onClick = onMonthPrev)
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.titleMedium,
+                color = SpendWiseTheme.colors.onMuted,
+            )
+            Text(
+                text = monthLabel,
+                modifier = Modifier.padding(horizontal = 2.dp),
+                style = SpendWiseTextStyles.Caps,
+                color = SpendWiseTheme.colors.onMuted,
+            )
+            // Forward chevron disabled on current month (no future data).
+            Text(
+                text = "›",
+                modifier = Modifier
+                    .clickable(enabled = !isCurrentMonth, onClick = onMonthNext)
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.titleMedium,
+                color = if (isCurrentMonth) {
+                    SpendWiseTheme.colors.onFaint
+                } else {
+                    SpendWiseTheme.colors.onMuted
+                },
+            )
+            if (!isCurrentMonth) {
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = "Today",
+                    modifier = Modifier
+                        .clickable(onClick = onResetMonth)
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp),

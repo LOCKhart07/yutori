@@ -135,6 +135,7 @@ private fun AppContent() {
             val suggestedCount: Int by database.accountDao()
                 .observeCountByStatus("SUGGESTED")
                 .collectAsStateWithLifecycle(initialValue = 0)
+            val viewedMonthKey: String by viewModel.viewedMonthKey.collectAsState()
 
             DashboardScreen(
                 state = state,
@@ -145,6 +146,10 @@ private fun AppContent() {
                 onCategoryClick = { cat -> screen = Screen.CategoryDrill(cat) },
                 onCardClick = { last4 -> screen = Screen.CardDrill(last4) },
                 hasSettingsBadge = suggestedCount > 0,
+                onMonthPrev = { viewModel.navigateMonth(-1) },
+                onMonthNext = { viewModel.navigateMonth(1) },
+                onResetMonth = { viewModel.resetToCurrentMonth() },
+                isCurrentMonth = viewModel.isCurrentMonth(viewedMonthKey),
             )
 
             if (importDialogOpen) {

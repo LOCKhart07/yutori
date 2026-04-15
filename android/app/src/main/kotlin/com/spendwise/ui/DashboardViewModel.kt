@@ -13,8 +13,10 @@ import com.spendwise.database.entities.TransactionEntity
 import com.spendwise.transactions.MonthKeyComputer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -43,15 +45,28 @@ class DashboardViewModel(
     private val nowMsProvider: () -> Long = nowMs
     private val currentMonthKey: String = MonthKeyComputer.ofDevice(nowMs())
 
+    private val _viewedMonthKey = MutableStateFlow(currentMonthKey)
+    val viewedMonthKey: StateFlow<String> = _viewedMonthKey.asStateFlow()
+
+    fun navigateMonth(deltaMonths: Long) {
+        _viewedMonthKey.value = MonthKeyComputer.shift(_viewedMonthKey.value, deltaMonths)
+    }
+
+    fun resetToCurrentMonth() {
+        _viewedMonthKey.value = currentMonthKey
+    }
+
+    fun isCurrentMonth(monthKey: String): Boolean = monthKey == currentMonthKey
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<DashboardUiState> = run {
         val hasPerm = hasPermissionProvider()
         if (!hasPerm) {
             flowOf<DashboardUiState>(DashboardUiState.NeedsPermission)
         } else {
-            combinedReadyFlow()
+            _viewedMonthKey.flatMapLatest { mk -> combinedReadyFlow(mk) }
         }
-            .catch { emit(DashboardUiState.Empty(currentMonthKey, hasBudget = false)) }
+            .catch { emit(DashboardUiState.Empty(_viewedMonthKey.value, hasBudget = false)) }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
@@ -59,30 +74,31 @@ class DashboardViewModel(
             )
     }
 
-    private fun combinedReadyFlow(): Flow<DashboardUiState> {
-        val txFlow = transactionDao.observeByMonth(currentMonthKey)
-        val budgetFlow = budgetDao.observeByMonth(currentMonthKey)
+    private fun combinedReadyFlow(monthKey: String): Flow<DashboardUiState> {
+        val txFlow = transactionDao.observeByMonth(monthKey)
+        val budgetFlow = budgetDao.observeByMonth(monthKey)
         val pendingFlow = transactionDao.observePendingForex()
 
         return combine(txFlow, budgetFlow, pendingFlow) { txs, budget, pendingForex ->
-            toUiState(txs, budget, pendingForex.size)
+            toUiState(monthKey, txs, budget, pendingForex.size)
         }
     }
 
     private suspend fun toUiState(
+        monthKey: String,
         txEntities: List<TransactionEntity>,
         budgetEntity: BudgetEntity?,
         pendingForexCount: Int,
     ): DashboardUiState {
         if (txEntities.isEmpty() && budgetEntity == null) {
-            return DashboardUiState.Empty(currentMonthKey, hasBudget = false)
+            return DashboardUiState.Empty(monthKey, hasBudget = false)
         }
         if (txEntities.isEmpty()) {
-            return DashboardUiState.Empty(currentMonthKey, hasBudget = true)
+            return DashboardUiState.Empty(monthKey, hasBudget = true)
         }
 
         // Snapshot math uses prior-month budgets too. Load them once.
-        val priorBudgetEntities = budgetDao.getAllBefore(currentMonthKey)
+        val priorBudgetEntities = budgetDao.getAllBefore(monthKey)
         val allBudgets: List<Budget> = buildList {
             priorBudgetEntities.forEach { add(it.toDomainBudget()) }
             budgetEntity?.let { add(it.toDomainBudget()) }
@@ -98,13 +114,13 @@ class DashboardViewModel(
         val snapshot = BudgetCalculator.snapshot(
             transactions = priorTxFlat + thisMonthTxs,
             budgets = allBudgets,
-            monthKey = currentMonthKey,
+            monthKey = monthKey,
         )
 
         return DashboardUiState.Ready(
-            monthKey = currentMonthKey,
+            monthKey = monthKey,
             snapshot = snapshot,
-            derived = DashboardDerived.from(snapshot, currentMonthKey, nowMsProvider()),
+            derived = DashboardDerived.from(snapshot, monthKey, nowMsProvider()),
             byCategory = bucketByCategory(txEntities),
             byCard = bucketByCard(txEntities),
             transactionCount = txEntities.size,
