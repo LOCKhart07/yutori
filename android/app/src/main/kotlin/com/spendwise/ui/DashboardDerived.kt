@@ -3,6 +3,7 @@ package com.spendwise.ui
 import com.spendwise.budget.MonthSnapshot
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import kotlin.math.max
 
@@ -34,14 +35,19 @@ data class DashboardDerived(
             val today = LocalDate.ofInstant(Instant.ofEpochMilli(nowMs), zone)
             val viewingCurrentMonth = monthKey == "%04d-%02d".format(today.year, today.monthValue)
 
-            val daysInMonth = today.lengthOfMonth()
+            // Use the days-in-month of the *viewed* month, not today's
+            // month. Matters when user navigates to a 28- or 31-day
+            // month from a 30-day one.
+            val viewedYm = runCatching { YearMonth.parse(monthKey) }
+                .getOrDefault(YearMonth.from(today))
+            val daysInMonth = viewedYm.lengthOfMonth()
             val dayOfMonth: Int
             val daysLeft: Int
             if (viewingCurrentMonth) {
                 dayOfMonth = today.dayOfMonth
                 daysLeft = daysInMonth - dayOfMonth + 1
             } else {
-                // Past month — fully elapsed.
+                // Past or future month — fully elapsed / not yet started.
                 dayOfMonth = daysInMonth
                 daysLeft = 0
             }

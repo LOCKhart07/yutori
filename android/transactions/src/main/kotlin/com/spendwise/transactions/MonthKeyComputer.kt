@@ -1,6 +1,7 @@
 package com.spendwise.transactions
 
 import java.time.Instant
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -30,4 +31,8 @@ object MonthKeyComputer {
     /** Compute month_key using the JVM's default zone (device-local). */
     fun ofDevice(occurredAtMs: Long): String =
         of(occurredAtMs, ZoneId.systemDefault())
+
+    /** Return month_key shifted by [deltaMonths] (can be negative). */
+    fun shift(monthKey: String, deltaMonths: Long): String =
+        YearMonth.parse(monthKey, FORMATTER).plusMonths(deltaMonths).format(FORMATTER)
 }
