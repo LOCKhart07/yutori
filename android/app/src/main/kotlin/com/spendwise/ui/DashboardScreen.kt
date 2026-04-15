@@ -90,24 +90,16 @@ fun DashboardScreen(
 
 @Composable
 private fun LoadingView() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) { CircularProgressIndicator() }
+    LoadingSpinner()
 }
 
 @Composable
 private fun NeedsPermissionView() {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            "SMS permission required.",
-            style = MaterialTheme.typography.headlineSmall,
-        )
-    }
+    EmptyState(
+        title = "SMS permission required",
+        description = "Grant SMS access in Settings to let SpendWise " +
+            "read bank/UPI messages. We never send or share them.",
+    )
 }
 
 @Composable

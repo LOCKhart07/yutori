@@ -1,37 +1,41 @@
 package com.spendwise.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.spendwise.ui.theme.SpendWiseTheme
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.spendwise.database.entities.RecipientRuleEntity
+import com.spendwise.ui.theme.SpendWiseTextStyles
+import com.spendwise.ui.theme.SpendWiseTheme
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Recipient rules list per settings-spec §3.4. v1 MVP supports
- * enable/disable for all rules and delete for user-source rules.
- * Adding new rules via a full editor is v1.1.
+ * Recipient rules list. v2-styled: status-bar inset, caps section
+ * heads, card-wrapped rule rows, mono pattern text, themed switch.
  */
 @Composable
 fun RecipientRulesScreen(
@@ -43,6 +47,8 @@ fun RecipientRulesScreen(
     val rules by rulesFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val seed = rules.filter { it.source == "SEED" }
     val user = rules.filter { it.source == "USER" }
+    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
+    val colors = SpendWiseTheme.colors
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -51,64 +57,59 @@ fun RecipientRulesScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(top = statusInset.calculateTopPadding() + 8.dp)
                 .padding(horizontal = 24.dp),
         ) {
+            BackRow(label = "Settings", onBack = onBack)
             Spacer(Modifier.height(16.dp))
-            TextButton(onClick = onBack) { Text("← Back") }
-
-            Text("Recipient rules", style = MaterialTheme.typography.headlineMedium)
             Text(
-                text = "Rules reclassify transactions based on who you're paying. " +
-                    "For example, payments to CRED aren't spend — they're bill " +
-                    "payments for your credit card.",
-                style = MaterialTheme.typography.bodySmall,
-                color = SpendWiseTheme.colors.onMuted,
+                text = "Recipient rules",
+                style = MaterialTheme.typography.headlineLarge,
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Reclassify transactions based on who you're paying. " +
+                    "Payments to CRED, for example, aren't spend — they're " +
+                    "credit-card bill payments.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onMuted,
+            )
+            Spacer(Modifier.height(20.dp))
 
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                 if (seed.isNotEmpty()) {
                     item(key = "seed-header") {
-                        Text(
-                            "Built-in",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = SpendWiseTheme.colors.onMuted,
-                            modifier = Modifier.padding(vertical = 8.dp),
-                        )
+                        CapsHeader("BUILT-IN (${seed.size})")
                     }
                     items(seed, key = { "s-${it.id}" }) { rule ->
-                        RuleRow(rule, onToggle = onToggleEnabled, onDelete = null)
-                        HorizontalDivider(color = SpendWiseTheme.colors.divider)
+                        RuleCard(rule, onToggle = onToggleEnabled, onDelete = null)
                     }
+                    item { Spacer(Modifier.height(12.dp)) }
                 }
 
                 item(key = "user-header") {
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        "Your rules",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = SpendWiseTheme.colors.onMuted,
-                        modifier = Modifier.padding(vertical = 8.dp),
+                    CapsHeader(
+                        if (user.isEmpty()) "YOUR RULES" else "YOUR RULES (${user.size})",
                     )
                 }
                 if (user.isEmpty()) {
                     item(key = "user-empty") {
                         Text(
-                            "User-added rules will appear here. For now, UPI " +
-                                "handles linked to an account (added in My " +
-                                "accounts) become SELF_TRANSFER rules automatically.",
+                            text = "User rules will appear here. UPI handles " +
+                                "linked to an account (in My accounts) become " +
+                                "SELF_TRANSFER rules automatically.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = SpendWiseTheme.colors.onMuted,
+                            color = colors.onMuted,
+                            modifier = Modifier.padding(vertical = 4.dp),
                         )
                     }
                 } else {
                     items(user, key = { "u-${it.id}" }) { rule ->
-                        RuleRow(
+                        RuleCard(
                             rule,
                             onToggle = onToggleEnabled,
                             onDelete = { onDeleteUserRule(rule) },
                         )
-                        HorizontalDivider(color = SpendWiseTheme.colors.divider)
                     }
                 }
             }
@@ -117,43 +118,72 @@ fun RecipientRulesScreen(
 }
 
 @Composable
-private fun RuleRow(
+private fun CapsHeader(text: String) {
+    Text(
+        text = text,
+        style = SpendWiseTextStyles.Caps,
+        color = SpendWiseTheme.colors.onFaint,
+        modifier = Modifier.padding(vertical = 8.dp),
+    )
+}
+
+@Composable
+private fun RuleCard(
     rule: RecipientRuleEntity,
     onToggle: (RecipientRuleEntity, Boolean) -> Unit,
     onDelete: (() -> Unit)?,
 ) {
-    Row(
+    val colors = SpendWiseTheme.colors
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceElevated,
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.divider),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = rule.pattern,
-                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
-            )
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = rule.pattern,
+                    style = SpendWiseTextStyles.Mono,
+                    modifier = Modifier.weight(1f),
+                )
+                Switch(
+                    checked = rule.isEnabled,
+                    onCheckedChange = { onToggle(rule, it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary,
+                        uncheckedThumbColor = colors.onMuted,
+                        uncheckedTrackColor = colors.surfaceElevated2,
+                        uncheckedBorderColor = colors.divider,
+                    ),
+                )
+            }
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = "${rule.patternKind} · → ${rule.reclassifyAs}" +
                     (rule.note?.let { " · $it" } ?: ""),
                 style = MaterialTheme.typography.labelSmall,
-                color = SpendWiseTheme.colors.onMuted,
-            )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Switch(
-                checked = rule.isEnabled,
-                onCheckedChange = { onToggle(rule, it) },
+                color = colors.onMuted,
             )
             if (onDelete != null) {
-                TextButton(onClick = onDelete) {
-                    Text(
-                        "Delete",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Delete",
+                    modifier = Modifier
+                        .clickable(onClick = onDelete)
+                        .padding(vertical = 4.dp),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Medium,
+                    ),
+                    color = colors.negative,
+                )
             }
         }
     }

@@ -381,12 +381,7 @@ private fun LoadingPlaceholder() {
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator()
-        }
+        com.spendwise.ui.LoadingSpinner()
     }
 }
 

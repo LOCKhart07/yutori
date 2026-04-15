@@ -161,13 +161,10 @@ fun CategoryDrillDownScreen(
             }
 
             if (transactions.isEmpty()) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    Text(
-                        "No transactions in this category this month.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = SpendWiseTheme.colors.onMuted,
-                    )
-                }
+                EmptyState(
+                    title = "No transactions",
+                    description = "Nothing in this category this month.",
+                )
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     itemsIndexed(
