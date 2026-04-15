@@ -33,6 +33,17 @@ Framing: the real problem isn't budgeting accuracy, it's *awareness at the momen
 - **Hard-stop / lock-screen when over budget** — when net spend crosses 100%, dashboard swaps to a full-screen red "STOP — over budget by ₹X" state instead of a soft banner. Dismissible for the session. Opt-in in settings; the whole point is that it's aggressive.
 - **Bucket simplification mode** — optional UI toggle to collapse all categories into three super-buckets (Daily / Lifestyle / Fixed) for users who don't want to see the fine-grained classifier output. Classifier keeps emitting today's categories underneath; this is a presentation-layer rollup in the dashboard + drilldowns. Mapping table from current `Classification` enum → {Daily, Lifestyle, Fixed}.
 
+### Pace concept — extensions beyond the hero
+
+The traffic-light hero (mocked in `mockups/v3-behavioral.html` §1) buckets by `actual_pct − elapsed_pct`. Same idea unlocks several follow-on places — these were discussed alongside the hero but not mocked, so they ship later:
+
+- **Daily-burn stat pill pace tint.** Today the pill shows raw `₹X/day`. Add `· target ₹Y` next to it and tint the value warn/over when burn ≥ 1.3× expected. Reuses the hero pace bucket. Tiny lift on top of the hero work.
+- **Sharper notification copy.** Both the post-spend impact notif and the cumulative threshold alerts currently say `Y% of budget`. Both should add `· +Zpp over pace` so the second line carries pace context, not just raw %.
+- **Per-category pacing on dashboard rows.** Each category row gets a small pace tag: `Groceries ₹6,200 · 80% of usual by now`. Needs a per-category historical baseline (median over past 3 months) — synergistic with budget-from-history.
+- **Category drill-down hero pace bucket.** Reuse the same rule scoped to one category.
+- **BudgetSetup pace anchor.** When changing the limit, show "at last month's pace you'd land around ₹X". Anchors to reality.
+- **Card drill-down hero pace bucket.** Same as category drill, scoped to a card. Free once the helper is reusable; less intuitive since users rarely budget per card.
+
 ## Features not yet built
 
 - **Dashboard ring/donut chart** — spec mentions; tinted bars shipped. Decide: keep bars or build donut.
@@ -83,6 +94,21 @@ Framing: the real problem isn't budgeting accuracy, it's *awareness at the momen
 
 - **Custom nav stack instead of Navigation-Compose** — ui-spec §2 calls for Navigation-Compose. We ship a hand-rolled `List<Screen>` stack in `MainActivity` because it was simpler and fully covers v1 needs. Swap in Navigation-Compose when we want deep-link URIs, type-safe args, animation primitives, or a back-stack inspector.
 - **Historical-import lives on the dashboard as a dialog, not as a Settings entry** — ui-spec puts it under Settings §4. The dashboard dialog was a stopgap; eventually move into the proper Settings entry alongside Alert thresholds / Rerun parser / etc.
+
+## External suggestions (unvetted — not decisions)
+
+External agent fed the capabilities digest (2026-04-16). Captured verbatim-in-spirit for consideration; none of this is adopted. Read critically — much of it overlaps with the Behavioral-awareness brief above.
+
+- **Core framing claim:** the app is a tracker, not a behavior-changing system. The moment-of-spending feedback loop is the highest-leverage gap, not more ingestion correctness. Product arc should be "recording money → interrupting bad decisions." Worth weighing against the current spec's more neutral "awareness without guilt" framing before adopting wholesale — aggressive-interruption framing may cut against the Yutori/Lagom/Sukoon direction.
+- **Proposed "true MVP" cut:** (1) real-time spend meter with color state on the hero, (2) micro-spend insight ("N small txns this month"), (3) mid-month overshoot prediction, (4) opt-in hard-stop over-budget UI. Items 1, 2, 4 already in Behavioral-awareness brief; **mid-month overshoot projection is the net-new idea** — e.g. "70% spent in 9 days → projected overshoot ₹Y." Cheap to derive from existing tx rows + days-elapsed; no schema change.
+- **"Real spend this month" unified number** — suggestion to de-emphasize per-account splits on the hero and lead with a single merged CC+UPI figure. Already how `DashboardUiState` computes net spend; the suggestion is presentation — don't let the card drill-down leak into the primary view.
+- **Goal-linked emotional framing made explicit** — "₹5k saved = 1 day closer" framing reinforces the existing Goal-linked savings item in the Behavioral-awareness brief. Note: agent assumes a house-down-payment goal as the canonical example; that's agent-side projection, not a user decision — don't hardcode.
+- **"Too many planned features, not one killer feature" critique** — agent flags Goals / smoothing / AI rules / PDF import as nice-to-haves diluting focus. Counter-consideration: PDF/CSV statement import is the only way to backfill pre-install history and is explicitly in spec §10.1; smoothing buckets directly serve the "spend without guilt" framing. Worth revisiting priority order, not dropping outright.
+- **Retention / habit-loop concern** — "if the user doesn't open daily, the app dies." Possibly true for consumer fintech at scale; less obviously true for a single-user side-loaded APK where the notification layer *is* the daily touch. Notifications doing the behavior-change work means the app itself doesn't need to be opened daily to succeed.
+
+Rejected framings worth naming so they don't sneak back in:
+- "Users don't care about classification correctness" — false for this user; double-counting destroys the budget number's trustworthiness, which destroys the whole premise. Correctness is load-bearing, not polish.
+- "Delete the deferred features" — most deferred items (statement import, reparse pipeline, per-tx notes, ignore-tx) address real gaps surfaced by the feasibility dataset, not speculative nice-to-haves. Evaluate per-item, not en masse.
 
 ## Distribution & updates
 
