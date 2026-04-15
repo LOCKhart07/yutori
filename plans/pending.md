@@ -42,6 +42,7 @@ Reconciled snapshot. Delete rows as they ship.
 - Rerun parser
 - Purge non-financial
 - Review unmatched
+- **Rebuild database** — destructive: wipe `transactions`, `transaction_sms_sources`, `sms_log`, `budget_alert_state` (keep `accounts`, `recipient_rules`, `budgets`) and re-run the historical-import worker so every SMS goes back through the current parser + classifier. Useful after parser/classifier changes or to recover from a bad state. Confirm twice; show a progress notification while it runs.
 
 ## Visually unverified (code exists, no eyes on)
 
