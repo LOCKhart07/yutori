@@ -1,47 +1,50 @@
 # SpendWise — pending work
 
-Snapshot after commit `4b7f530` (UI overhaul). Re-evaluate periodically; delete rows as they ship.
+Reconciled snapshot. Delete rows as they ship.
 
-## Real bugs (from on-device testing, 2026-04-15)
+## UX / layout gaps
 
-- **System back button kills the app.** MainActivity routes `Screen` via a single sealed state; no BackHandler is wired. Pressing back from any non-dashboard screen should pop the screen stack; currently Android finishes the activity.
-- **Forex stays pending on device even with internet.** `INTERNET` permission is in the manifest (no runtime prompt needed for normal perms), so the likely culprits are: worker not enqueued, NetworkType constraint not satisfied, or exchangerate-api call failing. Needs logcat from device.
-- **Transaction detail crash** — fixed in commit `4b7f530` on emulator. User may have tested on older APK; re-install + verify on physical phone.
+- **Over-budget hero overflows on large deficits.** Example: `₹−30,027` at the display font size — confirm exact layout break and either shrink font, use compact format (`30k`), or wrap. (Needs repro amount.)
+- **No entry point to edit an existing budget.** `BudgetSetup` is only reachable via the "Set budget" CTA, which vanishes once a budget exists. Add an edit affordance (tap the budget header, or a pencil icon).
+- **Claude / GitHub subscriptions land in Entertainment.** Add a `SUBSCRIPTIONS` (or `SOFTWARE`) category and update the merchant-key mapping for known SaaS vendors. Bonus: per-merchant user overrides.
+- **"KOTAK UPI" shows 2 similar sources** — user-flagged on device, needs a screenshot to diagnose. Probably two merchant-key variants (spacing, casing) that should normalize to one.
 
-## UX / UI feedback (on-device, 2026-04-15)
+## Branding / identity
 
-- **Over-budget hero reads busy with a big negative number.** Example: `-₹30,027` with red color + "Budget exceeded" banner. Drop the minus sign; let color + banner carry the semantics.
-- **No sort controls** on category drill-down or dashboard "Spend by category". Default is latest / amount-desc; user wants ability to switch (amount asc/desc, date asc/desc).
-- **Import has a 1-year cap; no "all" option.** `ImportDialog` caps at 12 months. Add "everything on this phone" preset.
+- **App name** — "SpendWise" is placeholder. Pick a real name (affects AndroidManifest label, string resources, splash, in-app copy).
+- **Launcher icon / logo** — currently the default Android icon. Need an adaptive icon (foreground + background layer) at the standard density buckets.
 
-## UI gaps (functional but unpolished)
+## Features not yet built
 
-- **AccountEditScreen, RecipientRulesScreen, BudgetSetupScreen, ImportDialog** — compile against theme tokens but haven't been rebuilt to match the Copilot aesthetic. Headlines, mono amounts, spacing, buttons still default Material.
-- **Loading / empty / error states** on drill-down screens still show default Material text, not styled.
-- **Dashboard state variants** — only normal (19%) and over-budget have been seen on device. Approaching (1b), early-month (1c), end-month-hot (1d), end-month-surplus (1e) are in code but visually unverified; need seeded data that triggers each.
-- **Transaction detail forex variant** (v2 mockup frame 6) — USD transaction with rate + source link. Built, not verified.
+- **Auto-detect accounts.** On first SMS from an unknown sender + last-4, create a suggested account draft and surface it on the Settings screen for confirmation. Removes manual account entry.
+- **Dashboard ring/donut chart** — spec mentions; tinted bars shipped. Decide: keep bars or build donut.
+- **Onboarding 4-step flow** (welcome, permissions, import prompt, budget prompt). Only permissions exists.
+- **CardDrillDown filter chips** — All / Spend / Refunds / Bills / Self-transfers (ui-spec §7).
+- **Tx-detail Edit / Mark as payback** (v1.1 per spec).
 
-## Spec gaps (screens linked but missing)
+## Spec-linked screens not yet built
 
-- **Alert thresholds** screen
-- **CSV export** screen
-- **Rerun parser** screen
-- **Purge non-financial** screen
-- **Review unmatched** screen
-- **CardDrillDown filter chips** (ui-spec §7) — All / Spend / Refunds / Bills / Self-transfers
-- **Onboarding 4-step flow** — spec is welcome, permissions, import prompt, budget prompt; only permissions exists
-- **Transaction detail Edit / Mark as payback** — v1.1 per spec
-- **Dashboard ring/donut chart** — spec mentions it; tinted bars shipped instead. Call to make: keep bars, or build the donut.
+- Alert thresholds
+- CSV export
+- Rerun parser
+- Purge non-financial
+- Review unmatched
+- `RecipientRulesScreen` — compiles against theme tokens but not retrofitted to Copilot aesthetic.
 
-## Distribution & updates
+## Visually unverified (code exists, no eyes on)
 
-Play Store is not an option. Plan:
-
-- **GitHub Actions** build + signed-APK release pipeline.
-- **In-app autoupdater**, similar to [TachiyomiSY's updater](https://github.com/jobobby04/tachiyomisy): periodic GitHub Releases check, download new APK, invoke `PackageInstaller` for side-load install. Requires `REQUEST_INSTALL_PACKAGES` permission.
+- Dashboard state variants 1b (approaching), 1c (early-month), 1d (end-month-hot), 1e (end-month-surplus) — need seeded data that triggers each.
+- Forex tx-detail variant (mockup frame 6).
+- `BudgetSetup` — unreachable until an edit entry point exists (see UX gaps).
 
 ## Tech debt
 
 - **Carry-over math** uses only current-month transactions (TODO in `DashboardViewModel`). Prior-month REFUNDs that alter surplus aren't reflected.
-- **`DashboardDerived.computeBanner`** has untested branches — no integration tests for the approaching / surplus / early-month cases.
-- **Compose render test coverage** is thin — only `TransactionListItem`. Dashboard / TransactionDetail state-change paths have no regression net.
+- **`DashboardDerived.computeBanner`** untested branches — approaching / surplus / early-month paths.
+- **Compose render tests** are thin — only `TransactionListItem`. Dashboard / TransactionDetail state-change paths have no regression net.
+- **Loading / empty / error states** on drill-down screens fall back to default Material text.
+
+## Distribution & updates
+
+- **GitHub Actions** — signed-APK build + release pipeline on tag push.
+- **In-app autoupdater**, Tachiyomi-style: periodic GitHub Releases check, download APK, invoke `PackageInstaller`. Requires `REQUEST_INSTALL_PACKAGES`.
