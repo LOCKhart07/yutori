@@ -46,11 +46,20 @@ interface TransactionDao {
         accountId: Long,
     ): Flow<List<TransactionEntity>>
 
+    /**
+     * Dashboard's per-category bucketing coalesces null category → OTHER
+     * (legacy rows from before the Categorizer always assigned a non-
+     * null bucket). Mirror that here so drill-down totals match the
+     * parent tile: when [category] is 'OTHER', include category IS NULL.
+     */
     @Query(
         """
         SELECT * FROM transactions
          WHERE month_key = :monthKey
-           AND category = :category
+           AND (
+             category = :category OR
+             (:category = 'OTHER' AND category IS NULL)
+           )
            AND budget_effect IN ('SPEND', 'REFUND')
          ORDER BY occurred_at_ms DESC
         """,
