@@ -93,6 +93,7 @@ The traffic-light hero (mocked in `mockups/v3-behavioral.html` §1) buckets by `
 ## Conscious deferrals (revisit when they earn their weight)
 
 - **Custom nav stack instead of Navigation-Compose** — ui-spec §2 calls for Navigation-Compose. We ship a hand-rolled `List<Screen>` stack in `MainActivity` because it was simpler and fully covers v1 needs. Swap in Navigation-Compose when we want deep-link URIs, type-safe args, animation primitives, or a back-stack inspector.
+- **Custom splash screen** — not building one. Android 12+ auto-generates a system splash from the launcher icon + window background via the `SplashScreen` API; once the adaptive icon lands it will look right for free. Revisit only if we ever need branded animation or have to mask a slow cold-start (neither applies — DB init is already async).
 - **Historical-import lives on the dashboard as a dialog, not as a Settings entry** — ui-spec puts it under Settings §4. The dashboard dialog was a stopgap; eventually move into the proper Settings entry alongside Alert thresholds / Rerun parser / etc.
 
 ## External suggestions (unvetted — not decisions)
