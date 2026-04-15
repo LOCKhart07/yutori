@@ -241,7 +241,7 @@ class ClassifierPipelineTest {
         outcome.amount shouldBe 10.00
         outcome.currency shouldBe "USD"
         outcome.accountId shouldBe axisCc.id
-        outcome.category shouldBe Category.ENTERTAINMENT   // "github" keyword
+        outcome.category shouldBe Category.SUBSCRIPTIONS   // "github" keyword
     }
 
     // =====================================================================

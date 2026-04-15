@@ -134,10 +134,32 @@ internal object Categorizer {
         "pvr",
         "inox",
         "bookmyshow",
+    )
+
+    private val SUBSCRIPTIONS_KEYWORDS = listOf(
         "claude",
+        "anthropic",
+        "openai",
+        "chatgpt",
         "github",
+        "cursor",
+        "vercel",
+        "cloudflare",
+        "notion",
+        "figma",
+        "linear",
+        "1password",
+        "dropbox",
+        "apple.com/bill",
+        "google one",
+        "google *one",
+        "microsoft 365",
+        "office 365",
+        "medium",
+        "substack",
         "real-debrid",
-        "f1",
+        "f1tv",
+        "f1 tv",
     )
 
     // Order matters: UNCATEGORIZED first (cross-cutting wins over generic
@@ -150,6 +172,7 @@ internal object Categorizer {
         Category.SHOPPING to SHOPPING_KEYWORDS,
         Category.BILLS_UTILITIES to BILLS_UTILITIES_KEYWORDS,
         Category.HEALTH to HEALTH_KEYWORDS,
+        Category.SUBSCRIPTIONS to SUBSCRIPTIONS_KEYWORDS,
         Category.ENTERTAINMENT to ENTERTAINMENT_KEYWORDS,
     )
 

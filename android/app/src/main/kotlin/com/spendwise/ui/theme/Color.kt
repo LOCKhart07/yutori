@@ -51,6 +51,7 @@ object SpendWiseColors {
     val DarkCatBills       = Color(0xFFB59A63)  // mustard-tan
     val DarkCatShopping    = Color(0xFFB88A92)  // dusty rose
     val DarkCatEnt         = Color(0xFF9B8FB5)  // muted violet
+    val DarkCatSubs        = Color(0xFF8FB5AE)  // desaturated aqua
     val DarkCatHealth      = Color(0xFF6FA6A1)  // desaturated teal
     // UPI Transfer / Cash / Uncategorized / Other stay neutral — they
     // read as "unsorted," not themselves a category.
@@ -62,5 +63,6 @@ object SpendWiseColors {
     val LightCatBills      = Color(0xFF8E7134)
     val LightCatShopping   = Color(0xFF8E5E67)
     val LightCatEnt        = Color(0xFF716389)
+    val LightCatSubs       = Color(0xFF548079)
     val LightCatHealth     = Color(0xFF3F7874)
 }
