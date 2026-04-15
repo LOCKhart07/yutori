@@ -2,6 +2,7 @@ package com.spendwise.classifier.internal
 
 import com.spendwise.classifier.Account
 import com.spendwise.classifier.AccountKind
+import com.spendwise.classifier.AccountStatus
 import com.spendwise.parser.Classification
 
 /**
@@ -27,6 +28,10 @@ internal object AccountResolver {
     ): Account? {
         if (last4 == null) return null
 
+        // SUGGESTED and DISMISSED rows are machine-generated proposals —
+        // they exist in the DB but must not steer transaction routing.
+        val confirmed = accounts.filter { it.status == AccountStatus.CONFIRMED }
+
         // Normalize both sides: strip non-digits. SMS bodies use varied
         // prefixes ("X0000", "XX1111", "x3333") and the parser may capture
         // with or without them depending on the rule's regex. Accounts
@@ -34,7 +39,7 @@ internal object AccountResolver {
         // digits-only makes the comparison stable across surface forms.
         val inputDigits = last4.filter(Char::isDigit)
         if (inputDigits.isEmpty()) return null
-        val matches = accounts.filter { it.last4.filter(Char::isDigit) == inputDigits }
+        val matches = confirmed.filter { it.last4.filter(Char::isDigit) == inputDigits }
         if (matches.isEmpty()) return null
         if (matches.size == 1) return matches.single()
 

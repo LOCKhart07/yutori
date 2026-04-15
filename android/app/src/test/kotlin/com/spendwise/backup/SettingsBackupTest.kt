@@ -231,6 +231,21 @@ class SettingsBackupTest {
             MutableStateFlow(all.toList()).asStateFlow()
         override suspend fun getAll(): List<AccountEntity> = all.toList()
         override suspend fun findByLast4(last4: String) = all.filter { it.last4 == last4 }
+        override suspend fun findByIssuerAndLast4(issuer: String, last4: String) =
+            all.firstOrNull {
+                it.issuer.equals(issuer, ignoreCase = true) &&
+                    it.last4.equals(last4, ignoreCase = true)
+            }
+        override fun observeCountByStatus(status: String): Flow<Int> =
+            MutableStateFlow(all.count { it.status == status }).asStateFlow()
+        override suspend fun bumpSeenCount(id: Long) {
+            all.replaceAll {
+                if (it.id == id) it.copy(seenCount = it.seenCount + 1) else it
+            }
+        }
+        override suspend fun setStatus(id: Long, status: String) {
+            all.replaceAll { if (it.id == id) it.copy(status = status) else it }
+        }
     }
 
     class FakeRecipientRuleDao : RecipientRuleDao {

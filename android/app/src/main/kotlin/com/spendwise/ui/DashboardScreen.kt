@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -63,6 +64,7 @@ fun DashboardScreen(
     onSettings: () -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
     onCardClick: (last4: String) -> Unit = {},
+    hasSettingsBadge: Boolean = false,
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -72,12 +74,13 @@ fun DashboardScreen(
             is DashboardUiState.Loading -> LoadingView()
             is DashboardUiState.NeedsPermission -> NeedsPermissionView()
             is DashboardUiState.Empty ->
-                EmptyView(state, onSetBudget, onImport, importStatus, onSettings)
+                EmptyView(state, onSetBudget, onImport, importStatus, onSettings, hasSettingsBadge)
             is DashboardUiState.Ready ->
                 ReadyView(
                     state, importStatus,
                     onSetBudget, onImport, onSettings,
                     onCategoryClick, onCardClick,
+                    hasSettingsBadge,
                 )
         }
     }
@@ -114,12 +117,14 @@ private fun EmptyView(
     onImport: () -> Unit,
     importStatus: ImportStatus,
     onSettings: () -> Unit,
+    hasSettingsBadge: Boolean = false,
 ) {
     ScrollingShell {
         TopBar(
             monthLabel = prettyMonthKey(state.monthKey, dayLabel = null),
             onImport = onImport,
             onSettings = onSettings,
+            hasSettingsBadge = hasSettingsBadge,
         )
         Spacer(Modifier.height(24.dp))
         HeroAmount(primaryText = "₹0", subText = if (state.hasBudget) "No spend yet this month" else "Spent this month")
@@ -153,6 +158,7 @@ private fun ReadyView(
     onSettings: () -> Unit,
     onCategoryClick: (String) -> Unit,
     onCardClick: (String) -> Unit,
+    hasSettingsBadge: Boolean = false,
 ) {
     val inr = remember { NumberFormat.getCurrencyInstance(Locale("en", "IN")) }
     val snap = state.snapshot
@@ -170,6 +176,7 @@ private fun ReadyView(
             ),
             onImport = onImport,
             onSettings = onSettings,
+            hasSettingsBadge = hasSettingsBadge,
         )
 
         Spacer(Modifier.height(24.dp))
@@ -302,7 +309,12 @@ private fun ScrollingShell(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun TopBar(monthLabel: String, onImport: () -> Unit, onSettings: () -> Unit) {
+private fun TopBar(
+    monthLabel: String,
+    onImport: () -> Unit,
+    onSettings: () -> Unit,
+    hasSettingsBadge: Boolean = false,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -323,12 +335,25 @@ private fun TopBar(monthLabel: String, onImport: () -> Unit, onSettings: () -> U
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
             )
-            Text(
-                text = "⚙",
-                modifier = Modifier.clickable(onClick = onSettings).padding(vertical = 8.dp),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-            )
+            androidx.compose.foundation.layout.Box(
+                contentAlignment = Alignment.TopEnd,
+            ) {
+                Text(
+                    text = "⚙",
+                    modifier = Modifier.clickable(onClick = onSettings).padding(vertical = 8.dp),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                )
+                if (hasSettingsBadge) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .padding(top = 4.dp, end = 2.dp)
+                            .size(8.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                    )
+                }
+            }
         }
     }
 }

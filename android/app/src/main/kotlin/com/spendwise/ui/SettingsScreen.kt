@@ -37,6 +37,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onAccounts: () -> Unit,
     onRecipientRules: () -> Unit,
+    accountSuggestionCount: Int = 0,
 ) {
     val backup = rememberBackupActions()
     val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
@@ -64,9 +65,14 @@ fun SettingsScreen(
             SettingsSection(title = "Data & accounts") {
                 SettingsItem(
                     title = "My accounts",
-                    subtitle = "Banks and cards — register UPI handles " +
-                        "so self-transfers don't count as spend.",
+                    subtitle = if (accountSuggestionCount > 0) {
+                        "$accountSuggestionCount new suggestion(s) from recent SMSes."
+                    } else {
+                        "Banks and cards — register UPI handles so self-" +
+                            "transfers don't count as spend."
+                    },
                     onClick = onAccounts,
+                    badge = accountSuggestionCount.takeIf { it > 0 },
                 )
                 SettingsItem(
                     title = "Recipient rules",
@@ -117,6 +123,7 @@ private fun SettingsItem(
     title: String,
     subtitle: String,
     onClick: () -> Unit,
+    badge: Int? = null,
 ) {
     Row(
         modifier = Modifier
@@ -126,10 +133,28 @@ private fun SettingsItem(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                )
+                if (badge != null) {
+                    Spacer(Modifier.padding(horizontal = 4.dp))
+                    androidx.compose.material3.Surface(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                    ) {
+                        Text(
+                            text = badge.toString(),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    }
+                }
+            }
             Spacer(Modifier.height(2.dp))
             Text(
                 text = subtitle,

@@ -2,6 +2,7 @@ package com.spendwise.database.mappers
 
 import com.spendwise.classifier.Account
 import com.spendwise.classifier.AccountKind
+import com.spendwise.classifier.AccountStatus
 import com.spendwise.database.entities.AccountEntity
 
 object AccountMapper {
@@ -13,6 +14,8 @@ object AccountMapper {
         last4 = entity.last4,
         displayName = entity.displayName,
         isDefaultSpend = entity.isDefaultSpend,
+        status = runCatching { AccountStatus.valueOf(entity.status) }
+            .getOrDefault(AccountStatus.CONFIRMED),
     )
 
     fun toEntity(account: Account, createdAtMs: Long): AccountEntity = AccountEntity(
@@ -23,5 +26,6 @@ object AccountMapper {
         displayName = account.displayName,
         isDefaultSpend = account.isDefaultSpend,
         createdAtMs = createdAtMs,
+        status = account.status.name,
     )
 }
