@@ -11,6 +11,8 @@ import com.spendwise.database.dao.TransactionDao
 import com.spendwise.database.entities.BudgetEntity
 import com.spendwise.database.entities.TransactionEntity
 import com.spendwise.transactions.MonthKeyComputer
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -41,6 +44,13 @@ class DashboardViewModel(
     private val budgetDao: BudgetDao,
     private val hasPermissionProvider: () -> Boolean,
     nowMs: () -> Long = { System.currentTimeMillis() },
+    /**
+     * Where the snapshot math and entity→domain mapping runs. Default
+     * is [Dispatchers.Default] so the work stays off the main thread
+     * (#98); tests replace this with the test scheduler so `runTest`
+     * can virtually-advance past dispatched work.
+     */
+    private val computationDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     private val nowMsProvider: () -> Long = nowMs
@@ -105,9 +115,14 @@ class DashboardViewModel(
         val budgetFlow = budgetDao.observeByMonth(monthKey)
         val pendingFlow = transactionDao.observePendingForex()
 
+        // `flowOn(computationDispatcher)` moves the combine transform —
+        // toUiState's Room fetches, entity→domain mapping, and the
+        // snapshot math — off the main thread. That's the single
+        // biggest scroll-smoothness win for #98 at 7k+ SMS scale;
+        // main stays free to drive the pager's fling animation.
         return combine(txFlow, budgetFlow, pendingFlow) { txs, budget, pendingForex ->
             toUiState(monthKey, txs, budget, pendingForex.size)
-        }
+        }.flowOn(computationDispatcher)
     }
 
     private suspend fun toUiState(

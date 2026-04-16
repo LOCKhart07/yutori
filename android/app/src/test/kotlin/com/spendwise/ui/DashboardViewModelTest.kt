@@ -44,6 +44,7 @@ class DashboardViewModelTest {
             budgetDao = FakeBudgetDao(),
             hasPermissionProvider = { false },
             nowMs = { epoch("2026-04-15") },
+        computationDispatcher = dispatcher,
         )
         vm.uiState.first { it !is DashboardUiState.Loading } shouldBe
             DashboardUiState.NeedsPermission
@@ -56,6 +57,7 @@ class DashboardViewModelTest {
             budgetDao = FakeBudgetDao(),
             hasPermissionProvider = { true },
             nowMs = { epoch("2026-04-15") },
+        computationDispatcher = dispatcher,
         )
         val state = vm.uiState.first { it !is DashboardUiState.Loading }
         state.shouldBeInstanceOf<DashboardUiState.Empty>()
@@ -76,6 +78,7 @@ class DashboardViewModelTest {
                 ),
                 hasPermissionProvider = { true },
                 nowMs = { epoch("2026-04-15") },
+            computationDispatcher = dispatcher,
             )
             val state = vm.uiState.first { it !is DashboardUiState.Loading }
             state.shouldBeInstanceOf<DashboardUiState.Empty>()
@@ -100,6 +103,7 @@ class DashboardViewModelTest {
                 ),
                 hasPermissionProvider = { true },
                 nowMs = { epoch("2026-04-15") },
+            computationDispatcher = dispatcher,
             )
 
             val state = vm.uiState.first { it is DashboardUiState.Ready }
@@ -131,6 +135,7 @@ class DashboardViewModelTest {
             ),
             hasPermissionProvider = { true },
             nowMs = { epoch("2026-04-15") },
+        computationDispatcher = dispatcher,
         )
         val state = vm.uiState.first { it is DashboardUiState.Ready }
                 as DashboardUiState.Ready
@@ -166,6 +171,7 @@ class DashboardViewModelTest {
             ),
             hasPermissionProvider = { true },
             nowMs = { epoch("2026-04-15") },
+        computationDispatcher = dispatcher,
         )
         val state = vm.uiState.first { it is DashboardUiState.Ready }
             as DashboardUiState.Ready
@@ -207,6 +213,7 @@ class DashboardViewModelTest {
                 ),
                 hasPermissionProvider = { true },
                 nowMs = { epoch("2026-04-15") },
+            computationDispatcher = dispatcher,
             )
             val state = vm.uiState.first { it is DashboardUiState.Ready }
                 as DashboardUiState.Ready
@@ -249,6 +256,7 @@ class DashboardViewModelTest {
                 ),
                 hasPermissionProvider = { true },
                 nowMs = { epoch("2026-04-15") },
+            computationDispatcher = dispatcher,
             )
             val state = vm.uiState.first { it is DashboardUiState.Ready }
                 as DashboardUiState.Ready
@@ -280,6 +288,7 @@ class DashboardViewModelTest {
             ),
             hasPermissionProvider = { true },
             nowMs = { epoch("2026-04-15") },
+        computationDispatcher = dispatcher,
         )
         val march = vm.observeMonth("2026-03")
             .first { it is DashboardUiState.Ready } as DashboardUiState.Ready
@@ -296,6 +305,7 @@ class DashboardViewModelTest {
             budgetDao = FakeBudgetDao(),
             hasPermissionProvider = { false },
             nowMs = { epoch("2026-04-15") },
+        computationDispatcher = dispatcher,
         )
         vm.observeMonth("2026-03").first() shouldBe DashboardUiState.NeedsPermission
     }
@@ -307,6 +317,7 @@ class DashboardViewModelTest {
             budgetDao = FakeBudgetDao(),
             hasPermissionProvider = { true },
             nowMs = { epoch("2026-04-15") },
+        computationDispatcher = dispatcher,
         )
         vm.viewedMonthKey.value shouldBe "2026-04"
         vm.setMonth("2025-11")
@@ -320,6 +331,7 @@ class DashboardViewModelTest {
             budgetDao = FakeBudgetDao(),
             hasPermissionProvider = { true },
             nowMs = { epoch("2026-04-15") },
+        computationDispatcher = dispatcher,
         )
         // Loading-initial is current; once the Flow emits null (empty
         // table) the fallback becomes currentMonthKey too.
@@ -338,6 +350,7 @@ class DashboardViewModelTest {
             budgetDao = FakeBudgetDao(),
             hasPermissionProvider = { true },
             nowMs = { epoch("2026-04-15") },
+        computationDispatcher = dispatcher,
         )
         vm.earliestMonthKey.first { it != "2026-04" } shouldBe "2025-09"
     }
@@ -361,6 +374,7 @@ class DashboardViewModelTest {
             ),
             hasPermissionProvider = { true },
             nowMs = { epoch("2026-04-15") },
+        computationDispatcher = dispatcher,
         )
         val state = vm.uiState.first { it is DashboardUiState.Ready }
                 as DashboardUiState.Ready
