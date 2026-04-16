@@ -34,7 +34,7 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * Accounts list. Confirmed rows show flat; SUGGESTED rows land in a
- * "Suggested" section above with Add / Ignore actions (auto-detect).
+ * "Suggested" section below with Add / Ignore actions (auto-detect).
  */
 @Composable
 fun AccountsScreen(
@@ -76,24 +76,6 @@ fun AccountsScreen(
                 AddAccountLink(onAdd)
             } else {
                 LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    if (suggested.isNotEmpty()) {
-                        item {
-                            SectionCaps(
-                                "SUGGESTED (${suggested.size})",
-                                subtitle = "Detected from your SMS inbox. Add to " +
-                                    "route future transactions automatically.",
-                            )
-                        }
-                        items(items = suggested, key = { it.id }) { acc ->
-                            SuggestionRow(
-                                entity = acc,
-                                onAdd = { onConfirmSuggestion(acc.id) },
-                                onIgnore = { onIgnoreSuggestion(acc.id) },
-                            )
-                        }
-                        item { Spacer(Modifier.height(16.dp)) }
-                    }
-
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -112,6 +94,24 @@ fun AccountsScreen(
                     items(items = confirmed, key = { it.id }) { acc ->
                         AccountRow(acc, onClick = { onEdit(acc.id) })
                         HorizontalDivider(color = SpendWiseTheme.colors.divider)
+                    }
+
+                    if (suggested.isNotEmpty()) {
+                        item { Spacer(Modifier.height(16.dp)) }
+                        item {
+                            SectionCaps(
+                                "SUGGESTED (${suggested.size})",
+                                subtitle = "Detected from your SMS inbox. Add to " +
+                                    "route future transactions automatically.",
+                            )
+                        }
+                        items(items = suggested, key = { it.id }) { acc ->
+                            SuggestionRow(
+                                entity = acc,
+                                onAdd = { onConfirmSuggestion(acc.id) },
+                                onIgnore = { onIgnoreSuggestion(acc.id) },
+                            )
+                        }
                     }
                 }
             }
