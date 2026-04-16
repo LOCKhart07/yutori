@@ -44,13 +44,16 @@ class CardDrillResolutionTest {
         }
 
     @Test
-    fun `last4 present and registered resolves ByAccount via findByLast4`() = runTest {
+    fun `last4 present and registered resolves ByLast4 enriched with issuer`() = runTest {
+        // Even when the account is registered, we stay on a last4-filter
+        // query — older txs parsed before registration still have
+        // account_id=null, and an account-id query would miss them.
+        // The registered account is used only to enrich the header.
         val dao = FakeAccountDao(
             listOf(acc(id = 11L, issuer = "Axis", last4 = "XX1111")),
         )
         val res = resolveCardDrill(accountId = null, last4 = "XX1111", accountDao = dao)
-        res.shouldBeInstanceOf<CardDrillResolution.ByAccount>()
-        res.accountId shouldBe 11L
+        res.shouldBeInstanceOf<CardDrillResolution.ByLast4>()
         res.last4 shouldBe "XX1111"
         res.issuer shouldBe "Axis"
     }

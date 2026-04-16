@@ -41,6 +41,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #30 — Reparse pipeline
 - #31 — "Offer" reclassify confirm dialog after saving account UPI handle
 - #32 — Review unmatched screen
+- #75 — Backfill account_id on existing txs when a new account is registered
 
 ## Tier 3 — structurally important, bigger lifts
 

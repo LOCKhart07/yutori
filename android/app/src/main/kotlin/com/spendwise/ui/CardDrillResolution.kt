@@ -38,11 +38,13 @@ sealed interface CardDrillResolution {
  * Resolve a [CardDrillResolution] from the nav args.
  *
  * Rules:
- *   1. If [accountId] is non-null, use it directly and enrich with the
- *      account's stored last-4 + issuer for the header.
- *   2. Else if [last4] is non-null, look up an account by last-4. If
- *      one is registered, use its id (account-scoped query). Else
- *      fall back to a month-filter-by-last4.
+ *   1. If [accountId] is non-null, query by account id.
+ *   2. Else if [last4] is non-null, query by last-4 — enriched with
+ *      issuer when a matching account happens to be registered, but
+ *      we do NOT "upgrade" to an account-id query. Old txs parsed
+ *      before the account was registered still have account_id=null
+ *      even though the account now exists, so account-id filtering
+ *      would miss them.
  *   3. Both null → [CardDrillResolution.Empty].
  */
 suspend fun resolveCardDrill(
@@ -60,18 +62,10 @@ suspend fun resolveCardDrill(
     }
     if (last4 != null) {
         val match = accountDao.findByLast4(last4).firstOrNull()
-        return if (match != null) {
-            CardDrillResolution.ByAccount(
-                accountId = match.id,
-                last4 = match.last4 ?: last4,
-                issuer = match.issuer,
-            )
-        } else {
-            CardDrillResolution.ByLast4(
-                last4 = last4,
-                issuer = null,
-            )
-        }
+        return CardDrillResolution.ByLast4(
+            last4 = last4,
+            issuer = match?.issuer,
+        )
     }
     return CardDrillResolution.Empty
 }
