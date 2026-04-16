@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v5: swipe between months on dashboard (#21)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --accent:        #F5B547;
+    --pos:           #6FB07E;
+    --info:          #7BA9D1;
+    --warn:          #E0A260;
+    --neg:           #E06C61;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 80px;
+    min-height: 100vh;
+  }
+
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 56px 0 18px; font-size: 17px; color: #C9CACD; }
+  h3 { font-weight: 600; margin: 40px 0 14px; font-size: 14px; color: #C9CACD; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 32px; font-size: 13px; line-height: 1.6; }
+  .blurb code, .blurb kbd {
+    background: #17171A;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  .row-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 28px;
+    max-width: 1400px;
+  }
+
+  /* ─── Phone frame ─── */
+  .frame {
+    width: 280px;
+    border-radius: 28px;
+    background: var(--surface);
+    color: var(--on);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 24px 48px -16px rgba(0,0,0,0.6);
+    padding-bottom: 18px;
+  }
+  .frame .label {
+    position: absolute;
+    top: -22px;
+    left: 4px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8A8E96;
+    font-weight: 500;
+  }
+  .statusbar {
+    height: 26px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 18px 4px;
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 18px 0;
+  }
+  .topbar .month {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--on-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .topbar .month .chev {
+    font-size: 11px;
+    color: var(--on-muted);
+    cursor: default;
+    padding: 0 2px;
+  }
+  .topbar .month .chev.dim { color: var(--on-faint); opacity: 0.5; }
+  .topbar .actions { display: inline-flex; gap: 12px; align-items: center; font-size: 11px; opacity: 0.85; }
+
+  /* Pager container — gives us the peek + clip context */
+  .pager {
+    position: relative;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  /* Each month page: full-width within the pager viewport */
+  .page {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Peek edge — 12dp (≈ scaled 10px in mockup) strip of neighbor month */
+  .peek-left, .peek-right {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    background: var(--surface-el2);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .peek-left { left: 0; border-right: 1px solid var(--divider); }
+  .peek-right { right: 0; border-left: 1px solid var(--divider); }
+  .peek-label {
+    position: absolute;
+    top: 12px;
+    font-size: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--on-faint);
+    transform: rotate(-90deg);
+    transform-origin: center;
+    white-space: nowrap;
+  }
+  .peek-label.left { left: -8px; }
+  .peek-label.right { right: -8px; }
+
+  /* Hero */
+  .hero {
+    margin: 16px 16px 0;
+    padding: 18px 0 0;
+  }
+  .hero .amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+  .hero .sub {
+    font-size: 11px;
+    color: var(--on-muted);
+    margin-top: 6px;
+  }
+  .hero .ring {
+    height: 4px;
+    border-radius: 3px;
+    background: var(--surface-el2);
+    margin-top: 14px;
+    overflow: hidden;
+    position: relative;
+  }
+  .hero .ring > i {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent);
+  }
+
+  /* Stat strip */
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 14px 16px 0;
+  }
+  .strip .pill {
+    background: var(--surface-el);
+    border-radius: 10px;
+    padding: 10px;
+  }
+  .strip .pill .k {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--on-faint);
+  }
+  .strip .pill .v {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  /* Category list */
+  .cats { padding: 18px 16px 0; }
+  .cats .h {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--on-faint);
+    margin-bottom: 8px;
+  }
+  .cats .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+    border-top: 1px solid var(--divider);
+  }
+  .cats .row:first-of-type { border-top: 0; }
+  .cats .row .mono { font-family: 'JetBrains Mono', monospace; opacity: 0.85; }
+  .cats .row .name { display: inline-flex; align-items: center; gap: 8px; }
+  .cats .row .name::before {
+    content: '';
+    width: 3px; height: 16px;
+    background: var(--accent);
+    border-radius: 1px;
+    opacity: 0.7;
+  }
+
+  /* Empty / future-month CTA */
+  .empty-cta {
+    margin: 36px 16px 0;
+    padding: 28px 16px;
+    background: var(--surface-el);
+    border: 1px dashed var(--divider);
+    border-radius: 14px;
+    text-align: center;
+  }
+  .empty-cta .big {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--on);
+  }
+  .empty-cta .muted {
+    font-size: 11px;
+    color: var(--on-muted);
+    margin-bottom: 14px;
+    line-height: 1.4;
+  }
+  .empty-cta .btn {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* Mid-drag diorama — two partial pages side by side inside the pager */
+  .drag-frame .pager { height: 420px; }
+  .drag-pages {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 0;
+    display: flex;
+    /* Shift: current month pushed 40% right, prev month takes left half */
+    transform: translateX(-55%);
+  }
+  .drag-pages .page {
+    width: 280px;
+    flex: 0 0 280px;
+    border-right: 1px solid var(--divider);
+  }
+  .drag-pages .page:last-child { border-right: 0; }
+  .drag-shadow {
+    position: absolute;
+    top: 0; bottom: 0;
+    right: 0;
+    width: 40px;
+    background: linear-gradient(to left, rgba(0,0,0,0.5), rgba(0,0,0,0));
+    pointer-events: none;
+  }
+
+  /* Annotation caret */
+  .note {
+    font-size: 11px;
+    color: var(--on-muted);
+    margin-top: 8px;
+    max-width: 280px;
+    line-height: 1.45;
+  }
+  .note strong { color: var(--on); font-weight: 600; }
+
+  .spec {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 16px 0 8px;
+    max-width: 820px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #C9CACD;
+  }
+  .spec ul { margin: 6px 0 0; padding-left: 18px; }
+  .spec li { margin-bottom: 4px; }
+  .spec li strong { color: var(--on); }
+
+</style>
+</head>
+<body>
+
+<h1>Yutori — v5 mockup: swipe between months on dashboard (#21)</h1>
+<p class="blurb">
+Goal: replace the feeling of "tap, wait, tap" with a horizontal swipe on the dashboard.
+Chevrons stay (edge discoverability, accessibility), but the gesture is the primary mode.
+Each month is a full dashboard page — strip, categories, banners, everything.
+</p>
+
+<div class="spec">
+  <strong>Decisions locked:</strong>
+  <ul>
+    <li><strong>Impl:</strong> <code>HorizontalPager</code> (Compose foundation). Each month = one page composable.</li>
+    <li><strong>Swipe region:</strong> whole dashboard scroll area. Vertical scroll inside the page must yield cleanly to horizontal pager drag at the horizontal-dominant gesture threshold.</li>
+    <li><strong>Range:</strong> bounded on the past edge at the earliest <code>sms_log</code> month, <strong>unbounded forward</strong> (you can page into future months to preset a budget before the month begins).</li>
+    <li><strong>Chevrons:</strong> kept in the topbar. Past-edge chevron dims when at earliest month. Forward chevron is never disabled.</li>
+    <li><strong>Peek:</strong> <strong>12dp</strong> of the neighbor month visible at each edge when at rest, so there's a visual hint the surface is horizontally pageable. Achieved via <code>contentPadding</code> on the Pager.</li>
+    <li><strong>State:</strong> each page hosts its own <code>MonthSnapshot</code>; pager window keeps ±1 page composed for fling-smoothness. ViewModel keys snapshots by <code>YYYY-MM</code>.</li>
+  </ul>
+</div>
+
+<h2>① At-rest states — peek hints neighbor months exist</h2>
+<p class="blurb">
+At rest, a 12dp sliver of the previous month's surface colour is visible on the left edge
+(and, for any non-earliest month, the next month on the right). The peek is non-interactive — just a visual affordance.
+The topbar chevrons remain for explicit taps and accessibility.
+</p>
+
+<div class="row-wrap">
+
+  <!-- Current month (April 2026), has past + future peeks -->
+  <div class="frame">
+    <span class="label">A · current month (April 2026)</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="topbar">
+      <span class="month"><span class="chev">‹</span> April 2026 <span class="chev">›</span></span>
+      <span class="actions"><span>Import</span><span>⚙</span></span>
+    </div>
+    <div class="pager">
+      <div class="peek-left"><span class="peek-label left">MAR</span></div>
+      <div class="peek-right"><span class="peek-label right">MAY</span></div>
+      <div class="page" style="padding: 0 10px;">
+        <div class="hero">
+          <div class="amount">₹14,400</div>
+          <div class="sub">of ₹45,000 · 32% used</div>
+          <div class="ring"><i style="width:32%"></i></div>
+        </div>
+        <div class="strip">
+          <div class="pill"><div class="k">CARRY-OVER</div><div class="v">₹0</div></div>
+          <div class="pill"><div class="k">DAYS LEFT</div><div class="v">15</div></div>
+          <div class="pill"><div class="k">DAILY BURN</div><div class="v">₹960</div></div>
+        </div>
+        <div class="cats">
+          <div class="h">Spend by category</div>
+          <div class="row"><span class="name">UPI Transfer</span><span class="mono">₹5,444</span></div>
+          <div class="row"><span class="name">Groceries</span><span class="mono">₹2,500</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Earliest sms_log month — no left peek, left chevron dim -->
+  <div class="frame">
+    <span class="label">B · earliest month — past edge</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="topbar">
+      <span class="month"><span class="chev dim">‹</span> Jan 2025 <span class="chev">›</span></span>
+      <span class="actions"><span>Import</span><span>⚙</span></span>
+    </div>
+    <div class="pager">
+      <!-- no left peek: page starts at pager edge -->
+      <div class="peek-right"><span class="peek-label right">FEB</span></div>
+      <div class="page" style="padding: 0 10px 0 0;">
+        <div class="hero">
+          <div class="amount">₹38,200</div>
+          <div class="sub">of ₹40,000 · 96% used · end-of-month</div>
+          <div class="ring"><i style="width:96%; background: var(--warn);"></i></div>
+        </div>
+        <div class="strip">
+          <div class="pill"><div class="k">CARRY-OVER</div><div class="v">—</div></div>
+          <div class="pill"><div class="k">DAYS LEFT</div><div class="v">0</div></div>
+          <div class="pill"><div class="k">DAILY BURN</div><div class="v">₹1,232</div></div>
+        </div>
+        <div class="cats">
+          <div class="h">Spend by category</div>
+          <div class="row"><span class="name">UPI Transfer</span><span class="mono">₹18,444</span></div>
+          <div class="row"><span class="name">Groceries</span><span class="mono">₹6,800</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin: 10px 16px 0;">
+      <strong>Past edge:</strong> left chevron dimmed, no left peek rendered. Pager's
+      left boundary snaps here — overscroll drag rubber-bands and settles back.
+    </p>
+  </div>
+
+  <!-- Forward future month (May 2026), no budget set yet -->
+  <div class="frame">
+    <span class="label">C · future month (May 2026) — no budget yet</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="topbar">
+      <span class="month"><span class="chev">‹</span> May 2026 <span class="chev">›</span></span>
+      <span class="actions"><span>Import</span><span>⚙</span></span>
+    </div>
+    <div class="pager">
+      <div class="peek-left"><span class="peek-label left">APR</span></div>
+      <div class="peek-right"><span class="peek-label right">JUN</span></div>
+      <div class="page" style="padding: 0 10px;">
+        <div class="empty-cta">
+          <div class="big">No budget set for May</div>
+          <div class="muted">
+            Preset next month's budget ahead of time. Carry-over from April
+            will apply automatically once May begins.
+          </div>
+          <div class="btn">Set May budget</div>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin: 10px 16px 0;">
+      <strong>Forward unbounded:</strong> any future month is reachable.
+      No transactions exist yet — page renders the existing <code>Empty</code>
+      dashboard state with a forward-looking CTA copy variant.
+    </p>
+  </div>
+
+</div>
+
+<h2>② Mid-drag state — user is swiping right, March sliding into view</h2>
+<p class="blurb">
+Drag offset is ≈55% of page width. The previous month (March) occupies the left 55%; the current month (April)
+has translated to the right and is being pushed out. Shadow gradient softens the trailing edge.
+Release threshold: 50% of page width or a fling velocity above the configured minimum → snap to March.
+Otherwise settle back to April.
+</p>
+
+<div class="row-wrap">
+
+  <div class="frame drag-frame">
+    <span class="label">D · mid-drag — April → March (~55% drag)</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="topbar">
+      <span class="month"><span class="chev">‹</span> April 2026 <span class="chev">›</span></span>
+      <span class="actions"><span>Import</span><span>⚙</span></span>
+    </div>
+    <div class="pager">
+      <div class="drag-pages">
+        <!-- March page (partial, left portion visible) -->
+        <div class="page">
+          <div class="hero">
+            <div class="amount">₹41,800</div>
+            <div class="sub">of ₹45,000 · 93% used</div>
+            <div class="ring"><i style="width:93%; background: var(--warn);"></i></div>
+          </div>
+          <div class="strip">
+            <div class="pill"><div class="k">CARRY-OVER</div><div class="v">₹0</div></div>
+            <div class="pill"><div class="k">DAYS LEFT</div><div class="v">0</div></div>
+            <div class="pill"><div class="k">DAILY BURN</div><div class="v">₹1,348</div></div>
+          </div>
+          <div class="cats">
+            <div class="h">Spend by category</div>
+            <div class="row"><span class="name">UPI Transfer</span><span class="mono">₹19,600</span></div>
+          </div>
+        </div>
+        <!-- April page (partial, right portion visible, being pushed out) -->
+        <div class="page">
+          <div class="hero">
+            <div class="amount">₹14,400</div>
+            <div class="sub">of ₹45,000 · 32% used</div>
+            <div class="ring"><i style="width:32%"></i></div>
+          </div>
+          <div class="strip">
+            <div class="pill"><div class="k">CARRY-OVER</div><div class="v">₹0</div></div>
+            <div class="pill"><div class="k">DAYS LEFT</div><div class="v">15</div></div>
+            <div class="pill"><div class="k">DAILY BURN</div><div class="v">₹960</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="drag-shadow"></div>
+    </div>
+    <p class="note" style="margin: 10px 16px 0;">
+      <strong>Topbar month label:</strong> stays "April" during drag and flips to "March" only on settle.
+      Avoids flicker if the user releases below the snap threshold.
+      <em>Open Q:</em> or cross-fade the month label proportionally to drag offset?
+    </p>
+  </div>
+
+</div>
+
+<h2>③ Gesture conflict — vertical scroll vs horizontal page</h2>
+<p class="blurb">
+The dashboard scrolls vertically (long category list, banners below). Pager must not hijack vertical drags.
+Standard resolution: <code>HorizontalPager</code> only commits to a horizontal gesture once the pointer movement
+has a horizontal-dominant slope (|dx| &gt; |dy|) <em>and</em> has exceeded a small slop (~6dp).
+Before that, vertical scroll takes the gesture. Once committed, pager keeps the gesture until release.
+</p>
+
+<h3>Edge behaviours to verify at build time</h3>
+<ul class="blurb">
+  <li>Swiping past earliest month rubber-bands and snaps back (no blank page beyond edge).</li>
+  <li>Forward-swiping into a month with no transactions renders the <code>Empty</code> state (CTA variant "Set May budget" / "Set budget for July").</li>
+  <li>Chevron tap still animates as a pager <code>scrollToPage(index)</code>, not an instant jump — so chevron and swipe produce the same visual motion.</li>
+  <li>Dashboard pull-to-refresh (if/when added) shares the vertical axis only; no conflict with pager.</li>
+  <li>Month change emits the existing <code>onMonthPrev</code> / <code>onMonthNext</code> callbacks so ViewModel wiring is unchanged — pager calls these on settle.</li>
+  <li>Accessibility: TalkBack users get the chevrons as discrete buttons; swipe gesture is not the only way to navigate.</li>
+</ul>
+
+<h3>What this does <em>not</em> ship</h3>
+<ul class="blurb">
+  <li>No vertical swipe (years, settings, etc.) — horizontal only.</li>
+  <li>No hero-only swipe option — the whole dashboard scrolls as a page.</li>
+  <li>No month-picker grid (quick-jump multiple months ahead) — tracked as <a href="https://github.com/LOCKhart07/spendwise/issues/91">#91</a>.</li>
+</ul>
+
+</body>
+</html>

@@ -20,8 +20,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 /**
  * Dashboard ViewModel.
@@ -48,8 +49,27 @@ class DashboardViewModel(
     private val _viewedMonthKey = MutableStateFlow(currentMonthKey)
     val viewedMonthKey: StateFlow<String> = _viewedMonthKey.asStateFlow()
 
+    /**
+     * Earliest month_key observed across the transactions table, or
+     * [currentMonthKey] when the table is empty. Drives the dashboard
+     * pager's past-edge (#21) — the pager lets the user swipe forward
+     * into unbounded future months but refuses to swipe past this.
+     */
+    val earliestMonthKey: StateFlow<String> = transactionDao.observeEarliestMonthKey()
+        .map { it ?: currentMonthKey }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+            initialValue = currentMonthKey,
+        )
+
     fun navigateMonth(deltaMonths: Long) {
         _viewedMonthKey.value = MonthKeyComputer.shift(_viewedMonthKey.value, deltaMonths)
+    }
+
+    /** Explicit set — used by the pager on settle so we don't have to compute a delta. */
+    fun setMonth(monthKey: String) {
+        _viewedMonthKey.value = monthKey
     }
 
     fun resetToCurrentMonth() {
@@ -59,20 +79,26 @@ class DashboardViewModel(
     fun isCurrentMonth(monthKey: String): Boolean = monthKey == currentMonthKey
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val uiState: StateFlow<DashboardUiState> = run {
-        val hasPerm = hasPermissionProvider()
-        if (!hasPerm) {
-            flowOf<DashboardUiState>(DashboardUiState.NeedsPermission)
+    val uiState: StateFlow<DashboardUiState> = _viewedMonthKey
+        .flatMapLatest { mk -> observeMonth(mk) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+            initialValue = DashboardUiState.Loading,
+        )
+
+    /**
+     * Per-month UI state factory for the dashboard pager (#21). Each
+     * page collects its own Flow keyed by [monthKey]; pager windowing
+     * naturally disposes pages that scroll out of view.
+     */
+    fun observeMonth(monthKey: String): Flow<DashboardUiState> =
+        if (!hasPermissionProvider()) {
+            flowOf(DashboardUiState.NeedsPermission)
         } else {
-            _viewedMonthKey.flatMapLatest { mk -> combinedReadyFlow(mk) }
+            combinedReadyFlow(monthKey)
+                .catch { emit(DashboardUiState.Empty(monthKey, hasBudget = false)) }
         }
-            .catch { emit(DashboardUiState.Empty(_viewedMonthKey.value, hasBudget = false)) }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
-                initialValue = DashboardUiState.Loading,
-            )
-    }
 
     private fun combinedReadyFlow(monthKey: String): Flow<DashboardUiState> {
         val txFlow = transactionDao.observeByMonth(monthKey)

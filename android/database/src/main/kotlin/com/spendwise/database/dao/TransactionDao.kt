@@ -110,6 +110,13 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE rate_source = 'pending'")
     fun observePendingForex(): Flow<List<TransactionEntity>>
 
+    /**
+     * Earliest `month_key` across all transactions, or null if the
+     * table is empty. Drives the dashboard pager's past-edge (#21).
+     */
+    @Query("SELECT MIN(month_key) FROM transactions")
+    fun observeEarliestMonthKey(): Flow<String?>
+
     @Query(
         """
         SELECT COALESCE(SUM(inr_amount), 0.0) FROM transactions

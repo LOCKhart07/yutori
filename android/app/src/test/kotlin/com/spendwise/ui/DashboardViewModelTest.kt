@@ -257,6 +257,92 @@ class DashboardViewModelTest {
         }
 
     @Test
+    fun `observeMonth yields a different snapshot per monthKey`() = runTest(dispatcher) {
+        // #21 — each pager page collects its own per-month flow so
+        // adjacent pages render their own data during a drag.
+        val txs = listOf(
+            txEntity(id = 1, inrAmount = 1_000.0, monthKey = "2026-03"),
+            txEntity(id = 2, inrAmount = 4_000.0, monthKey = "2026-04"),
+        )
+        val vm = DashboardViewModel(
+            transactionDao = FakeTxDao(txs),
+            budgetDao = FakeBudgetDao(
+                month = BudgetEntity(
+                    monthKey = "2026-04", limitInr = 30_000.0,
+                    createdAtMs = 0, updatedAtMs = 0,
+                ),
+                priors = listOf(
+                    BudgetEntity(
+                        monthKey = "2026-03", limitInr = 30_000.0,
+                        createdAtMs = 0, updatedAtMs = 0,
+                    ),
+                ),
+            ),
+            hasPermissionProvider = { true },
+            nowMs = { epoch("2026-04-15") },
+        )
+        val march = vm.observeMonth("2026-03")
+            .first { it is DashboardUiState.Ready } as DashboardUiState.Ready
+        val april = vm.observeMonth("2026-04")
+            .first { it is DashboardUiState.Ready } as DashboardUiState.Ready
+        march.snapshot.grossSpendInr shouldBe (1_000.0 plusOrMinus 1e-9)
+        april.snapshot.grossSpendInr shouldBe (4_000.0 plusOrMinus 1e-9)
+    }
+
+    @Test
+    fun `observeMonth honours permission gate`() = runTest(dispatcher) {
+        val vm = DashboardViewModel(
+            transactionDao = FakeTxDao(),
+            budgetDao = FakeBudgetDao(),
+            hasPermissionProvider = { false },
+            nowMs = { epoch("2026-04-15") },
+        )
+        vm.observeMonth("2026-03").first() shouldBe DashboardUiState.NeedsPermission
+    }
+
+    @Test
+    fun `setMonth updates viewedMonthKey without a delta computation`() = runTest(dispatcher) {
+        val vm = DashboardViewModel(
+            transactionDao = FakeTxDao(),
+            budgetDao = FakeBudgetDao(),
+            hasPermissionProvider = { true },
+            nowMs = { epoch("2026-04-15") },
+        )
+        vm.viewedMonthKey.value shouldBe "2026-04"
+        vm.setMonth("2025-11")
+        vm.viewedMonthKey.value shouldBe "2025-11"
+    }
+
+    @Test
+    fun `earliestMonthKey falls back to current when table empty`() = runTest(dispatcher) {
+        val vm = DashboardViewModel(
+            transactionDao = FakeTxDao(),
+            budgetDao = FakeBudgetDao(),
+            hasPermissionProvider = { true },
+            nowMs = { epoch("2026-04-15") },
+        )
+        // Loading-initial is current; once the Flow emits null (empty
+        // table) the fallback becomes currentMonthKey too.
+        vm.earliestMonthKey.first { true } shouldBe "2026-04"
+    }
+
+    @Test
+    fun `earliestMonthKey reflects the min month_key present`() = runTest(dispatcher) {
+        val txs = listOf(
+            txEntity(id = 1, inrAmount = 500.0, monthKey = "2025-09"),
+            txEntity(id = 2, inrAmount = 400.0, monthKey = "2026-04"),
+            txEntity(id = 3, inrAmount = 300.0, monthKey = "2026-02"),
+        )
+        val vm = DashboardViewModel(
+            transactionDao = FakeTxDao(txs),
+            budgetDao = FakeBudgetDao(),
+            hasPermissionProvider = { true },
+            nowMs = { epoch("2026-04-15") },
+        )
+        vm.earliestMonthKey.first { it != "2026-04" } shouldBe "2025-09"
+    }
+
+    @Test
     fun `pending forex count is exposed`() = runTest(dispatcher) {
         val txs = listOf(
             txEntity(id = 1, inrAmount = 500.0),
@@ -333,6 +419,8 @@ class DashboardViewModelTest {
             all.filter { it.monthKey < monthKey && it.budgetEffect in setOf("SPEND", "REFUND") }
         override fun observePendingForex(): Flow<List<TransactionEntity>> =
             MutableStateFlow(pending).asStateFlow()
+        override fun observeEarliestMonthKey(): Flow<String?> =
+            MutableStateFlow(all.minOfOrNull { it.monthKey }).asStateFlow()
 
         // Unused in tests — nothing calls these paths through the ViewModel.
         override suspend fun insert(row: TransactionEntity) = 0L

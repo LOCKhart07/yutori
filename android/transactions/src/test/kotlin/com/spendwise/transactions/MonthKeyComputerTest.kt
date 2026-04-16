@@ -61,4 +61,24 @@ class MonthKeyComputerTest {
         val expected = MonthKeyComputer.of(ts, ZoneId.systemDefault())
         MonthKeyComputer.ofDevice(ts) shouldBe expected
     }
+
+    @Test
+    fun `monthsBetween returns positive delta for later month`() {
+        MonthKeyComputer.monthsBetween("2026-01", "2026-04") shouldBe 3L
+    }
+
+    @Test
+    fun `monthsBetween returns negative delta for earlier month`() {
+        MonthKeyComputer.monthsBetween("2026-04", "2026-01") shouldBe -3L
+    }
+
+    @Test
+    fun `monthsBetween returns zero for same month`() {
+        MonthKeyComputer.monthsBetween("2026-04", "2026-04") shouldBe 0L
+    }
+
+    @Test
+    fun `monthsBetween crosses year boundary`() {
+        MonthKeyComputer.monthsBetween("2025-10", "2026-03") shouldBe 5L
+    }
 }

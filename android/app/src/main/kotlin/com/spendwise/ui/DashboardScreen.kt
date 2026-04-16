@@ -1,5 +1,6 @@
 package com.spendwise.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -18,6 +19,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -28,9 +31,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,9 +44,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.spendwise.budget.MonthSnapshot
+import com.spendwise.transactions.MonthKeyComputer
 import com.spendwise.ui.theme.SpendWiseTextStyles
 import com.spendwise.ui.theme.SpendWiseTheme
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -55,9 +65,21 @@ import java.util.Locale
  *   2   · over budget (red hero + banner)
  *   3   · no budget set
  */
+/**
+ * Max forward months past the current month that the pager is allowed
+ * to reach. Issue #21 makes the forward direction "unbounded", but
+ * Pager math prefers a finite page count — 24 months is well beyond any
+ * realistic pre-setting horizon.
+ */
+private const val MAX_FORWARD_MONTHS = 24
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DashboardScreen(
-    state: DashboardUiState,
+    viewedMonthKey: String,
+    earliestMonthKey: String,
+    currentMonthKey: String,
+    observeMonth: (String) -> Flow<DashboardUiState>,
     importStatus: ImportStatus = ImportStatus.Idle,
     onSetBudget: () -> Unit = {},
     onImport: () -> Unit = {},
@@ -65,40 +87,152 @@ fun DashboardScreen(
     onCategoryClick: (String) -> Unit = {},
     onCardClick: (accountId: Long?, last4: String?) -> Unit = { _, _ -> },
     hasSettingsBadge: Boolean = false,
-    onMonthPrev: () -> Unit = {},
-    onMonthNext: () -> Unit = {},
+    onMonthSettled: (String) -> Unit = {},
     onResetMonth: () -> Unit = {},
-    isCurrentMonth: Boolean = true,
     showNotificationPermissionBanner: Boolean = false,
     onOpenNotificationSettings: () -> Unit = {},
     onDismissNotificationBanner: () -> Unit = {},
 ) {
+    // earliestMonthKey bounds the past edge; forward goes until the
+    // current month + MAX_FORWARD_MONTHS so the user can preset a
+    // budget a year or two ahead per #21.
+    val pageCount = remember(earliestMonthKey, currentMonthKey) {
+        val currentIdx = MonthKeyComputer
+            .monthsBetween(earliestMonthKey, currentMonthKey)
+            .toInt()
+            .coerceAtLeast(0)
+        currentIdx + 1 + MAX_FORWARD_MONTHS
+    }
+    val initialPage = remember(earliestMonthKey, viewedMonthKey, pageCount) {
+        MonthKeyComputer
+            .monthsBetween(earliestMonthKey, viewedMonthKey)
+            .toInt()
+            .coerceIn(0, pageCount - 1)
+    }
+    val pagerState = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { pageCount },
+    )
+    // Emit onMonthSettled whenever the pager lands on a page. Uses
+    // settledPage (not currentPage) so mid-drag values don't thrash the
+    // ViewModel; the topbar label waits until the gesture commits.
+    LaunchedEffect(pagerState, earliestMonthKey) {
+        snapshotFlow { pagerState.settledPage }.collect { page ->
+            val mk = MonthKeyComputer.shift(earliestMonthKey, page.toLong())
+            onMonthSettled(mk)
+        }
+    }
+    // If earliestMonthKey shifts earlier (historical import lands),
+    // every page's index remaps. Re-pin the pager to viewedMonthKey so
+    // the user stays on the same month visually.
+    LaunchedEffect(earliestMonthKey) {
+        val target = MonthKeyComputer
+            .monthsBetween(earliestMonthKey, viewedMonthKey)
+            .toInt()
+            .coerceIn(0, pageCount - 1)
+        if (pagerState.currentPage != target) {
+            pagerState.scrollToPage(target)
+        }
+    }
+    val scope = rememberCoroutineScope()
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        when (state) {
-            is DashboardUiState.Loading -> LoadingView()
-            is DashboardUiState.NeedsPermission -> NeedsPermissionView()
-            is DashboardUiState.Empty ->
-                EmptyView(
-                    state, onSetBudget, onImport, importStatus, onSettings,
-                    hasSettingsBadge,
-                    onMonthPrev, onMonthNext, onResetMonth, isCurrentMonth,
-                    showNotificationPermissionBanner,
-                    onOpenNotificationSettings, onDismissNotificationBanner,
+        val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = statusInset.calculateTopPadding() + 8.dp),
+        ) {
+            TopBar(
+                monthLabel = prettyMonthKey(viewedMonthKey, dayLabel = null),
+                onImport = onImport,
+                onSettings = onSettings,
+                hasSettingsBadge = hasSettingsBadge,
+                onMonthPrev = {
+                    scope.launch {
+                        val target = (pagerState.currentPage - 1).coerceAtLeast(0)
+                        pagerState.animateScrollToPage(target)
+                    }
+                },
+                onMonthNext = {
+                    scope.launch {
+                        val target = (pagerState.currentPage + 1).coerceAtMost(pageCount - 1)
+                        pagerState.animateScrollToPage(target)
+                    }
+                },
+                onResetMonth = {
+                    onResetMonth()
+                    val target = MonthKeyComputer
+                        .monthsBetween(earliestMonthKey, currentMonthKey)
+                        .toInt()
+                        .coerceIn(0, pageCount - 1)
+                    scope.launch { pagerState.animateScrollToPage(target) }
+                },
+                canGoPrev = pagerState.currentPage > 0,
+                canGoNext = pagerState.currentPage < pageCount - 1,
+                isCurrentMonth = viewedMonthKey == currentMonthKey,
+                modifier = Modifier.padding(horizontal = 24.dp),
+            )
+            if (showNotificationPermissionBanner) {
+                Spacer(Modifier.height(16.dp))
+                Box(Modifier.padding(horizontal = 24.dp)) {
+                    NotificationPermissionBanner(
+                        onAction = onOpenNotificationSettings,
+                        onDismiss = onDismissNotificationBanner,
+                    )
+                }
+            }
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                // 12dp peek on each edge — lets the user see a sliver
+                // of the neighbor month, hinting the dashboard is
+                // horizontally pageable (#21 decision).
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                pageSpacing = 0.dp,
+            ) { page ->
+                val monthKey = remember(earliestMonthKey, page) {
+                    MonthKeyComputer.shift(earliestMonthKey, page.toLong())
+                }
+                val monthFlow: Flow<DashboardUiState> =
+                    remember(monthKey) { observeMonth(monthKey) }
+                val state by monthFlow.collectAsStateWithLifecycle(
+                    initialValue = DashboardUiState.Loading,
                 )
-            is DashboardUiState.Ready ->
-                ReadyView(
-                    state, importStatus,
-                    onSetBudget, onImport, onSettings,
-                    onCategoryClick, onCardClick,
-                    hasSettingsBadge,
-                    onMonthPrev, onMonthNext, onResetMonth, isCurrentMonth,
-                    showNotificationPermissionBanner,
-                    onOpenNotificationSettings, onDismissNotificationBanner,
+                MonthPage(
+                    state = state,
+                    importStatus = importStatus,
+                    onSetBudget = onSetBudget,
+                    onCategoryClick = onCategoryClick,
+                    onCardClick = onCardClick,
+                    isCurrentMonth = monthKey == currentMonthKey,
                 )
+            }
         }
+    }
+}
+
+@Composable
+private fun MonthPage(
+    state: DashboardUiState,
+    importStatus: ImportStatus,
+    onSetBudget: () -> Unit,
+    onCategoryClick: (String) -> Unit,
+    onCardClick: (accountId: Long?, last4: String?) -> Unit,
+    isCurrentMonth: Boolean,
+) {
+    when (state) {
+        is DashboardUiState.Loading -> LoadingView()
+        is DashboardUiState.NeedsPermission -> NeedsPermissionView()
+        is DashboardUiState.Empty -> EmptyView(state, onSetBudget, importStatus, isCurrentMonth)
+        is DashboardUiState.Ready ->
+            ReadyView(
+                state, importStatus,
+                onSetBudget, onCategoryClick, onCardClick,
+            )
     }
 }
 
@@ -122,47 +256,35 @@ private fun NeedsPermissionView() {
 private fun EmptyView(
     state: DashboardUiState.Empty,
     onSetBudget: () -> Unit,
-    onImport: () -> Unit,
     importStatus: ImportStatus,
-    onSettings: () -> Unit,
-    hasSettingsBadge: Boolean = false,
-    onMonthPrev: () -> Unit = {},
-    onMonthNext: () -> Unit = {},
-    onResetMonth: () -> Unit = {},
-    isCurrentMonth: Boolean = true,
-    showNotificationPermissionBanner: Boolean = false,
-    onOpenNotificationSettings: () -> Unit = {},
-    onDismissNotificationBanner: () -> Unit = {},
+    isCurrentMonth: Boolean,
 ) {
     ScrollingShell {
-        TopBar(
-            monthLabel = prettyMonthKey(state.monthKey, dayLabel = null),
-            onImport = onImport,
-            onSettings = onSettings,
-            hasSettingsBadge = hasSettingsBadge,
-            onMonthPrev = onMonthPrev,
-            onMonthNext = onMonthNext,
-            onResetMonth = onResetMonth,
-            isCurrentMonth = isCurrentMonth,
-        )
-        if (showNotificationPermissionBanner) {
-            Spacer(Modifier.height(16.dp))
-            NotificationPermissionBanner(
-                onAction = onOpenNotificationSettings,
-                onDismiss = onDismissNotificationBanner,
-            )
-        }
         Spacer(Modifier.height(24.dp))
-        HeroAmount(primaryText = "₹0", subText = if (state.hasBudget) "No spend yet this month" else "Spent this month")
+        HeroAmount(
+            primaryText = "₹0",
+            subText = when {
+                state.hasBudget -> "No spend yet this month"
+                !isCurrentMonth -> "No budget set for this month"
+                else -> "Spent this month"
+            },
+        )
         Spacer(Modifier.height(20.dp))
         if (!state.hasBudget) {
             Banner(
                 kind = BannerKind.Neutral,
-                title = "No budget set.",
-                detail = "Set a monthly limit to enable progress tracking and alerts.",
+                title = if (isCurrentMonth) "No budget set." else "Preset this month's budget.",
+                detail = if (isCurrentMonth) {
+                    "Set a monthly limit to enable progress tracking and alerts."
+                } else {
+                    "Set a budget ahead of time. Carry-over applies when the month begins."
+                },
             )
             Spacer(Modifier.height(16.dp))
-            PrimaryButton(text = "Set budget", onClick = onSetBudget)
+            PrimaryButton(
+                text = if (isCurrentMonth) "Set budget" else "Set budget for this month",
+                onClick = onSetBudget,
+            )
         } else {
             Banner(
                 kind = BannerKind.Neutral,
@@ -180,18 +302,8 @@ private fun ReadyView(
     state: DashboardUiState.Ready,
     importStatus: ImportStatus,
     onSetBudget: () -> Unit,
-    onImport: () -> Unit,
-    onSettings: () -> Unit,
     onCategoryClick: (String) -> Unit,
     onCardClick: (accountId: Long?, last4: String?) -> Unit,
-    hasSettingsBadge: Boolean = false,
-    onMonthPrev: () -> Unit = {},
-    onMonthNext: () -> Unit = {},
-    onResetMonth: () -> Unit = {},
-    isCurrentMonth: Boolean = true,
-    showNotificationPermissionBanner: Boolean = false,
-    onOpenNotificationSettings: () -> Unit = {},
-    onDismissNotificationBanner: () -> Unit = {},
 ) {
     val inr = remember { NumberFormat.getCurrencyInstance(Locale("en", "IN")) }
     val snap = state.snapshot
@@ -202,27 +314,6 @@ private fun ReadyView(
     val themeColors = SpendWiseTheme.colors
 
     ScrollingShell {
-        TopBar(
-            monthLabel = prettyMonthKey(
-                state.monthKey,
-                dayLabel = if (isCurrentMonth && derived.daysLeft in 1..3) "Day ${derived.dayOfMonth}" else null,
-            ),
-            onImport = onImport,
-            onSettings = onSettings,
-            hasSettingsBadge = hasSettingsBadge,
-            onMonthPrev = onMonthPrev,
-            onMonthNext = onMonthNext,
-            onResetMonth = onResetMonth,
-            isCurrentMonth = isCurrentMonth,
-        )
-        if (showNotificationPermissionBanner) {
-            Spacer(Modifier.height(16.dp))
-            NotificationPermissionBanner(
-                onAction = onOpenNotificationSettings,
-                onDismiss = onDismissNotificationBanner,
-            )
-        }
-
         Spacer(Modifier.height(24.dp))
 
         // Hero — wrapped in a pace-tinted card.
@@ -345,16 +436,16 @@ private fun ReadyView(
 
 @Composable
 private fun ScrollingShell(content: @Composable () -> Unit) {
-    // Inset for the system status bar — prevents content landing under
-    // the phone's clock/icons in edge-to-edge mode.
-    val statusInset: PaddingValues =
-        WindowInsets.statusBars.asPaddingValues()
+    // The outer DashboardScreen applies the status-bar inset and hosts
+    // the static TopBar; each pager page is just vertically-scrollable
+    // content. Horizontal 12.dp here pairs with the Pager's 12.dp
+    // contentPadding so a page's content still sits ~24.dp from the
+    // physical screen edge (unchanged from pre-pager behaviour).
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(top = statusInset.calculateTopPadding() + 8.dp)
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = 12.dp),
     ) {
         content()
     }
@@ -369,21 +460,29 @@ private fun TopBar(
     onMonthPrev: () -> Unit = {},
     onMonthNext: () -> Unit = {},
     onResetMonth: () -> Unit = {},
+    canGoPrev: Boolean = true,
+    canGoNext: Boolean = true,
     isCurrentMonth: Boolean = true,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // Past chevron dims at the past-edge (earliest sms_log month).
             Text(
                 text = "‹",
                 modifier = Modifier
-                    .clickable(onClick = onMonthPrev)
+                    .clickable(enabled = canGoPrev, onClick = onMonthPrev)
                     .padding(horizontal = 6.dp, vertical = 4.dp),
                 style = MaterialTheme.typography.titleMedium,
-                color = SpendWiseTheme.colors.onMuted,
+                color = if (canGoPrev) {
+                    SpendWiseTheme.colors.onMuted
+                } else {
+                    SpendWiseTheme.colors.onFaint
+                },
             )
             Text(
                 text = monthLabel,
@@ -391,17 +490,18 @@ private fun TopBar(
                 style = SpendWiseTextStyles.Caps,
                 color = SpendWiseTheme.colors.onMuted,
             )
-            // Forward chevron disabled on current month (no future data).
+            // Forward chevron is unbounded forward per #21; dim only at
+            // the (remote) MAX_FORWARD_MONTHS ceiling.
             Text(
                 text = "›",
                 modifier = Modifier
-                    .clickable(enabled = !isCurrentMonth, onClick = onMonthNext)
+                    .clickable(enabled = canGoNext, onClick = onMonthNext)
                     .padding(horizontal = 6.dp, vertical = 4.dp),
                 style = MaterialTheme.typography.titleMedium,
-                color = if (isCurrentMonth) {
-                    SpendWiseTheme.colors.onFaint
-                } else {
+                color = if (canGoNext) {
                     SpendWiseTheme.colors.onMuted
+                } else {
+                    SpendWiseTheme.colors.onFaint
                 },
             )
             if (!isCurrentMonth) {

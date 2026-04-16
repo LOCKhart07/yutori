@@ -115,6 +115,7 @@ class FakeTransactionDao : TransactionDao {
         }
     )
     override fun observePendingForex() = flowOf(all.filter { it.rateSource == "pending" })
+    override fun observeEarliestMonthKey() = flowOf(all.minOfOrNull { it.monthKey })
 
     override suspend fun findDedupCandidates(
         effect: String,

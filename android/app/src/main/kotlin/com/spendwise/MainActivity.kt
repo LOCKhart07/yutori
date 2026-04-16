@@ -154,13 +154,17 @@ private fun AppContent() {
                     hasPermissionProvider = { true },
                 ),
             )
-            val state: DashboardUiState by viewModel.uiState.collectAsState()
             val importStatus: ImportStatus by importStatusFlow(app)
                 .collectAsStateWithLifecycle(initialValue = ImportStatus.Idle)
             val suggestedCount: Int by database.accountDao()
                 .observeCountByStatus("SUGGESTED")
                 .collectAsStateWithLifecycle(initialValue = 0)
             val viewedMonthKey: String by viewModel.viewedMonthKey.collectAsState()
+            val earliestMonthKey: String by viewModel.earliestMonthKey.collectAsState()
+            val currentMonthKey: String = remember(viewModel) {
+                com.spendwise.transactions.MonthKeyComputer
+                    .ofDevice(System.currentTimeMillis())
+            }
 
             // Re-check the runtime POST_NOTIFICATIONS grant on every
             // recomposition tick that follows a lifecycle event so we
@@ -183,7 +187,10 @@ private fun AppContent() {
             }
 
             DashboardScreen(
-                state = state,
+                viewedMonthKey = viewedMonthKey,
+                earliestMonthKey = earliestMonthKey,
+                currentMonthKey = currentMonthKey,
+                observeMonth = viewModel::observeMonth,
                 importStatus = importStatus,
                 onSetBudget = { goTo(Screen.BudgetSetup(viewedMonthKey)) },
                 onImport = { importDialogOpen = true },
@@ -193,10 +200,8 @@ private fun AppContent() {
                     goTo(Screen.CardDrill(viewedMonthKey, accountId, last4))
                 },
                 hasSettingsBadge = suggestedCount > 0,
-                onMonthPrev = { viewModel.navigateMonth(-1) },
-                onMonthNext = { viewModel.navigateMonth(1) },
+                onMonthSettled = { mk -> viewModel.setMonth(mk) },
                 onResetMonth = { viewModel.resetToCurrentMonth() },
-                isCurrentMonth = viewModel.isCurrentMonth(viewedMonthKey),
                 showNotificationPermissionBanner = !notificationGranted &&
                     !notificationBannerDismissed,
                 onOpenNotificationSettings = {

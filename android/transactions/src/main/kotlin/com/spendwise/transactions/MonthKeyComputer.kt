@@ -35,4 +35,15 @@ object MonthKeyComputer {
     /** Return month_key shifted by [deltaMonths] (can be negative). */
     fun shift(monthKey: String, deltaMonths: Long): String =
         YearMonth.parse(monthKey, FORMATTER).plusMonths(deltaMonths).format(FORMATTER)
+
+    /**
+     * Whole-month distance from [from] to [to] (`to - from`). Positive
+     * when [to] is later than [from], zero when equal, negative when
+     * earlier.
+     */
+    fun monthsBetween(from: String, to: String): Long =
+        YearMonth.parse(from, FORMATTER).until(
+            YearMonth.parse(to, FORMATTER),
+            java.time.temporal.ChronoUnit.MONTHS,
+        )
 }
