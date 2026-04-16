@@ -54,16 +54,16 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/signing"
           echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/signing/release.keystore"
-          echo "SPENDWISE_KEYSTORE_PATH=$RUNNER_TEMP/signing/release.keystore" >> "$GITHUB_ENV"
+          echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/signing/release.keystore" >> "$GITHUB_ENV"
 
       - name: Make gradlew executable
         run: chmod +x gradlew
 
       - name: Assemble release APK
         env:
-          SPENDWISE_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
-          SPENDWISE_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-          SPENDWISE_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
 
       - name: Stage APK with release name

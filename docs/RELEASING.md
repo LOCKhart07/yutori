@@ -67,8 +67,8 @@ itself must never be committed; `*.jks` and `*.keystore` are in
 
 ```bash
 keytool -genkey -v \
-    -keystore spendwise-release.jks \
-    -alias spendwise \
+    -keystore yutori-release.jks \
+    -alias yutori \
     -keyalg RSA -keysize 4096 \
     -validity 10000
 ```
@@ -82,21 +82,21 @@ refuse to replace the app because the signatures won't match).
 
 ```bash
 # 1. base64-encode the keystore (macOS/Linux):
-base64 -w0 spendwise-release.jks > spendwise-release.jks.b64
-# (on macOS, `base64 -i spendwise-release.jks` produces the same thing
+base64 -w0 yutori-release.jks > yutori-release.jks.b64
+# (on macOS, `base64 -i yutori-release.jks` produces the same thing
 #  without the -w0 flag.)
 
-# 2. Copy the contents of spendwise-release.jks.b64 into the
+# 2. Copy the contents of yutori-release.jks.b64 into the
 #    SIGNING_KEYSTORE_BASE64 secret in the GitHub repo settings.
 
 # 3. Add SIGNING_KEYSTORE_PASSWORD, SIGNING_KEY_ALIAS, and
 #    SIGNING_KEY_PASSWORD as separate secrets.
 
 # 4. Delete the .b64 file once it's in GitHub:
-rm spendwise-release.jks.b64
+rm yutori-release.jks.b64
 ```
 
-The keystore itself (`spendwise-release.jks`) should live in your
+The keystore itself (`yutori-release.jks`) should live in your
 personal backup — **not** in the repo.
 
 ## Local builds (Android Studio + CLI)
@@ -113,10 +113,10 @@ invoked, so Android Studio picks it up automatically):
 
 ```properties
 # ~/.gradle/gradle.properties
-SPENDWISE_KEYSTORE_PATH=/absolute/path/to/spendwise-release.jks
-SPENDWISE_KEYSTORE_PASSWORD=...
-SPENDWISE_KEY_ALIAS=spendwise
-SPENDWISE_KEY_PASSWORD=...
+SIGNING_KEYSTORE_PATH=/absolute/path/to/yutori-release.jks
+SIGNING_KEYSTORE_PASSWORD=...
+SIGNING_KEY_ALIAS=yutori
+SIGNING_KEY_PASSWORD=...
 ```
 
 Lock it down: `chmod 600 ~/.gradle/gradle.properties`.
@@ -125,10 +125,10 @@ Env vars also work (take precedence over gradle.properties):
 
 ```bash
 cd android
-export SPENDWISE_KEYSTORE_PATH=/path/to/spendwise-release.jks
-export SPENDWISE_KEYSTORE_PASSWORD=...
-export SPENDWISE_KEY_ALIAS=spendwise
-export SPENDWISE_KEY_PASSWORD=...
+export SIGNING_KEYSTORE_PATH=/path/to/yutori-release.jks
+export SIGNING_KEYSTORE_PASSWORD=...
+export SIGNING_KEY_ALIAS=yutori
+export SIGNING_KEY_PASSWORD=...
 ./gradlew :app:assembleRelease
 ```
 

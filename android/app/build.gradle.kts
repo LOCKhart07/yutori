@@ -18,7 +18,7 @@ android {
 
     // Release signing config.
     //
-    // Reads SPENDWISE_* creds from env vars first (CI), then from Gradle
+    // Reads SIGNING_* creds from env vars first (CI), then from Gradle
     // properties (~/.gradle/gradle.properties on a dev machine — lets
     // Android Studio pick them up without launching AS from a shell).
     // When all four are present and the keystore file exists, both debug
@@ -30,10 +30,10 @@ android {
     fun signingProp(key: String): String? =
         System.getenv(key) ?: project.findProperty(key) as String?
 
-    val keystorePath: String? = signingProp("SPENDWISE_KEYSTORE_PATH")
-    val keystorePassword: String? = signingProp("SPENDWISE_KEYSTORE_PASSWORD")
-    val keyAlias: String? = signingProp("SPENDWISE_KEY_ALIAS")
-    val keyPassword: String? = signingProp("SPENDWISE_KEY_PASSWORD")
+    val keystorePath: String? = signingProp("SIGNING_KEYSTORE_PATH")
+    val keystorePassword: String? = signingProp("SIGNING_KEYSTORE_PASSWORD")
+    val keyAlias: String? = signingProp("SIGNING_KEY_ALIAS")
+    val keyPassword: String? = signingProp("SIGNING_KEY_PASSWORD")
     val hasReleaseSigning = !keystorePath.isNullOrBlank() &&
         !keystorePassword.isNullOrBlank() &&
         !keyAlias.isNullOrBlank() &&
