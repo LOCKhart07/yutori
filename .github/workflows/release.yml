@@ -86,20 +86,42 @@ jobs:
           fi
           dest="$RUNNER_TEMP/spendwise-${GITHUB_REF_NAME}.apk"
           cp "$src" "$dest"
-          echo "apk_path=$dest" >> "$GITHUB_OUTPUT"
+          sha=$(sha256sum "$dest" | awk '{print $1}')
+          echo "apk_path=$dest"     >> "$GITHUB_OUTPUT"
+          echo "apk_sha256=$sha"    >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog
+        id: cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          # --current picks only the commits between the previous tag
+          # and this one (HEAD). --strip header trims the blank top
+          # line so the body starts directly at "## <version>".
+          args: --current --strip header
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - name: Build release body
+        id: body
+        working-directory: ${{ github.workspace }}
+        run: |
+          {
+            cat "${{ steps.cliff.outputs.changelog }}"
+            echo
+            echo "---"
+            echo
+            echo "**Signing mode:** ${{ steps.signing.outputs.mode }}"
+            echo
+            echo "**APK SHA-256:** \`${{ steps.stage.outputs.apk_sha256 }}\`"
+          } > "$RUNNER_TEMP/release-body.md"
+          echo "body_path=$RUNNER_TEMP/release-body.md" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release & upload APK
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
-          generate_release_notes: true
           fail_on_unmatched_files: true
-          body: |
-            SpendWise ${{ github.ref_name }}
-
-            Signing mode: **${{ steps.signing.outputs.mode }}**
-
-            - `release` — signed with the project's release keystore.
-            - `debug` — signed with Android's auto-generated debug key. Installable via side-load, but flagged as a debug build by Android and NOT suitable for public distribution. See `docs/RELEASING.md`.
+          body_path: ${{ steps.body.outputs.body_path }}
           files: ${{ steps.stage.outputs.apk_path }}

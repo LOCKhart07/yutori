@@ -1,0 +1,67 @@
+# git-cliff configuration — feeds release body on every v* tag build.
+#
+# Two paths:
+#   1. Going-forward commits use conventional-commit prefixes
+#      (feat/fix/perf/refactor/docs/test/chore/style/ci), bucketed below.
+#   2. Pre-migration commits are categorised by regex on the first word
+#      so we don't have to rewrite history. See docs/RELEASING.md and
+#      CLAUDE.md for the prefix convention.
+#
+# pending.md / backlog.md / merge-PR / initial-commit messages are
+# skipped outright — they're bookkeeping noise, not user-facing.
+
+[changelog]
+header = ""
+body = """
+{% if version -%}
+## {{ version | trim_start_matches(pat="v") }} — {{ timestamp | date(format="%Y-%m-%d") }}
+{% else -%}
+## Unreleased
+{% endif -%}
+{% for group, commits in commits | group_by(attribute="group") %}
+
+### {{ group }}
+{% for commit in commits %}
+- {{ commit.message | split(pat="\n") | first | trim }}
+{%- endfor %}
+{% endfor %}
+"""
+footer = ""
+trim = true
+
+[git]
+conventional_commits = false
+filter_unconventional = false
+split_commits = false
+protect_breaking_commits = false
+filter_commits = false
+tag_pattern = "v[0-9].*"
+sort_commits = "newest"
+
+commit_parsers = [
+    # Bookkeeping — never surface in release notes.
+    { message = "^pending\\.md", skip = true },
+    { message = "^backlog\\.md", skip = true },
+    { message = "^(Reconcile|Retire) pending\\.md", skip = true },
+    { message = "^Merge pull request", skip = true },
+    { message = "^Initial commit", skip = true },
+
+    # Conventional-commit prefixes (going-forward).
+    { message = "^feat", group = "Features" },
+    { message = "^fix", group = "Bug fixes" },
+    { message = "^perf", group = "Performance" },
+    { message = "^refactor", group = "Refactor" },
+    { message = "^docs", group = "Documentation" },
+    { message = "^test", group = "Tests" },
+    { message = "^chore", group = "Internal" },
+    { message = "^style", group = "Internal" },
+    { message = "^ci", group = "Internal" },
+
+    # Pre-migration style (bucketed by first word).
+    { message = "^(Fix|Dedup)", group = "Bug fixes" },
+    { message = "^(Dashboard|Nav|Post-spend|Carry-over|Auto-detect|Add|Retrofit|Implement)", group = "Features" },
+    { message = "^(Scrub|Continue PII scrub|\\.gitignore|CI:|mocks:)", group = "Internal" },
+
+    # Fallback — don't lose anything.
+    { message = ".*", group = "Other" },
+]

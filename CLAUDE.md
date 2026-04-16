@@ -78,6 +78,7 @@ Package layout in each module is `com.spendwise.<module>`; `:app` uses `com.spen
 - **Verify audit / hypothesis claims before coding.** Two of the audit subagent's "missing" findings (alerts wired, FX banner) turned out to already exist. Always grep / read the alleged code path before claiming it's a gap.
 - **PII**: real names, account last-4s, employer names, UPI handles, phone numbers, real SMS bodies must never be in committed source (tests, fixtures, plans, mockups). Synthetic placeholders only — see existing patterns in `android/parser/src/test/kotlin/.../*Test.kt`.
 - **Commit policy**: don't `git add -A` (a hook blocks it). Stage by path. The user's name + email is fine on commits going forward.
+- **Commit message convention**: use conventional-commit prefixes — `feat:` / `fix:` / `perf:` / `refactor:` / `docs:` / `test:` / `chore:` / `style:` / `ci:`. Short imperative subject line, optional body for the *why*. git-cliff reads these prefixes to generate the release body on every `v*` tag — see `cliff.toml`. Pre-2026-04-16 commits are bucketed via regex fallback, so no rewrite is needed, but every new commit should be prefixed.
 
 ## Conventions picked up from existing code
 

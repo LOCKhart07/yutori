@@ -27,6 +27,22 @@ See `CLAUDE.md` for module graph, behavioural invariants, and workflow conventio
 
 Tag-push (`v*`) builds and uploads a signed APK via GitHub Actions. Setup + keystore details: [`docs/RELEASING.md`](docs/RELEASING.md).
 
+`versionCode` and `versionName` are derived at build time — no manual bumps. Cut a release with just `git tag v0.2.0 && git push --tags`.
+
+## Commit conventions
+
+Use conventional-commit prefixes so git-cliff can group them into release notes:
+
+- `feat:` — user-facing feature
+- `fix:` — user-facing bug fix
+- `perf:` — performance improvement
+- `refactor:` — non-behavioural code change
+- `test:` — test-only change
+- `docs:` — documentation only
+- `chore:`, `style:`, `ci:` — internal
+
+Subject line is short and imperative; body (optional) explains *why*. See `cliff.toml` for the bucketing rules and the fallbacks for pre-2026-04-16 un-prefixed history.
+
 ## Privacy
 
 The repo is sanitised — no real SMS bodies, account numbers, names, employer or UPI handles. Test fixtures use synthetic placeholders. Real data lives only in the on-device Room database.
