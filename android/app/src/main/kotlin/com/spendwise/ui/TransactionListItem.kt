@@ -124,7 +124,7 @@ private fun formatAmount(entity: TransactionEntity, inr: NumberFormat): String {
     val raw = when {
         entity.originalCurrency != "INR" && origAmt != null ->
             "${entity.originalCurrency} ${"%.2f".format(origAmt)}"
-        inrAmt != null -> inr.formatCompact(inrAmt)
+        inrAmt != null -> inr.formatAmount(inrAmt, compact = true)
         else -> "pending"
     }
     return when (entity.budgetEffect) {

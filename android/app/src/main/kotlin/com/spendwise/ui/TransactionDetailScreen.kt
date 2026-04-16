@@ -145,7 +145,7 @@ private fun Hero(tx: TransactionEntity) {
     val primary = when {
         tx.originalCurrency != "INR" && originalAmt != null ->
             "${tx.originalCurrency} ${"%.2f".format(originalAmt)}"
-        inrAmt != null -> inr.formatCompact(inrAmt)
+        inrAmt != null -> inr.formatAmount(inrAmt)
         else -> "Pending"
     }
     // Read theme tokens unconditionally — reading @Composable getters
@@ -170,7 +170,7 @@ private fun Hero(tx: TransactionEntity) {
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "≈ ${inr.formatCompact(inrAmt)}  at  ${"%.4f".format(rate)}  ",
+                text = "≈ ${inr.formatAmount(inrAmt)}  at  ${"%.4f".format(rate)}  ",
                 style = MaterialTheme.typography.bodySmall,
                 color = SpendWiseTheme.colors.onMuted,
             )

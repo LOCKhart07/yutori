@@ -229,7 +229,7 @@ private fun ReadyView(
         val overBudget = snap.percentUsed >= 100.0
         PaceTintedHeroCard(pace = derived.pace) {
             HeroAmount(
-                primaryText = inr.formatCompact(snap.netSpendInr),
+                primaryText = inr.formatAmount(snap.netSpendInr, compact = true),
                 subText = heroSubLine(snap, derived, inr),
                 primaryColor = when {
                     derived.pace == PaceBucket.Over -> themeColors.negative
@@ -906,7 +906,7 @@ private fun CategoryRow(
             )
         }
         Text(
-            text = inr.formatCompact(slice.totalInr),
+            text = inr.formatAmount(slice.totalInr, compact = true),
             style = SpendWiseTextStyles.Mono,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -958,7 +958,7 @@ private fun AccountStrip(
                 )
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    text = inr.formatCompact(card.totalInr),
+                    text = inr.formatAmount(card.totalInr, compact = true),
                     style = SpendWiseTextStyles.Mono,
                 )
             }
@@ -1054,7 +1054,7 @@ private fun prettyMonthKey(monthKey: String, dayLabel: String?): String {
     } catch (_: Exception) { monthKey }
 }
 
-// formatCompact() shared with CategoryDrillDownScreen.kt; defined there.
+// formatAmount() lives in MoneyFormatting.kt.
 
 // ───────────────────────── Sort ─────────────────────────
 

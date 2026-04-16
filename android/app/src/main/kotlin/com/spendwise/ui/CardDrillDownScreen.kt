@@ -76,7 +76,7 @@ fun CardDrillDownScreen(
                 )
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    text = if (spendTotal > 0) inr.formatCompact(spendTotal) else "₹0",
+                    text = if (spendTotal > 0) inr.formatAmount(spendTotal, compact = true) else "₹0",
                     style = MaterialTheme.typography.displaySmall,
                 )
                 Spacer(Modifier.height(2.dp))

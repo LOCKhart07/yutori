@@ -104,7 +104,7 @@ fun CategoryDrillDownScreen(
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = inr.formatCompact(totalSpend),
+                            text = inr.formatAmount(totalSpend, compact = true),
                             style = MaterialTheme.typography.displaySmall,
                         )
                         Spacer(Modifier.height(2.dp))
@@ -220,16 +220,6 @@ private fun prettyMonth(monthKey: String): String = try {
     )[m - 1]
     "$name $y"
 } catch (_: Exception) { monthKey }
-
-// ── Shared formatter used by the list item too ──
-internal fun NumberFormat.formatCompact(value: Double): String {
-    val rounded = kotlin.math.round(value)
-    return if (kotlin.math.abs(value - rounded) < 0.005) {
-        format(rounded).replace(Regex("\\.\\d{2}$"), "")
-    } else {
-        format(value)
-    }
-}
 
 /** Cycle: biggest first → smallest first → latest first → oldest first → back. */
 internal enum class TxSort(val label: String) {
