@@ -12,19 +12,49 @@
 
 [changelog]
 header = ""
+# Sections render in a fixed priority order — user-facing groups
+# first (Features, Bug fixes, Performance), internal noise last.
+# Tests / Internal / Other are wrapped in a <details> block so the
+# release body reads clean on GitHub + in the autoupdater dialog
+# (#71), with power users still able to expand it.
 body = """
 {% if version -%}
 ## {{ version | trim_start_matches(pat="v") }} — {{ timestamp | date(format="%Y-%m-%d") }}
 {% else -%}
 ## Unreleased
 {% endif -%}
-{% for group, commits in commits | group_by(attribute="group") %}
+{% set grouped = commits | group_by(attribute="group") -%}
+{% set visible_order = ["Features", "Bug fixes", "Performance", "Refactor", "Documentation"] -%}
+{% set collapsed_order = ["Tests", "Internal", "Other"] -%}
+{% for g in visible_order -%}
+{% if grouped[g] %}
 
-### {{ group }}
-{% for commit in commits %}
+### {{ g }}
+{% for commit in grouped[g] %}
 - {{ commit.message | split(pat="\n") | first | trim }}
-{%- endfor %}
+{%- endfor -%}
+{% endif -%}
+{% endfor -%}
+{% set has_collapsed = false -%}
+{% for g in collapsed_order -%}
+{% if grouped[g] %}{% set_global has_collapsed = true %}{% endif -%}
+{% endfor -%}
+{% if has_collapsed %}
+
+<details>
+<summary>Internal / tests / other</summary>
+{% for g in collapsed_order -%}
+{% if grouped[g] %}
+
+**{{ g }}**
+{% for commit in grouped[g] %}
+- {{ commit.message | split(pat="\n") | first | trim }}
+{%- endfor -%}
+{% endif -%}
 {% endfor %}
+
+</details>
+{% endif %}
 """
 footer = ""
 trim = true
