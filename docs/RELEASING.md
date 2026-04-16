@@ -99,9 +99,29 @@ rm spendwise-release.jks.b64
 The keystore itself (`spendwise-release.jks`) should live in your
 personal backup — **not** in the repo.
 
-## Local release builds
+## Local builds (Android Studio + CLI)
 
-You don't normally need to build a release APK locally, but if you do:
+You don't normally need to build a release APK locally. But if you have
+the release keystore on your machine, Gradle will pick it up for **both**
+debug and release builds — meaning AS-built debug APKs and CI-built
+release APKs are signed with the same certificate, and Android will let
+one replace the other on your phone without an uninstall prompt.
+
+The recommended setup is `~/.gradle/gradle.properties` (outside the
+repo, in your user home — Gradle reads this regardless of how it was
+invoked, so Android Studio picks it up automatically):
+
+```properties
+# ~/.gradle/gradle.properties
+SPENDWISE_KEYSTORE_PATH=/absolute/path/to/spendwise-release.jks
+SPENDWISE_KEYSTORE_PASSWORD=...
+SPENDWISE_KEY_ALIAS=spendwise
+SPENDWISE_KEY_PASSWORD=...
+```
+
+Lock it down: `chmod 600 ~/.gradle/gradle.properties`.
+
+Env vars also work (take precedence over gradle.properties):
 
 ```bash
 cd android
@@ -112,5 +132,16 @@ export SPENDWISE_KEY_PASSWORD=...
 ./gradlew :app:assembleRelease
 ```
 
-Without the env vars set, the build falls back to the debug key (same
-behaviour as CI).
+Without any of the above set, the build falls back to Android Studio's
+auto-generated debug keystore (per-machine, different on every
+developer's box). Debug builds still work; release builds fall through
+to the debug key too and the CI workflow emits a warning.
+
+### One-time migration from a debug-signed install
+
+If your phone currently has v0.1.0 installed (debug-signed under AS's
+auto-generated key), you'll need to **uninstall it once** before
+installing the first release-signed build — Android refuses to replace
+an APK with one signed by a different cert. After that one uninstall,
+every subsequent debug or release build signs with the same release
+keystore, and the reinstall prompts go away.

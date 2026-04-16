@@ -18,19 +18,22 @@ android {
 
     // Release signing config.
     //
-    // CI-friendly: reads everything from env vars. No local.properties,
-    // no committed keystore paths. Two modes:
-    //
-    //   1. All four SPENDWISE_* env vars + an existing keystore file at
-    //      SPENDWISE_KEYSTORE_PATH → real release signing.
-    //   2. Anything missing → fall through to the debug signingConfig so
-    //      the release build still produces an installable (debug-signed)
-    //      APK. Intended for side-loading by the app author only; the
-    //      release workflow emits a warning when this path is taken.
-    val keystorePath: String? = System.getenv("SPENDWISE_KEYSTORE_PATH")
-    val keystorePassword: String? = System.getenv("SPENDWISE_KEYSTORE_PASSWORD")
-    val keyAlias: String? = System.getenv("SPENDWISE_KEY_ALIAS")
-    val keyPassword: String? = System.getenv("SPENDWISE_KEY_PASSWORD")
+    // Reads SPENDWISE_* creds from env vars first (CI), then from Gradle
+    // properties (~/.gradle/gradle.properties on a dev machine — lets
+    // Android Studio pick them up without launching AS from a shell).
+    // When all four are present and the keystore file exists, both debug
+    // and release builds use the release signingConfig — same cert on
+    // every APK means AS-built debug installs and CI-built release
+    // installs can replace each other on your phone without uninstalling.
+    // When anything is missing, release falls back to the auto-generated
+    // debug keystore and the workflow emits a warning.
+    fun signingProp(key: String): String? =
+        System.getenv(key) ?: project.findProperty(key) as String?
+
+    val keystorePath: String? = signingProp("SPENDWISE_KEYSTORE_PATH")
+    val keystorePassword: String? = signingProp("SPENDWISE_KEYSTORE_PASSWORD")
+    val keyAlias: String? = signingProp("SPENDWISE_KEY_ALIAS")
+    val keyPassword: String? = signingProp("SPENDWISE_KEY_PASSWORD")
     val hasReleaseSigning = !keystorePath.isNullOrBlank() &&
         !keystorePassword.isNullOrBlank() &&
         !keyAlias.isNullOrBlank() &&
@@ -49,6 +52,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            // When release-signing creds are present locally, sign debug
+            // with them too so AS-built debug APKs and CI-built release
+            // APKs can replace each other without an uninstall prompt.
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
