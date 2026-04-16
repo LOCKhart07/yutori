@@ -18,6 +18,10 @@ import com.spendwise.ingestion.AlertNotifier
 import com.spendwise.ingestion.ImpactNotification
 import com.spendwise.ui.formatAmount
 import java.text.NumberFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
 import java.util.Locale
 
 /**
@@ -40,8 +44,13 @@ class AndroidAlertNotifier(private val context: Context) : AlertNotifier {
 
         val inr = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
         val snap = evaluation.snapshot
-        val title = titleFor(thresholdPct, snap, inr)
-        val body = bodyFor(thresholdPct, snap, inr)
+        val paceDays = computePaceDeltaDays(
+            monthKey = snap.monthKey,
+            actualPct = snap.percentUsed,
+            nowMs = System.currentTimeMillis(),
+        )
+        val title = buildBudgetAlertTitle(thresholdPct, snap, inr)
+        val body = buildBudgetAlertBody(snap, inr, paceDays)
 
         val contentIntent = PendingIntent.getActivity(
             context,
@@ -90,23 +99,6 @@ class AndroidAlertNotifier(private val context: Context) : AlertNotifier {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun titleFor(pct: Int, snap: MonthSnapshot, inr: NumberFormat): String =
-        buildBudgetAlertTitle(pct, snap, inr)
-
-    private fun bodyFor(
-        pct: Int,
-        snap: com.spendwise.budget.MonthSnapshot,
-        inr: NumberFormat,
-    ): String = buildString {
-        append("Spent ${inr.format(snap.netSpendInr)} of ${inr.format(snap.effectiveBudgetInr)}")
-        val remaining = snap.effectiveBudgetInr - snap.netSpendInr
-        if (remaining >= 0) {
-            append(" · ${inr.format(remaining)} remaining")
-        } else {
-            append(" · ${inr.format(-remaining)} over")
-        }
-    }
-
     override fun notifyImpact(impact: ImpactNotification) {
         if (!hasPostNotificationsPermission()) return
         val inr = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
@@ -116,15 +108,21 @@ class AndroidAlertNotifier(private val context: Context) : AlertNotifier {
             ?.let { " at $it" } ?: ""
         val title = "${inr.format(impact.txInrAmount)}$merchantBit"
 
-        val pctRounded = impact.percentOfBudget.let { kotlin.math.round(it).toInt() }
-        val daysLeftBit = if (impact.daysLeft > 0) {
-            " for ${impact.daysLeft} days"
-        } else ""
-        val body = if (impact.remainingInr >= 0) {
-            "$pctRounded% of this month · ${inr.format(impact.remainingInr)} left$daysLeftBit"
-        } else {
-            "$pctRounded% of this month · over by ${inr.format(-impact.remainingInr)}"
+        // Pace applies only when still under budget — the runway line
+        // already reads "· over by ₹X" once remaining < 0 and pace is
+        // redundant noise at that point.
+        val cumulativePct = if (impact.effectiveBudgetInr > 0.0) {
+            100.0 * (impact.effectiveBudgetInr - impact.remainingInr) /
+                impact.effectiveBudgetInr
+        } else null
+        val paceDays = cumulativePct?.let {
+            computePaceDeltaDays(
+                monthKey = impact.monthKey,
+                actualPct = it,
+                nowMs = System.currentTimeMillis(),
+            )
         }
+        val body = buildImpactBody(impact, inr, paceDays)
 
         val contentIntent = PendingIntent.getActivity(
             context,
@@ -199,4 +197,94 @@ internal fun buildBudgetAlertTitle(
             else -> "Budget: $pct% · ${inr.formatAmount(over, compact = true)} over"
         }
     }
+}
+
+/**
+ * Budget-alert notification body. Expanded (BigText) view shows the
+ * full string; the collapsed row truncates at ~35 chars and relies on
+ * the title (above) for actionable info.
+ *
+ * `paceDelta` is the output of [computePaceDeltaPp] — when present and
+ * noticeably off-pace (|Δ| > 5pp), it's appended as a `· +Xpp over pace`
+ * suffix so the user knows whether the threshold was crossed early
+ * ("got here too fast") or late ("on schedule for the month"). See #17.
+ */
+internal fun buildBudgetAlertBody(
+    snap: MonthSnapshot,
+    inr: NumberFormat,
+    paceDelta: Int?,
+): String = buildString {
+    append("Spent ${inr.format(snap.netSpendInr)} of ${inr.format(snap.effectiveBudgetInr)}")
+    val remaining = snap.effectiveBudgetInr - snap.netSpendInr
+    if (remaining >= 0) append(" · ${inr.format(remaining)} remaining")
+    else append(" · ${inr.format(-remaining)} over")
+    append(paceSuffix(paceDelta))
+}
+
+/**
+ * Impact-notification body. Leads with the single-tx percent of the
+ * month's budget, then remaining runway. When the user is still under
+ * budget (`remainingInr ≥ 0`) a pace suffix is appended so the alert
+ * doubles as a pacing check — "this one tx was 12% of your budget AND
+ * you're already running +15pp over pace" is much sharper than the
+ * per-tx percent alone. When already over budget, the runway line
+ * already reads "· over by ₹X" so pace is redundant noise.
+ */
+internal fun buildImpactBody(
+    impact: ImpactNotification,
+    inr: NumberFormat,
+    paceDelta: Int?,
+): String {
+    val pctRounded = kotlin.math.round(impact.percentOfBudget).toInt()
+    val daysLeftBit = if (impact.daysLeft > 0) " for ${impact.daysLeft} days" else ""
+    return if (impact.remainingInr >= 0) {
+        "$pctRounded% of this month · ${inr.format(impact.remainingInr)} left$daysLeftBit" +
+            paceSuffix(paceDelta)
+    } else {
+        "$pctRounded% of this month · over by ${inr.format(-impact.remainingInr)}"
+    }
+}
+
+/**
+ * Pace delta expressed in calendar days — the number of days' worth of
+ * budget the user is ahead of ("over pace") or behind ("under pace") a
+ * perfectly-proportional burn. Positive = spending fast, negative =
+ * spending slow. Returns null when the month isn't the current one
+ * (past/future months have no "pace") or when `monthKey` won't parse.
+ *
+ * Days are reader-friendly — an end-user who wouldn't know what "pp"
+ * means still groks "12 days over pace." The pp-precision version is
+ * tracked separately for a future detailed/analysis surface.
+ *
+ * Formula:
+ *   expected_pct = 100 × dayOfMonth / daysInMonth
+ *   delta_pp     = actualPct − expected_pct
+ *   delta_days   = delta_pp × daysInMonth / 100
+ */
+internal fun computePaceDeltaDays(
+    monthKey: String,
+    actualPct: Double,
+    nowMs: Long,
+    zone: ZoneId = ZoneId.systemDefault(),
+): Int? {
+    val ym = runCatching { YearMonth.parse(monthKey) }.getOrNull() ?: return null
+    val today = LocalDate.ofInstant(Instant.ofEpochMilli(nowMs), zone)
+    if (today.year != ym.year || today.monthValue != ym.monthValue) return null
+    val daysInMonth = ym.lengthOfMonth()
+    val expected = 100.0 * today.dayOfMonth / daysInMonth
+    val deltaDays = (actualPct - expected) * daysInMonth / 100.0
+    return kotlin.math.round(deltaDays).toInt()
+}
+
+/**
+ * Formats a pace-delta (days) as a suffix for the notification body.
+ * Hides the suffix when the delta is null or within ±2 days — day-to-
+ * day fluctuations aren't actionable and pinning the deadband at 2
+ * sidesteps the "1 days" grammar-error case.
+ */
+internal fun paceSuffix(deltaDays: Int?): String = when {
+    deltaDays == null -> ""
+    deltaDays >= 2 -> " · $deltaDays days over pace"
+    deltaDays <= -2 -> " · ${-deltaDays} days under pace"
+    else -> ""
 }

@@ -15,7 +15,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #14 — Budgets roll forward by default
 - #15 — Budget suggestions from history
 - #16 — Daily-burn stat pill — pace tint + target value
-- #17 — Sharper notification copy (add · +Zpp over pace)
 - #18 — Late-arriving past-month alert stamping
 - #19 — Rebuild database screen
 
@@ -69,6 +68,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #78 — Migration error screen: 'Report this error' action (bug-report flow + PII sanitization)
 - #91 — Month-picker grid — quick-jump to arbitrary month *(follow-up to #21)*
 - #92 — Dashboard pager peek is invisible *(follow-up to #21)*
+- #97 — Expose precise pace delta (pp) in a detail/analysis surface *(follow-up to #17)*
 
 ## Tier 5 — deferred / low urgency
 
