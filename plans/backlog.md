@@ -43,6 +43,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #87 — Permission gate: row order mismatch + misleading check/warning glyphs
 - #93 — Auto-promote active accounts from SUGGESTED to CONFIRMED *(follow-up to #82)*
 - #94 — Dashboard has no P99 headroom — fix before piling on animations *(gates #52–#56)*
+- #96 — Upgrade toolchain + libraries (Kotlin 2.x, AGP 9, Gradle 9, compileSdk 36)
 
 ## Tier 4 — nice-to-have polish
 
