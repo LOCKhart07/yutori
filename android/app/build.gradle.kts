@@ -118,6 +118,18 @@ android {
                 signingConfigs.getByName("debug")
             }
         }
+        // Macrobenchmark target. Shape matches release (non-debuggable,
+        // same minify + signing config) so measurements reflect real
+        // performance and the APK replaces the existing install cleanly
+        // — inheriting release's signing means we reuse the release key
+        // when creds are set and fall back to the debug key otherwise.
+        // `matchingFallbacks` tells library modules with no `benchmark`
+        // variant to use their `release` one.
+        create("benchmark") {
+            initWith(getByName("release"))
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
+        }
     }
 
     compileOptions {
@@ -169,6 +181,11 @@ dependencies {
 
     // WorkManager — drives the historical-import worker.
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // Pulled in transitively by other androidx libs at an older rev; pinned
+    // here because Macrobenchmark on API 34+ requires >=1.4.0 to install
+    // baseline/startup profiles at measurement time.
+    implementation("androidx.profileinstaller:profileinstaller:1.4.0")
 
     // Compose bill-of-materials pins all androidx.compose.* artifacts.
     val composeBom = platform("androidx.compose:compose-bom:2024.04.00")

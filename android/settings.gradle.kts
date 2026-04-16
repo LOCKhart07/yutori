@@ -15,6 +15,7 @@ include(":transactions")
 include(":database")
 include(":ingestion")
 include(":app")
+include(":macrobenchmark")
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
