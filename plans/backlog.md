@@ -10,7 +10,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 
 ## Tier 1 — easy wins (hours, no schema)
 
-- #11 — Pending-FX banner on dashboard
 - #12 — Mid-month overshoot projection
 - #13 — Frequency insight on dashboard ("N small txns · median ₹X")
 - #14 — Budgets roll forward by default
