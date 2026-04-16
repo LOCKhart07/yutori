@@ -40,7 +40,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #36 — Goals entity + translator
 - #37 — Annual-cost smoothing buckets
 - #38 — Per-category pacing baseline (median-of-3 historical)
-- #71 — In-app autoupdater *(spec: plans/autoupdater-spec.md)*
+- #71 — In-app autoupdater *(spec: plans/autoupdater-spec.md; shares markdown renderer with #77)*
 - #85 — MigrationErrorScreen: stack trace not scrollable; Copy has no feedback
 - #87 — Permission gate: row order mismatch + misleading check/warning glyphs
 - #93 — Auto-promote active accounts from SUGGESTED to CONFIRMED *(follow-up to #82)*
@@ -67,7 +67,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #54 — Animation: progress-bar fill
 - #55 — Animation: money counter on hero
 - #56 — Animation: screen transitions
-- #77 — In-app changelog / "What's new" view
+- #77 — In-app changelog / "What's new" view *(reuses #71's markdown renderer)*
 - #78 — Migration error screen: 'Report this error' action (bug-report flow + PII sanitization)
 - #91 — Month-picker grid — quick-jump to arbitrary month *(follow-up to #21)*
 - #92 — Dashboard pager peek is invisible *(follow-up to #21)*
