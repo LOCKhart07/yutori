@@ -1,12 +1,12 @@
 # SpendWise
 
-> Working title — see `plans/pending.md` for the naming brainstorm.
+> Package name — will be renamed **Yutori** across user-facing surfaces. Rename tracked in issue #8.
 
 Android-only personal spending tracker that reads SMS from Indian banks and UPI apps, classifies each message, and derives a monthly budget view. All data stays on-device (Room). Side-loaded APK; no Play Store.
 
 ## Status
 
-Personal project, single user. Active development. The `plans/` directory captures intent; `plans/pending.md` is the live work-in-progress list.
+Personal project, single user. Active development. The `plans/` directory captures intent; work-in-progress is tracked in [GitHub issues](../../issues) — `plans/backlog.md` is a thin tiered index.
 
 ## Build
 

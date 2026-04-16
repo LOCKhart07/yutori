@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-SpendWise (placeholder name — see `plans/pending.md`) is an Android-only personal spending tracker that reads SMS from Indian banks and UPI apps, classifies each message, and derives a monthly budget view. All data stays on-device (Room). Ships as a side-loaded APK via GitHub Releases (no Play Store); `docs/RELEASING.md` covers signing. The project is planning-heavy — the `plans/` directory is authoritative for behaviour; read the relevant spec before changing logic:
+Yutori (package name still `com.spendwise.*` — internal-only; user-facing strings use Yutori. Rename tracked in issue #8) is an Android-only personal spending tracker that reads SMS from Indian banks and UPI apps, classifies each message, and derives a monthly budget view. All data stays on-device (Room). Ships as a side-loaded APK via GitHub Releases (no Play Store); `docs/RELEASING.md` covers signing. The project is planning-heavy — the `plans/` directory is authoritative for behaviour; read the relevant spec before changing logic:
 
 - `plans/spendwise-plan.md` — top-level product and design doc. Read §4 (classification & double-counting), §11–§12 (resolved decisions and open questions) before touching parser/classifier logic.
 - `plans/business-logic-spec.md` — dedup rules (§4.2 in particular), budget/alert semantics, reparse pipeline.
 - `plans/parser-spec.md`, `plans/ingestion-spec.md`, `plans/schema.md`, `plans/ui-spec.md`, `plans/settings-spec.md`, `plans/error-states-spec.md`, `plans/testing-spec.md` — domain-specific specs.
-- `plans/pending.md` — current pending work and gaps (reconciled snapshot).
+- `plans/backlog.md` — thin index linking every pending work item to its GitHub issue. Issues are the source of truth; the index is just a sorted view by tier. `plans/pending.md` was retired 2026-04-16 — its contents migrated to issues #5–#73.
 
 ## Build and test
 
