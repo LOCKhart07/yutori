@@ -7,16 +7,27 @@
 #      so we don't have to rewrite history. See docs/RELEASING.md and
 #      CLAUDE.md for the prefix convention.
 #
+# `docs:` is reserved for repo-internal documentation (README,
+# CLAUDE.md, specs, docs/*). User-facing copy changes (help text,
+# About screen, onboarding, labels) ship as `feat:` or `fix:` — they
+# are product surface, not code docs. That's why Documentation lives
+# in the collapsed block below: by rule, it's always repo noise.
+#
 # pending.md / backlog.md / merge-PR / initial-commit messages are
 # skipped outright — they're bookkeeping noise, not user-facing.
 
 [changelog]
 header = ""
 # Sections render in a fixed priority order — user-facing groups
-# first (Features, Bug fixes, Performance), internal noise last.
-# Tests / Internal / Other are wrapped in a <details> block so the
-# release body reads clean on GitHub + in the autoupdater dialog
-# (#71), with power users still able to expand it.
+# first (Features, Bug fixes, Performance, Refactor), internal noise
+# last. Documentation / Tests / Internal / Other are wrapped in a
+# <details> block so the release body reads clean on GitHub + in the
+# autoupdater dialog (#71), with power users still able to expand.
+#
+# The bullet lookup uses commit.conventional_commit.description when
+# the commit has a conventional prefix (stripping `feat:` / `fix:` /
+# etc. because the section header already says what it is) and falls
+# back to the first line of the raw message for pre-migration commits.
 body = """
 {% if version -%}
 ## {{ version | trim_start_matches(pat="v") }} — {{ timestamp | date(format="%Y-%m-%d") }}
@@ -24,8 +35,8 @@ body = """
 ## Unreleased
 {% endif -%}
 {% set grouped = commits | group_by(attribute="group") -%}
-{% set visible_order = ["Features", "Bug fixes", "Performance", "Refactor", "Documentation"] -%}
-{% set collapsed_order = ["Tests", "Internal", "Other"] -%}
+{% set visible_order = ["Features", "Bug fixes", "Performance", "Refactor"] -%}
+{% set collapsed_order = ["Documentation", "Tests", "Internal", "Other"] -%}
 {% for g in visible_order -%}
 {% if grouped[g] %}
 
@@ -42,7 +53,7 @@ body = """
 {% if has_collapsed %}
 
 <details>
-<summary>Internal / tests / other</summary>
+<summary>Docs / internal / tests / other</summary>
 {% for g in collapsed_order -%}
 {% if grouped[g] %}
 
@@ -60,7 +71,7 @@ footer = ""
 trim = true
 
 [git]
-conventional_commits = false
+conventional_commits = true
 filter_unconventional = false
 split_commits = false
 protect_breaking_commits = false

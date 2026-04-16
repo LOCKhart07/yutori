@@ -79,6 +79,7 @@ Package layout in each module is `com.spendwise.<module>`; `:app` uses `com.spen
 - **PII**: real names, account last-4s, employer names, UPI handles, phone numbers, real SMS bodies must never be in committed source (tests, fixtures, plans, mockups). Synthetic placeholders only — see existing patterns in `android/parser/src/test/kotlin/.../*Test.kt`.
 - **Commit policy**: don't `git add -A` (a hook blocks it). Stage by path. The user's name + email is fine on commits going forward.
 - **Commit message convention**: use conventional-commit prefixes — `feat:` / `fix:` / `perf:` / `refactor:` / `docs:` / `test:` / `chore:` / `style:` / `ci:`. Short imperative subject line, optional body for the *why*. git-cliff reads these prefixes to generate the release body on every `v*` tag — see `cliff.toml`. Pre-2026-04-16 commits are bucketed via regex fallback, so no rewrite is needed, but every new commit should be prefixed.
+- **`docs:` is repo-internal only.** Reserve `docs:` for changes to README, CLAUDE.md, spec files under `plans/`, `docs/*`, etc. — documentation *of the codebase*. User-facing copy changes (help text, About screen, onboarding prompts, button labels, error messages, notification strings) are product surface and ship as `feat:` (new copy) or `fix:` (wrong copy). This is why `Documentation` is always collapsed in release bodies — by rule, it's repo noise the end user doesn't care about.
 
 ## Conventions picked up from existing code
 

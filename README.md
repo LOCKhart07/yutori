@@ -33,13 +33,15 @@ Tag-push (`v*`) builds and uploads a signed APK via GitHub Actions. Setup + keys
 
 Use conventional-commit prefixes so git-cliff can group them into release notes:
 
-- `feat:` — user-facing feature
-- `fix:` — user-facing bug fix
+- `feat:` — user-facing feature (incl. copy / help text / labels)
+- `fix:` — user-facing bug fix (incl. wrong copy)
 - `perf:` — performance improvement
 - `refactor:` — non-behavioural code change
 - `test:` — test-only change
-- `docs:` — documentation only
+- `docs:` — repo-internal documentation only (README, CLAUDE.md, plans/, docs/)
 - `chore:`, `style:`, `ci:` — internal
+
+`docs:` is reserved for documentation *of the codebase*. User-facing copy (help text, About, onboarding, buttons, errors, notifications) is product surface and ships as `feat:`/`fix:`.
 
 Subject line is short and imperative; body (optional) explains *why*. See `cliff.toml` for the bucketing rules and the fallbacks for pre-2026-04-16 un-prefixed history.
 
