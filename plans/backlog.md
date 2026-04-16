@@ -30,6 +30,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #25 — CI gate on release (run tests before publishing APK)
 - #5 — Fix tx-list amount sort ordering + make large-to-small the default
 - #6 — Account drill-down from dashboard footer shows ₹0 spend
+- #74 — Historical import doesn't update the dashboard incrementally
 
 ## Tier 2 — behavior-change core (medium effort)
 
