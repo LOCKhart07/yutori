@@ -5,6 +5,7 @@ import com.spendwise.database.dao.BudgetDao
 import com.spendwise.database.dao.TransactionDao
 import com.spendwise.database.entities.BudgetEntity
 import com.spendwise.database.entities.TransactionEntity
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.doubles.plusOrMinus
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -174,6 +175,88 @@ class DashboardViewModelTest {
     }
 
     @Test
+    fun `card grouping - accountId wins and unregistered last4 forms its own chip`() =
+        runTest(dispatcher) {
+            // Issue #6: UPI-only accounts (null last4 on tx, accountId
+            // set) must form their own chip. Registered cards group by
+            // accountId regardless of surface-form variance. Rows
+            // without accountId but with last4 still surface (fallback
+            // for unregistered cards).
+            val txs = listOf(
+                // Registered UPI-only account — no last4 on the tx.
+                txEntity(id = 1, inrAmount = 500.0, accountId = 42L,
+                    last4 = null, issuer = "Paytm"),
+                txEntity(id = 2, inrAmount = 300.0, accountId = 42L,
+                    last4 = null, issuer = "Paytm"),
+                // Registered card — same accountId, two surface forms.
+                txEntity(id = 3, inrAmount = 200.0, accountId = 7L,
+                    last4 = "XX0000", issuer = "Kotak"),
+                txEntity(id = 4, inrAmount = 100.0, accountId = 7L,
+                    last4 = "0000", issuer = "Kotak"),
+                // Unregistered card — no accountId, has last4.
+                txEntity(id = 5, inrAmount = 50.0, accountId = null,
+                    last4 = "XX9999", issuer = "Unknown"),
+            )
+            val vm = DashboardViewModel(
+                transactionDao = FakeTxDao(txs),
+                budgetDao = FakeBudgetDao(
+                    month = BudgetEntity(
+                        monthKey = "2026-04", limitInr = 30_000.0,
+                        createdAtMs = 0, updatedAtMs = 0,
+                    ),
+                ),
+                hasPermissionProvider = { true },
+                nowMs = { epoch("2026-04-15") },
+            )
+            val state = vm.uiState.first { it is DashboardUiState.Ready }
+                as DashboardUiState.Ready
+
+            // Three chips: Paytm (UPI-only, accountId 42), Kotak
+            // (card, accountId 7), Unknown (last4-only).
+            state.byCard shouldHaveSize 3
+            val paytm = state.byCard.single { it.accountId == 42L }
+            paytm.last4 shouldBe null
+            paytm.totalInr shouldBe (800.0 plusOrMinus 1e-9)
+            paytm.transactionCount shouldBe 2
+
+            val kotak = state.byCard.single { it.accountId == 7L }
+            // Both surface forms collapsed under one chip.
+            kotak.totalInr shouldBe (300.0 plusOrMinus 1e-9)
+            kotak.transactionCount shouldBe 2
+
+            val unknown = state.byCard.single { it.accountId == null }
+            unknown.last4 shouldBe "XX9999"
+            unknown.totalInr shouldBe (50.0 plusOrMinus 1e-9)
+        }
+
+    @Test
+    fun `card grouping - rows without accountId and without last4 are excluded`() =
+        runTest(dispatcher) {
+            // Txs with neither identifier can't anchor a chip — excluding
+            // them prevents an "Unknown ••null" ghost tile.
+            val txs = listOf(
+                txEntity(id = 1, inrAmount = 100.0, accountId = null, last4 = null),
+                txEntity(id = 2, inrAmount = 200.0, accountId = 9L,
+                    last4 = "XX1111", issuer = "Axis"),
+            )
+            val vm = DashboardViewModel(
+                transactionDao = FakeTxDao(txs),
+                budgetDao = FakeBudgetDao(
+                    month = BudgetEntity(
+                        monthKey = "2026-04", limitInr = 30_000.0,
+                        createdAtMs = 0, updatedAtMs = 0,
+                    ),
+                ),
+                hasPermissionProvider = { true },
+                nowMs = { epoch("2026-04-15") },
+            )
+            val state = vm.uiState.first { it is DashboardUiState.Ready }
+                as DashboardUiState.Ready
+            state.byCard shouldHaveSize 1
+            state.byCard.single().accountId shouldBe 9L
+        }
+
+    @Test
     fun `pending forex count is exposed`() = runTest(dispatcher) {
         val txs = listOf(
             txEntity(id = 1, inrAmount = 500.0),
@@ -219,6 +302,7 @@ class DashboardViewModelTest {
         issuer: String? = "Kotak",
         monthKey: String = "2026-04",
         rateSource: String? = null,
+        accountId: Long? = null,
     ) = TransactionEntity(
         id = id,
         classification = "UPI_PAYMENT",
@@ -231,7 +315,7 @@ class DashboardViewModelTest {
         merchant = "x",
         merchantKey = "x",
         category = category,
-        accountId = null,
+        accountId = accountId,
         last4 = last4,
         issuer = issuer,
         occurredAtMs = 1_700_000_000_000L,

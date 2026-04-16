@@ -39,7 +39,11 @@ internal object AccountResolver {
         // digits-only makes the comparison stable across surface forms.
         val inputDigits = last4.filter(Char::isDigit)
         if (inputDigits.isEmpty()) return null
-        val matches = confirmed.filter { it.last4.filter(Char::isDigit) == inputDigits }
+        // Accounts with null last4 (UPI-only) never match a parsed
+        // last-4 — identity for those flows through recipient_rules.
+        val matches = confirmed.filter {
+            it.last4?.filter(Char::isDigit) == inputDigits
+        }
         if (matches.isEmpty()) return null
         if (matches.size == 1) return matches.single()
 

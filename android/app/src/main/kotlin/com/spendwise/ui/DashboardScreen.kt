@@ -63,7 +63,7 @@ fun DashboardScreen(
     onImport: () -> Unit = {},
     onSettings: () -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
-    onCardClick: (last4: String) -> Unit = {},
+    onCardClick: (accountId: Long?, last4: String?) -> Unit = { _, _ -> },
     hasSettingsBadge: Boolean = false,
     onMonthPrev: () -> Unit = {},
     onMonthNext: () -> Unit = {},
@@ -183,7 +183,7 @@ private fun ReadyView(
     onImport: () -> Unit,
     onSettings: () -> Unit,
     onCategoryClick: (String) -> Unit,
-    onCardClick: (String) -> Unit,
+    onCardClick: (accountId: Long?, last4: String?) -> Unit,
     hasSettingsBadge: Boolean = false,
     onMonthPrev: () -> Unit = {},
     onMonthNext: () -> Unit = {},
@@ -929,7 +929,7 @@ private fun EmptySection(text: String) {
 private fun AccountStrip(
     cards: List<CardChip>,
     inr: NumberFormat,
-    onCardClick: (String) -> Unit,
+    onCardClick: (accountId: Long?, last4: String?) -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -941,7 +941,7 @@ private fun AccountStrip(
             Column(
                 modifier = Modifier
                     .width(160.dp)
-                    .clickable { onCardClick(card.last4) }
+                    .clickable { onCardClick(card.accountId, card.last4) }
                     .clip(RoundedCornerShape(12.dp))
                     .background(SpendWiseTheme.colors.surfaceElevated)
                     .padding(14.dp),
@@ -951,8 +951,10 @@ private fun AccountStrip(
                     style = MaterialTheme.typography.labelSmall,
                     color = SpendWiseTheme.colors.onMuted,
                 )
+                // UPI-only accounts (issue #6) have no last-4 — show the
+                // UPI tag instead of a masked number placeholder.
                 Text(
-                    text = "••${card.last4}",
+                    text = card.last4?.let { "\u2022\u2022$it" } ?: "UPI",
                     style = SpendWiseTextStyles.Mono.copy(fontWeight = FontWeight.Normal),
                     color = SpendWiseTheme.colors.onMuted,
                 )

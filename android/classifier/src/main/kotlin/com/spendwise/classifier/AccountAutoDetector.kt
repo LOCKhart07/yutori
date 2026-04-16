@@ -46,7 +46,7 @@ object AccountAutoDetector {
 
         val match = existingAccounts.firstOrNull {
             it.issuer.equals(issuer, ignoreCase = true) &&
-                it.last4.equals(last4, ignoreCase = true)
+                it.last4?.equals(last4, ignoreCase = true) == true
         }
         return when {
             // CONFIRMED or DISMISSED → do nothing.

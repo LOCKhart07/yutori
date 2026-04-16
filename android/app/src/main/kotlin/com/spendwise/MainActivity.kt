@@ -33,6 +33,8 @@ import com.spendwise.ui.AlertSettingsScreen
 import com.spendwise.ui.AccountsScreen
 import com.spendwise.ui.BudgetSetupScreen
 import com.spendwise.ui.CardDrillDownScreen
+import com.spendwise.ui.CardDrillResolution
+import com.spendwise.ui.resolveCardDrill
 import com.spendwise.ui.CategoryDrillDownScreen
 import com.spendwise.ui.DashboardScreen
 import com.spendwise.ui.DashboardUiState
@@ -46,6 +48,7 @@ import com.spendwise.ui.RecipientRulesScreen
 import com.spendwise.ui.SettingsScreen
 import com.spendwise.ui.TransactionDetailScreen
 import com.spendwise.ui.importStatusFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
@@ -70,7 +73,17 @@ private sealed interface Screen {
     data object Dashboard : Screen
     data class BudgetSetup(val monthKey: String) : Screen
     data class CategoryDrill(val monthKey: String, val category: String) : Screen
-    data class CardDrill(val monthKey: String, val last4: String) : Screen
+    /**
+     * Account drill-down. [accountId] is the canonical identifier when
+     * the chip represents a registered account (issue #6). [last4] is
+     * a fallback for chips derived from unregistered cards. At least
+     * one is non-null.
+     */
+    data class CardDrill(
+        val monthKey: String,
+        val accountId: Long?,
+        val last4: String?,
+    ) : Screen
     data class TransactionDetail(val transactionId: Long) : Screen
     data object Settings : Screen
     data object Accounts : Screen
@@ -164,7 +177,9 @@ private fun AppContent() {
                 onImport = { importDialogOpen = true },
                 onSettings = { goTo(Screen.Settings) },
                 onCategoryClick = { cat -> goTo(Screen.CategoryDrill(viewedMonthKey, cat)) },
-                onCardClick = { last4 -> goTo(Screen.CardDrill(viewedMonthKey, last4)) },
+                onCardClick = { accountId, last4 ->
+                    goTo(Screen.CardDrill(viewedMonthKey, accountId, last4))
+                },
                 hasSettingsBadge = suggestedCount > 0,
                 onMonthPrev = { viewModel.navigateMonth(-1) },
                 onMonthNext = { viewModel.navigateMonth(1) },
@@ -242,37 +257,50 @@ private fun AppContent() {
         }
 
         is Screen.CardDrill -> {
-            // Resolve accountId for this last4 (if registered) so we can use
-            // the account-scoped query. Falls back to filtering all month
-            // transactions by last4 when no account is registered.
+            // Three-branch resolution per issue #6:
+            //   1. accountId present → account-scoped query (covers
+            //      registered card accounts and UPI-only accounts).
+            //   2. accountId null, last4 present → try to look up an
+            //      account by last4; if found, account-scoped query,
+            //      else fall back to month-filtered-by-last4.
+            //   3. both null → nothing to show (nav layer shouldn't
+            //      reach this but we degrade gracefully).
             val accountDao = database.accountDao()
-            val resolvedAccountId: Long? by produceState<Long?>(null, s.last4) {
-                val match = accountDao.findByLast4(s.last4).firstOrNull()
-                value = match?.id
-            }
-            val issuer: String? by produceState<String?>(null, s.last4) {
-                val match = accountDao.findByLast4(s.last4).firstOrNull()
-                value = match?.issuer
-            }
-
             val txDao = database.transactionDao()
-            val flow = if (resolvedAccountId != null) {
-                txDao.observeByMonthAndAccount(s.monthKey, resolvedAccountId!!)
-            } else {
-                // No registered account — show all transactions this month
-                // with matching last4 by filtering the broader flow.
-                txDao.observeByMonth(s.monthKey)
-                    .map { list -> list.filter { it.last4 == s.last4 } }
+
+            val resolved: CardDrillResolution? by produceState<CardDrillResolution?>(
+                null, s.accountId, s.last4,
+            ) {
+                value = resolveCardDrill(
+                    accountId = s.accountId,
+                    last4 = s.last4,
+                    accountDao = accountDao,
+                )
             }
 
-            CardDrillDownScreen(
-                monthKey = s.monthKey,
-                last4 = s.last4,
-                issuerLabel = issuer,
-                transactionsFlow = flow,
-                onBack = { goBack() },
-                onTransactionClick = { id -> goTo(Screen.TransactionDetail(id)) },
-            )
+            val r = resolved
+            if (r == null) {
+                LoadingPlaceholder()
+            } else {
+                val flow = when (r) {
+                    is CardDrillResolution.ByAccount ->
+                        txDao.observeByMonthAndAccount(s.monthKey, r.accountId)
+                    is CardDrillResolution.ByLast4 ->
+                        txDao.observeByMonth(s.monthKey)
+                            .map { list -> list.filter { it.last4 == r.last4 } }
+                    is CardDrillResolution.Empty ->
+                        flowOf(emptyList())
+                }
+
+                CardDrillDownScreen(
+                    monthKey = s.monthKey,
+                    last4 = r.last4,
+                    issuerLabel = r.issuer,
+                    transactionsFlow = flow,
+                    onBack = { goBack() },
+                    onTransactionClick = { id -> goTo(Screen.TransactionDetail(id)) },
+                )
+            }
         }
 
         is Screen.TransactionDetail -> {

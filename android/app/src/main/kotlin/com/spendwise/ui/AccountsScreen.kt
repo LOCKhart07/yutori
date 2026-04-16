@@ -162,11 +162,11 @@ private fun AccountRow(entity: AccountEntity, onClick: () -> Unit) {
         Column(Modifier.fillMaxWidth()) {
             Text(
                 entity.displayName?.takeIf { it.isNotBlank() }
-                    ?: "${entity.issuer} ••${entity.last4}",
+                    ?: accountTitle(entity),
                 style = MaterialTheme.typography.bodyLarge,
             )
             Text(
-                "${entity.issuer} ••${entity.last4} · " +
+                accountTitle(entity) + " · " +
                     prettyKind(entity.kind) +
                     if (entity.isDefaultSpend) " · default spend" else "",
                 style = MaterialTheme.typography.bodySmall,
@@ -193,7 +193,7 @@ private fun SuggestionRow(
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Text(
-                text = "${entity.issuer} ••${entity.last4}",
+                text = accountTitle(entity),
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
             )
             Spacer(Modifier.height(2.dp))
@@ -224,6 +224,15 @@ private fun SuggestionRow(
         }
     }
 }
+
+/**
+ * Human-readable one-line identity for an account. Card-bearing rows
+ * show issuer + masked last-4; UPI-only rows (null last4, issue #6)
+ * show just the issuer.
+ */
+private fun accountTitle(entity: AccountEntity): String =
+    if (entity.last4 != null) "${entity.issuer} \u2022\u2022${entity.last4}"
+    else entity.issuer
 
 private fun prettyKind(kind: String): String = when (kind) {
     "SAVINGS" -> "Savings"

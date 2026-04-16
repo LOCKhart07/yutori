@@ -24,7 +24,12 @@ data class AccountEntity(
 
     val issuer: String,
 
-    val last4: String,
+    /**
+     * Masked last-4. Nullable since schema v3 so UPI-only accounts
+     * (Paytm, PhonePe, bank UPI apps) can be registered without a fake
+     * last-4 (issue #6). Non-null for card-bearing accounts.
+     */
+    val last4: String?,
 
     @ColumnInfo(name = "display_name")
     val displayName: String? = null,

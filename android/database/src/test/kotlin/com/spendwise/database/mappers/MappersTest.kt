@@ -42,6 +42,24 @@ class MappersTest {
     }
 
     @Test
+    fun `Account with null last4 round-trips via AccountEntity`() {
+        // Issue #6: UPI-only accounts (Paytm, PhonePe, bank UPI apps)
+        // have no last-4. Ensure the mapper preserves null instead of
+        // coercing to empty string or crashing.
+        val source = Account(
+            id = 11,
+            kind = AccountKind.SAVINGS,
+            issuer = "Paytm",
+            last4 = null,
+            displayName = "UPI wallet",
+            isDefaultSpend = false,
+        )
+        val entity = AccountMapper.toEntity(source, createdAtMs = 0L)
+        entity.last4 shouldBe null
+        AccountMapper.toDomain(entity) shouldBe source
+    }
+
+    @Test
     fun `AccountEntity with every AccountKind round-trips`() {
         AccountKind.entries.forEach { kind ->
             val account = Account(

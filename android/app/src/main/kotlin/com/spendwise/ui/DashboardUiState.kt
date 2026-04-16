@@ -35,8 +35,17 @@ data class CategorySlice(
     val transactionCount: Int,
 )
 
+/**
+ * One tile in the dashboard's "Accounts" strip. Since issue #6,
+ * identity can be by registered-account id OR by an unregistered
+ * last-4 — accountId is the canonical nav arg; last4 is fallback.
+ *
+ * At least one of [accountId] or [last4] is non-null (otherwise the
+ * tx is ungrouped and doesn't surface here).
+ */
 data class CardChip(
-    val last4: String,
+    val accountId: Long?,
+    val last4: String?,
     val issuer: String?,
     val totalInr: Double,
     val transactionCount: Int,

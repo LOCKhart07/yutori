@@ -109,7 +109,10 @@ class SettingsBackupTest {
     }
 
     @Test
-    fun `accounts missing required fields are skipped with warnings`() = runTest {
+    fun `accounts missing issuer are skipped - missing last4 allowed as UPI-only`() = runTest {
+        // Since issue #6, `last4` is optional (UPI-only accounts exist).
+        // Only `issuer` remains required — rows without it are still
+        // skipped with a warning.
         val dstAcc = FakeAccountDao()
         val dstRule = FakeRecipientRuleDao()
         val backup = """
@@ -122,9 +125,34 @@ class SettingsBackupTest {
            "recipientRules":[]}
         """.trimIndent()
         val summary = SettingsBackup.importFromJson(backup, dstAcc, dstRule, nowMs = 0L)
-        summary.accountsInserted shouldBe 1
-        summary.warnings shouldHaveSize 2
-        dstAcc.all.single().issuer shouldBe "ICICI"
+        // Kotak (UPI-only) + ICICI inserted; the issuer-less row warns.
+        summary.accountsInserted shouldBe 2
+        summary.warnings shouldHaveSize 1
+        dstAcc.all.map { it.issuer }.toSet() shouldBe setOf("Kotak", "ICICI")
+        dstAcc.all.single { it.issuer == "Kotak" }.last4 shouldBe null
+    }
+
+    @Test
+    fun `UPI-only accounts round-trip through export and import`() = runTest {
+        // Issue #6: exporting an account with null last4 and re-importing
+        // it must preserve the null and not duplicate on a second import.
+        val srcAcc = FakeAccountDao().apply {
+            insert(account(issuer = "Paytm", last4 = null))
+        }
+        val srcRule = FakeRecipientRuleDao()
+        val json = SettingsBackup.exportToJson(srcAcc, srcRule, nowMs = 0L)
+
+        val dstAcc = FakeAccountDao()
+        val dstRule = FakeRecipientRuleDao()
+        val first = SettingsBackup.importFromJson(json, dstAcc, dstRule, nowMs = 0L)
+        first.accountsInserted shouldBe 1
+        dstAcc.all.single().last4 shouldBe null
+
+        // Second import against the same DB — should dedup, not duplicate.
+        val second = SettingsBackup.importFromJson(json, dstAcc, dstRule, nowMs = 0L)
+        second.accountsInserted shouldBe 0
+        second.accountsSkipped shouldBe 1
+        dstAcc.all shouldHaveSize 1
     }
 
     @Test
@@ -186,7 +214,7 @@ class SettingsBackupTest {
     private fun account(
         kind: String = "SAVINGS",
         issuer: String = "Kotak",
-        last4: String = "0000",
+        last4: String? = "0000",
         isDefaultSpend: Boolean = false,
     ) = AccountEntity(
         kind = kind,

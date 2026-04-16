@@ -144,21 +144,51 @@ class DashboardViewModel(
             }
             .sortedByDescending { it.totalInr }
 
+    /**
+     * Bucket SPEND rows into one chip per *account*. Since issue #6
+     * accounts can be UPI-only (no last-4), so we group by accountId
+     * when it's set and fall back to last-4 grouping for rows the
+     * resolver didn't tie to a registered account. Rows with neither
+     * account_id nor last4 aren't user-surfaceable at the account
+     * granularity and are dropped from this view.
+     */
     private fun bucketByCard(
         txs: List<TransactionEntity>,
-    ): List<CardChip> =
-        txs
-            .filter { it.last4 != null && it.budgetEffect == "SPEND" && it.inrAmount != null }
+    ): List<CardChip> {
+        val spend = txs.filter { it.budgetEffect == "SPEND" && it.inrAmount != null }
+        val withAccount = spend.filter { it.accountId != null }
+        val withoutAccount = spend.filter { it.accountId == null && it.last4 != null }
+
+        val byAccount = withAccount
+            .groupBy { it.accountId!! }
+            .map { (accId, rows) ->
+                CardChip(
+                    accountId = accId,
+                    // Multiple last4 values can legitimately share an
+                    // accountId if the account is UPI-only (null) or
+                    // appeared under varied surface forms — take the
+                    // first non-null one for display.
+                    last4 = rows.firstOrNull { it.last4 != null }?.last4,
+                    issuer = rows.firstOrNull { it.issuer != null }?.issuer,
+                    totalInr = rows.sumOf { it.inrAmount!! },
+                    transactionCount = rows.size,
+                )
+            }
+
+        val byLast4 = withoutAccount
             .groupBy { it.last4!! }
             .map { (last4, rows) ->
                 CardChip(
+                    accountId = null,
                     last4 = last4,
                     issuer = rows.firstOrNull { it.issuer != null }?.issuer,
                     totalInr = rows.sumOf { it.inrAmount!! },
                     transactionCount = rows.size,
                 )
             }
-            .sortedByDescending { it.totalInr }
+
+        return (byAccount + byLast4).sortedByDescending { it.totalInr }
+    }
 
     private fun BudgetEntity.toDomainBudget(): Budget = Budget(
         monthKey = monthKey,

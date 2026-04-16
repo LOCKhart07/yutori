@@ -46,7 +46,12 @@ data class AccountDraft(
     val id: Long,
     val kind: AccountKind,
     val issuer: String,
-    val last4: String,
+    /**
+     * Blank / null means UPI-only (no card component). Identity for
+     * those flows through [upiHandles] via recipient_rules. See
+     * issue #6.
+     */
+    val last4: String?,
     val displayName: String?,
     val isDefaultSpend: Boolean,
     val upiHandles: List<String>,
@@ -69,9 +74,17 @@ fun AccountEditScreen(
     }
     var newHandle by remember { mutableStateOf("") }
 
-    val last4Ok = last4.matches(Regex("""^[A-Za-z0-9]{4,6}$"""))
+    // last4 is now optional — blank means "UPI-only" (issue #6). When
+    // present it must still match the 4–6 alphanumeric shape.
+    val last4Trimmed = last4.trim()
+    val last4Blank = last4Trimmed.isEmpty()
+    val last4Ok = last4Blank ||
+        last4Trimmed.matches(Regex("""^[A-Za-z0-9]{4,6}$"""))
     val issuerOk = issuer.isNotBlank()
-    val saveEnabled = last4Ok && issuerOk
+    // Must have at least one identifier so the account has *something*
+    // to route transactions by — either a last-4 or a UPI handle.
+    val hasIdentifier = !last4Blank || upiHandles.isNotEmpty()
+    val saveEnabled = last4Ok && issuerOk && hasIdentifier
 
     val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
     val colors = SpendWiseTheme.colors
@@ -129,7 +142,7 @@ fun AccountEditScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            SectionLabel("Last 4–6 digits")
+            SectionLabel("Last 4–6 digits (optional)")
             Spacer(Modifier.height(8.dp))
             ThemedTextField(
                 value = last4,
@@ -138,16 +151,24 @@ fun AccountEditScreen(
                         last4 = new
                     }
                 },
-                placeholder = "0000 or XX0000",
+                placeholder = "0000 or XX0000 (blank for UPI-only)",
                 mono = true,
                 error = last4.isNotEmpty() && !last4Ok,
             )
             if (last4.isNotEmpty() && !last4Ok) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "4–6 alphanumeric characters.",
+                    "4–6 alphanumeric characters, or leave blank.",
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.negative,
+                )
+            } else if (last4Blank && upiHandles.isEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Add a last-4 or at least one UPI handle so we can " +
+                        "route transactions to this account.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.onMuted,
                 )
             }
 
@@ -263,7 +284,7 @@ fun AccountEditScreen(
                                 id = initial?.id ?: 0,
                                 kind = kind,
                                 issuer = issuer.trim(),
-                                last4 = last4.trim(),
+                                last4 = last4.trim().ifBlank { null },
                                 displayName = displayName.trim().ifBlank { null },
                                 isDefaultSpend = isDefault,
                                 upiHandles = upiHandles.toList(),

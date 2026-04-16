@@ -8,7 +8,13 @@ data class Account(
     val id: Long,
     val kind: AccountKind,
     val issuer: String,
-    val last4: String,
+    /**
+     * Masked last-4 from SMS. Nullable because UPI-only accounts
+     * (e.g. Paytm, PhonePe, bank UPI apps without a card) have no
+     * last-4 to store — identity is issuer + UPI handles from
+     * recipient_rules. See issue #6.
+     */
+    val last4: String?,
     val displayName: String? = null,
     val isDefaultSpend: Boolean = false,
     val status: AccountStatus = AccountStatus.CONFIRMED,

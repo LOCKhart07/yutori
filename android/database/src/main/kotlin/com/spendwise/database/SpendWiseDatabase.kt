@@ -37,7 +37,7 @@ import com.spendwise.database.entities.TransactionSourceEntity
         BudgetEntity::class,
         BudgetAlertStateEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(EnumConverters::class)
@@ -68,6 +68,54 @@ abstract class SpendWiseDatabase : RoomDatabase() {
                 db.execSQL(
                     "ALTER TABLE accounts ADD COLUMN seen_count INTEGER " +
                         "NOT NULL DEFAULT 0",
+                )
+            }
+        }
+
+        /**
+         * v3 makes `accounts.last4` nullable so UPI-only accounts
+         * (Paytm, PhonePe, bank UPI apps) can be registered without a
+         * fake last-4 (issue #6). SQLite doesn't support DROP NOT NULL,
+         * so we rebuild the table: create new → copy → drop old →
+         * rename → recreate the unique index on (issuer, last4).
+         *
+         * Unique index on (issuer, last4) keeps working — SQLite treats
+         * NULLs as distinct in unique indices, so multiple UPI-only
+         * accounts per issuer are allowed. Card accounts remain
+         * de-duped by (issuer, last4).
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE accounts_new (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`kind` TEXT NOT NULL, " +
+                        "`issuer` TEXT NOT NULL, " +
+                        "`last4` TEXT, " +
+                        "`display_name` TEXT, " +
+                        "`is_default_spend` INTEGER NOT NULL, " +
+                        "`created_at_ms` INTEGER NOT NULL, " +
+                        "`status` TEXT NOT NULL DEFAULT 'CONFIRMED', " +
+                        "`first_seen_ms` INTEGER, " +
+                        "`seen_count` INTEGER NOT NULL DEFAULT 0" +
+                        ")",
+                )
+                db.execSQL(
+                    "INSERT INTO accounts_new (" +
+                        "id, kind, issuer, last4, display_name, " +
+                        "is_default_spend, created_at_ms, status, " +
+                        "first_seen_ms, seen_count" +
+                        ") SELECT " +
+                        "id, kind, issuer, last4, display_name, " +
+                        "is_default_spend, created_at_ms, status, " +
+                        "first_seen_ms, seen_count FROM accounts",
+                )
+                db.execSQL("DROP TABLE accounts")
+                db.execSQL("ALTER TABLE accounts_new RENAME TO accounts")
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                        "`index_accounts_issuer_last4` ON `accounts` " +
+                        "(`issuer`, `last4`)",
                 )
             }
         }

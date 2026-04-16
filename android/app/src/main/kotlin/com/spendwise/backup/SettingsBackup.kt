@@ -88,13 +88,16 @@ object SettingsBackup {
 
         // Existing accounts — key on (issuer-lowercase, digits-only-last4)
         // to dedup across surface variations like "XX0000" vs "0000".
+        // UPI-only accounts (null last4) are keyed on issuer + "" — one
+        // UPI-only slot per issuer on import, which matches the
+        // one-row-per-issuer intent of backup exports.
         val existing = accountDao.getAll()
         val existingKey = existing.associateBy {
-            it.issuer.lowercase() to it.last4.filter(Char::isDigit)
+            it.issuer.lowercase() to (it.last4?.filter(Char::isDigit) ?: "")
         }
 
         val last4ToId = mutableMapOf<String, Long>()
-        for (a in existing) last4ToId[a.last4] = a.id
+        for (a in existing) a.last4?.let { last4ToId[it] = a.id }
 
         var accountsInserted = 0
         var accountsSkipped = 0
@@ -107,15 +110,11 @@ object SettingsBackup {
                 continue
             }
             val last4 = obj.optString("last4").ifBlank { null }
-            if (last4 == null) {
-                warnings += "account[$i]: missing last4"
-                continue
-            }
-            val key = issuer.lowercase() to last4.filter(Char::isDigit)
+            val key = issuer.lowercase() to (last4?.filter(Char::isDigit) ?: "")
             val existingRow = existingKey[key]
             if (existingRow != null) {
                 accountsSkipped++
-                last4ToId[last4] = existingRow.id
+                if (last4 != null) last4ToId[last4] = existingRow.id
                 continue
             }
             val id = accountDao.insert(
@@ -128,7 +127,7 @@ object SettingsBackup {
                     createdAtMs = nowMs,
                 ),
             )
-            last4ToId[last4] = id
+            if (last4 != null) last4ToId[last4] = id
             accountsInserted++
         }
 
@@ -187,7 +186,7 @@ object SettingsBackup {
     private fun AccountEntity.toJson(): JSONObject = JSONObject().apply {
         put("kind", kind)
         put("issuer", issuer)
-        put("last4", last4)
+        putOpt("last4", last4)
         putOpt("displayName", displayName)
         put("isDefaultSpend", isDefaultSpend)
     }

@@ -35,7 +35,7 @@ import kotlinx.coroutines.flow.Flow
 @Composable
 fun CardDrillDownScreen(
     monthKey: String,
-    last4: String,
+    last4: String?,
     issuerLabel: String?,
     transactionsFlow: Flow<List<TransactionEntity>>,
     onBack: () -> Unit,
@@ -70,7 +70,13 @@ fun CardDrillDownScreen(
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    text = "${(issuerLabel ?: "CARD").uppercase()} ••$last4 · ${prettyMonthShort(monthKey)}",
+                    text = buildString {
+                        append((issuerLabel ?: "ACCOUNT").uppercase())
+                        // UPI-only accounts (issue #6) have no last-4;
+                        // skip the "\u2022\u2022..." segment entirely.
+                        if (last4 != null) append(" \u2022\u2022").append(last4)
+                        append(" \u00B7 ").append(prettyMonthShort(monthKey))
+                    },
                     style = SpendWiseTextStyles.Caps,
                     color = colors.onMuted,
                 )
