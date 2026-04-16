@@ -20,7 +20,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #18 — Late-arriving past-month alert stamping
 - #19 — Rebuild database screen
 - #20 — End-to-end profiling round
-- #24 — Restricted-settings onboarding helper (Android 13+ sideload)
 - #74 — Surface where historical import landed (past-month affordance)
 
 ## Tier 2 — behavior-change core (medium effort)

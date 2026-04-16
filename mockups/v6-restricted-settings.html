@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v6 mockup: restricted-settings onboarding helper (#24)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --accent:        #F5B547;
+    --warn:          #E0A260;
+    --info:          #8FB8D8;
+    --info-soft:     rgba(143,184,216,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 80px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 56px 0 18px; font-size: 17px; color: #C9CACD; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 32px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+
+  .row-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 40px 28px;
+    max-width: 1400px;
+  }
+
+  /* Phone frame */
+  .frame {
+    width: 300px;
+    border-radius: 28px;
+    background: var(--surface);
+    color: var(--on);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 24px 48px -16px rgba(0,0,0,0.6);
+  }
+  .frame.light { background: #F6F7F8; color: #18191C; box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 24px 48px -16px rgba(0,0,0,0.25); }
+  .frame .label {
+    position: absolute;
+    top: -22px;
+    left: 4px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8A8E96;
+    font-weight: 500;
+  }
+  .statusbar {
+    height: 26px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 18px 4px;
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
+  /* Shared screen body */
+  .scr {
+    min-height: 560px;
+    display: flex;
+    flex-direction: column;
+    padding: 40px 24px 24px;
+  }
+  .caps {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--on-faint);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .title {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 10px;
+  }
+  .body {
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--on-muted);
+    margin-bottom: 24px;
+  }
+  .frame.light .body { color: #5A5D63; }
+  .frame.light .caps { color: #8A8E96; }
+
+  .permcard {
+    background: var(--surface-el);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .frame.light .permcard { background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,0.04); }
+  .permcard .glyph {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--surface-el2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-muted);
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .frame.light .permcard .glyph { background: #EFF0F2; }
+  .permcard .ptitle { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .permcard .pdetail { font-size: 11px; color: var(--on-muted); line-height: 1.4; }
+  .frame.light .permcard .pdetail { color: #5A5D63; }
+
+  .actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 24px;
+  }
+  .btn {
+    padding: 12px 14px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    border: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #1A1406;
+  }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--divider);
+    color: var(--on-muted);
+    font-weight: 500;
+  }
+  .frame.light .btn-secondary { border: 1px solid rgba(0,0,0,0.12); color: #5A5D63; }
+
+  /* Restricted-settings variant */
+  .restricted .info-icon {
+    align-self: flex-start;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--info-soft);
+    color: var(--info);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 18px;
+  }
+  .restricted .steps {
+    background: var(--surface-el);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .frame.light .restricted .steps { background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,0.04); }
+  .restricted .step {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+    align-items: flex-start;
+  }
+  .restricted .step + .step { border-top: 1px solid var(--divider); }
+  .frame.light .restricted .step + .step { border-top: 1px solid rgba(0,0,0,0.06); }
+  .restricted .step .n {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #1A1406;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .restricted .step .txt { font-size: 12px; line-height: 1.5; color: var(--on); padding-top: 2px; }
+  .frame.light .restricted .step .txt { color: #18191C; }
+  .restricted .step .sub { font-size: 11px; color: var(--on-muted); margin-top: 2px; }
+  .frame.light .restricted .step .sub { color: #5A5D63; }
+
+  /* sim screenshot snippet for step 2 — what user will see in App Info */
+  .appinfo-hint {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    background: var(--surface-el2);
+    color: var(--on-muted);
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 10px;
+    display: inline-block;
+  }
+  .frame.light .appinfo-hint { background: #EFF0F2; color: #5A5D63; }
+
+  .note {
+    font-size: 11px;
+    color: var(--on-faint);
+    text-align: center;
+    margin-top: 16px;
+    line-height: 1.5;
+  }
+  .frame.light .note { color: #8A8E96; }
+</style>
+</head>
+<body>
+
+<h1>Yutori — Restricted-settings onboarding helper (#24)</h1>
+<p class="blurb">
+  On Android 13+, sideloaded APKs can't request SMS permissions until
+  the user flips <b>Allow restricted settings</b> in App info. The
+  system silently denies the runtime request with no visible dialog —
+  the user taps <b>Grant permissions</b> and nothing appears to
+  happen. Hit on first install 2026-04-16.
+  <br><br>
+  <b>Frame A</b> shows the current permission gate (unchanged — step
+  1 of the onboarding). <b>Frame B</b> is the new restricted-settings
+  guidance state, reached when the launcher's result comes back denied
+  with <code>shouldShowRequestPermissionRationale = false</code> on
+  Android 13+ (i.e. the dialog never appeared). Primary CTA deep-links
+  to <code>Settings.ACTION_APPLICATION_DETAILS_SETTINGS</code>;
+  secondary CTA re-runs the permission launcher so the user can retry
+  after flipping the toggle without leaving the screen.
+  <br><br>
+  Detection heuristic is deliberately generous — we don't try to
+  distinguish "restricted by OS" from "user tapped Deny twice". Both
+  states are dead-ends that the app-info detour resolves, so the same
+  guidance applies.
+</p>
+
+<h2>A · Permission gate (unchanged, for reference)</h2>
+<div class="row-wrap">
+  <div class="frame">
+    <span class="label">A · dark · permission gate</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="scr">
+      <div class="caps">Step 1 of 1</div>
+      <div class="title">Let Yutori<br>read your SMSes.</div>
+      <div class="body">
+        Everything stays on this device. Yutori never sends your
+        messages anywhere — bank SMSes are parsed locally to build
+        your spending record.
+      </div>
+
+      <div class="permcard">
+        <div class="glyph">✉</div>
+        <div>
+          <div class="ptitle">Receive SMS</div>
+          <div class="pdetail">Catch new bank messages as they arrive.</div>
+        </div>
+      </div>
+      <div class="permcard">
+        <div class="glyph">⟲</div>
+        <div>
+          <div class="ptitle">Read SMS inbox</div>
+          <div class="pdetail">Import past transactions from your phone's SMS history.</div>
+        </div>
+      </div>
+      <div class="permcard">
+        <div class="glyph">◉</div>
+        <div>
+          <div class="ptitle">Post notifications</div>
+          <div class="pdetail">Alert you at 50%, 80%, and 100% of your budget.</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary">Grant permissions</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame light">
+    <span class="label">A · light · permission gate</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="scr">
+      <div class="caps">Step 1 of 1</div>
+      <div class="title">Let Yutori<br>read your SMSes.</div>
+      <div class="body">
+        Everything stays on this device. Yutori never sends your
+        messages anywhere — bank SMSes are parsed locally to build
+        your spending record.
+      </div>
+
+      <div class="permcard">
+        <div class="glyph">✉</div>
+        <div>
+          <div class="ptitle">Receive SMS</div>
+          <div class="pdetail">Catch new bank messages as they arrive.</div>
+        </div>
+      </div>
+      <div class="permcard">
+        <div class="glyph">⟲</div>
+        <div>
+          <div class="ptitle">Read SMS inbox</div>
+          <div class="pdetail">Import past transactions from your phone's SMS history.</div>
+        </div>
+      </div>
+      <div class="permcard">
+        <div class="glyph">◉</div>
+        <div>
+          <div class="ptitle">Post notifications</div>
+          <div class="pdetail">Alert you at 50%, 80%, and 100% of your budget.</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary">Grant permissions</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>B · Restricted-settings guidance (new)</h2>
+<div class="row-wrap">
+  <div class="frame">
+    <span class="label">B · dark · restricted blocked</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="scr restricted">
+      <div class="info-icon">i</div>
+      <div class="caps">One more step</div>
+      <div class="title">Android's blocking<br>this by default.</div>
+      <div class="body">
+        Because Yutori was installed outside the Play Store, Android
+        won't let it ask for SMS access yet. You need to flip one
+        toggle in App info, then come back.
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="n">1</div>
+          <div class="txt">
+            Tap <b>Open app info</b> below.
+            <div class="sub">Takes you straight to Yutori's system settings page.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <div class="txt">
+            Tap the three-dot menu (top-right), then
+            <span class="appinfo-hint">Allow restricted settings</span>.
+            <div class="sub">Android will ask you to confirm — this lets the app request SMS.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <div class="txt">
+            Come back here and tap <b>Try again</b>.
+            <div class="sub">The permission dialog will appear this time.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary">Open app info</button>
+        <button class="btn btn-secondary">Try again</button>
+      </div>
+      <div class="note">
+        Android 13+ restricts sideloaded apps from requesting some<br>
+        permissions without this manual opt-in.
+      </div>
+    </div>
+  </div>
+
+  <div class="frame light">
+    <span class="label">B · light · restricted blocked</span>
+    <div class="statusbar"><span>9:41</span><span>●●●●</span></div>
+    <div class="scr restricted">
+      <div class="info-icon">i</div>
+      <div class="caps">One more step</div>
+      <div class="title">Android's blocking<br>this by default.</div>
+      <div class="body">
+        Because Yutori was installed outside the Play Store, Android
+        won't let it ask for SMS access yet. You need to flip one
+        toggle in App info, then come back.
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="n">1</div>
+          <div class="txt">
+            Tap <b>Open app info</b> below.
+            <div class="sub">Takes you straight to Yutori's system settings page.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <div class="txt">
+            Tap the three-dot menu (top-right), then
+            <span class="appinfo-hint">Allow restricted settings</span>.
+            <div class="sub">Android will ask you to confirm — this lets the app request SMS.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <div class="txt">
+            Come back here and tap <b>Try again</b>.
+            <div class="sub">The permission dialog will appear this time.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary">Open app info</button>
+        <button class="btn btn-secondary">Try again</button>
+      </div>
+      <div class="note">
+        Android 13+ restricts sideloaded apps from requesting some<br>
+        permissions without this manual opt-in.
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

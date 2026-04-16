@@ -145,3 +145,25 @@ installing the first release-signed build — Android refuses to replace
 an APK with one signed by a different cert. After that one uninstall,
 every subsequent debug or release build signs with the same release
 keystore, and the reinstall prompts go away.
+
+## First-install friction on Android 13+ (restricted settings)
+
+Sideloaded APKs on Android 13+ can't request SMS permissions until the
+user flips **Allow restricted settings** on the app's App info page.
+On first launch, tapping *Grant permissions* produces no visible
+dialog — the OS silently denies the request. The app detects this
+dead-end (denied permission + `shouldShowRequestPermissionRationale`
+false) and surfaces a guidance screen with a deep-link to App info
+and a *Try again* retry path. Same screen also covers the
+*Don't-ask-again* case for users who denied the runtime prompt twice.
+
+No action required on the release side — just be aware the first
+install will hit this, and the first-run path is:
+
+1. Install APK.
+2. Tap *Grant permissions* — dialog never appears.
+3. Yutori shows the restricted-settings guidance.
+4. Tap *Open app info* → system App info opens.
+5. Tap three-dot menu → *Allow restricted settings* → confirm.
+6. Back to Yutori → tap *Try again* → the real permission dialog
+   now appears → Allow.
