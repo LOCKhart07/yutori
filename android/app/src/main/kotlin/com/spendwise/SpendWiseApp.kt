@@ -30,19 +30,18 @@ import kotlinx.coroutines.launch
  */
 class SpendWiseApp : Application() {
 
-    val database: SpendWiseDatabase by lazy {
-        Room.databaseBuilder(
-            applicationContext,
-            SpendWiseDatabase::class.java,
-            SpendWiseDatabase.NAME,
-        )
-            .addMigrations(
-                SpendWiseDatabase.MIGRATION_1_2,
-                SpendWiseDatabase.MIGRATION_2_3,
-            )
-            // No destructive fallback — user data is the point.
-            .build()
-    }
+    /**
+     * Non-null once the DB has opened successfully. Readers must
+     * null-check — on migration failure this stays null and
+     * [databaseError] holds the throwable. MainActivity routes to the
+     * recovery screen in that case (see error-states-spec §5.1 / §5.5).
+     */
+    var database: SpendWiseDatabase? = null
+        private set
+
+    /** Non-null when DB init failed. Consumed by MainActivity's routing. */
+    var databaseError: Throwable? = null
+        private set
 
     val impactAlertSettings: com.spendwise.settings.ImpactAlertSettings by lazy {
         com.spendwise.settings.ImpactAlertSettings(applicationContext)
@@ -51,14 +50,17 @@ class SpendWiseApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        initDatabase()
+        val db = database ?: return  // short-circuit the rest of init; MainActivity shows recovery screen
+
         val pipeline = IngestionPipeline(
-            smsLogDao = database.smsLogDao(),
-            transactionDao = database.transactionDao(),
-            transactionSourceDao = database.transactionSourceDao(),
-            accountDao = database.accountDao(),
-            recipientRuleDao = database.recipientRuleDao(),
-            budgetDao = database.budgetDao(),
-            budgetAlertStateDao = database.budgetAlertStateDao(),
+            smsLogDao = db.smsLogDao(),
+            transactionDao = db.transactionDao(),
+            transactionSourceDao = db.transactionSourceDao(),
+            accountDao = db.accountDao(),
+            recipientRuleDao = db.recipientRuleDao(),
+            budgetDao = db.budgetDao(),
+            budgetAlertStateDao = db.budgetAlertStateDao(),
             impactConfigProvider = {
                 val s = impactAlertSettings.get()
                 com.spendwise.ingestion.ImpactConfig(
@@ -84,7 +86,7 @@ class SpendWiseApp : Application() {
 
         // Seed recipient rules on first launch.
         scope.launch {
-            seedRecipientRulesIfEmpty()
+            seedRecipientRulesIfEmpty(db)
         }
 
         // Forex: one-shot on start + periodic every 6 h. Both gated on
@@ -101,7 +103,7 @@ class SpendWiseApp : Application() {
             delay(RECONCILE_START_DELAY_MS)
             if (!Permissions.hasSmsPermissions(applicationContext)) return@launch
             val reconciler = SmsLogReconciler(
-                smsLogDao = database.smsLogDao(),
+                smsLogDao = db.smsLogDao(),
                 inboxLookup = ContentProviderSmsInboxLookup(contentResolver),
             )
             runCatching { reconciler.reconcile() }
@@ -112,19 +114,48 @@ class SpendWiseApp : Application() {
             // in stopped state (force-stop / fresh install). No-op when
             // sms_log is empty — user has to explicitly trigger a full
             // historical import to get started with data.
-            runCatching { runCatchUpImport() }
+            runCatching { runCatchUpImport(db) }
                 .onFailure { android.util.Log.w(TAG, "Catch-up import failed", it) }
         }
     }
 
-    private suspend fun runCatchUpImport() {
-        val latest = database.smsLogDao().latestReceivedAtMs() ?: return
+    /**
+     * Build the Room DB and force the first open so migrations run now,
+     * not on the first query far from here. Failures are caught and
+     * stashed in [databaseError] so MainActivity can route to the
+     * recovery screen instead of the app crashing mid-compose.
+     */
+    private fun initDatabase() {
+        try {
+            val db = Room.databaseBuilder(
+                applicationContext,
+                SpendWiseDatabase::class.java,
+                SpendWiseDatabase.NAME,
+            )
+                .addMigrations(
+                    SpendWiseDatabase.MIGRATION_1_2,
+                    SpendWiseDatabase.MIGRATION_2_3,
+                )
+                // No destructive fallback — user data is the point.
+                .build()
+            // Force the SQLite open + migration eagerly so the throwable
+            // surfaces here, not from an arbitrary downstream Flow.
+            db.openHelper.writableDatabase
+            database = db
+        } catch (t: Throwable) {
+            databaseError = t
+            android.util.Log.e(TAG, "DB init failed — routing to recovery screen", t)
+        }
+    }
+
+    private suspend fun runCatchUpImport(db: SpendWiseDatabase) {
+        val latest = db.smsLogDao().latestReceivedAtMs() ?: return
         HistoricalImportWorker.enqueueCatchUp(applicationContext, latest + 1)
         android.util.Log.i(TAG, "Catch-up import enqueued (sinceMs=${latest + 1})")
     }
 
-    private suspend fun seedRecipientRulesIfEmpty() {
-        val dao = database.recipientRuleDao()
+    private suspend fun seedRecipientRulesIfEmpty(db: SpendWiseDatabase) {
+        val dao = db.recipientRuleDao()
         if (dao.getEnabled().isNotEmpty()) return
 
         SEED_RULES.forEach { dao.insert(it) }

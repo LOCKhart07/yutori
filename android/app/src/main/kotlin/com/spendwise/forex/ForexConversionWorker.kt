@@ -42,7 +42,9 @@ class ForexConversionWorker(
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val app = applicationContext as SpendWiseApp
-        val db = app.database
+        // DB init may have failed on app start; bail quietly so
+        // WorkManager doesn't retry on a broken DB.
+        val db = app.database ?: return@withContext Result.success()
         val txDao = db.transactionDao()
 
         // Pull a snapshot of pending rows. `observePendingForex()` is a

@@ -39,8 +39,8 @@ fun rememberBackupActions(): BackupActions {
         scope.launch {
             val json = withContext(Dispatchers.IO) {
                 SettingsBackup.exportToJson(
-                    accountDao = app.database.accountDao(),
-                    ruleDao = app.database.recipientRuleDao(),
+                    accountDao = app.database!!.accountDao(),
+                    ruleDao = app.database!!.recipientRuleDao(),
                     nowMs = System.currentTimeMillis(),
                 )
             }
@@ -62,8 +62,8 @@ fun rememberBackupActions(): BackupActions {
             val summary = withContext(Dispatchers.IO) {
                 SettingsBackup.importFromJson(
                     json = json,
-                    accountDao = app.database.accountDao(),
-                    ruleDao = app.database.recipientRuleDao(),
+                    accountDao = app.database!!.accountDao(),
+                    ruleDao = app.database!!.recipientRuleDao(),
                     nowMs = System.currentTimeMillis(),
                 )
             }

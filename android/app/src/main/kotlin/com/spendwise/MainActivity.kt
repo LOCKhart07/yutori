@@ -96,7 +96,19 @@ private sealed interface Screen {
 private fun AppContent() {
     val app = androidx.compose.ui.platform.LocalContext.current
         .applicationContext as SpendWiseApp
-    val database = app.database
+
+    // DB didn't open — show the recovery screen instead of crashing
+    // downstream. See error-states-spec §5.1 / §5.5.
+    app.databaseError?.let { err ->
+        com.spendwise.ui.MigrationErrorScreen(error = err)
+        return
+    }
+    val database = app.database ?: run {
+        com.spendwise.ui.MigrationErrorScreen(
+            error = IllegalStateException("Database not initialised"),
+        )
+        return
+    }
 
     var permissionGeneration by remember { mutableStateOf(0) }
     val hasPermission = remember(permissionGeneration) {

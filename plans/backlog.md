@@ -67,6 +67,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #49 — Category drill-down hero pace bucket
 - #50 — Per-category pacing tag on dashboard rows
 - #51 — Tx-detail Edit / Mark as payback
+- #78 — Migration error screen: add 'Report this error' action (bug-report flow + PII sanitization)
 - #52 — Animation: traffic-light hero color transition
 - #53 — Animation: AnimatedVisibility on dashboard banners
 - #54 — Animation: progress-bar fill
