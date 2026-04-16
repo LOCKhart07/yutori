@@ -57,7 +57,7 @@ fun CategoryDrillDownScreen(
     val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
     val catTint = SpendWiseTheme.colors.forCategory(category)
     var txSort: TxSort by androidx.compose.runtime.remember {
-        androidx.compose.runtime.mutableStateOf<TxSort>(TxSort.DateDesc)
+        androidx.compose.runtime.mutableStateOf<TxSort>(TxSort.AmountDesc)
     }
     val sortedTxs = remember(transactions, txSort) { applyTxSort(transactions, txSort) }
 
@@ -231,7 +231,7 @@ internal fun NumberFormat.formatCompact(value: Double): String {
     }
 }
 
-/** Cycle: latest first → oldest first → biggest first → smallest first → back. */
+/** Cycle: biggest first → smallest first → latest first → oldest first → back. */
 internal enum class TxSort(val label: String) {
     DateDesc("Latest"),
     DateAsc("Oldest"),
@@ -239,10 +239,10 @@ internal enum class TxSort(val label: String) {
     AmountAsc("Amount ↑");
 
     fun next(): TxSort = when (this) {
-        DateDesc   -> DateAsc
-        DateAsc    -> AmountDesc
         AmountDesc -> AmountAsc
         AmountAsc  -> DateDesc
+        DateDesc   -> DateAsc
+        DateAsc    -> AmountDesc
     }
 }
 
@@ -250,10 +250,19 @@ internal fun applyTxSort(
     txs: List<TransactionEntity>,
     sort: TxSort,
 ): List<TransactionEntity> = when (sort) {
-    TxSort.DateDesc   -> txs.sortedByDescending { it.occurredAtMs }
-    TxSort.DateAsc    -> txs.sortedBy { it.occurredAtMs }
-    TxSort.AmountDesc -> txs.sortedByDescending { it.inrAmount ?: 0.0 }
-    TxSort.AmountAsc  -> txs.sortedBy { it.inrAmount ?: 0.0 }
+    TxSort.DateDesc -> txs.sortedByDescending { it.occurredAtMs }
+    TxSort.DateAsc  -> txs.sortedBy { it.occurredAtMs }
+    // pending-forex nulls go last — see #5
+    TxSort.AmountDesc -> {
+        val (known, pending) = txs.partition { it.inrAmount != null }
+        known.sortedByDescending { it.inrAmount!! } +
+            pending.sortedByDescending { it.occurredAtMs }
+    }
+    TxSort.AmountAsc -> {
+        val (known, pending) = txs.partition { it.inrAmount != null }
+        known.sortedBy { it.inrAmount!! } +
+            pending.sortedByDescending { it.occurredAtMs }
+    }
 }
 
 private fun infoBoxForCategory(category: String): String? = when (category) {
