@@ -17,6 +17,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #16 — Daily-burn stat pill — pace tint + target value
 - #18 — Late-arriving past-month alert stamping
 - #19 — Rebuild database screen
+- #98 — Scrolling issues
 
 ## Tier 2 — behavior-change core (medium effort)
 
@@ -39,6 +40,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #36 — Goals entity + translator
 - #37 — Annual-cost smoothing buckets
 - #38 — Per-category pacing baseline (median-of-3 historical)
+- #71 — In-app autoupdater *(spec: plans/autoupdater-spec.md)*
 - #85 — MigrationErrorScreen: stack trace not scrollable; Copy has no feedback
 - #87 — Permission gate: row order mismatch + misleading check/warning glyphs
 - #93 — Auto-promote active accounts from SUGGESTED to CONFIRMED *(follow-up to #82)*
@@ -71,6 +73,8 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #92 — Dashboard pager peek is invisible *(follow-up to #21)*
 - #97 — Expose precise pace delta (pp) in a detail/analysis surface *(follow-up to #17)*
 - #99 — Over-banner third pill shows 'Deficit' — redundant with the banner above it *(follow-up to #16)*
+- #101 — Add horizontal pager-swipe benchmark to :macrobenchmark
+- #102 — Set HorizontalPager beyondViewportPageCount=0 on the dashboard
 
 ## Tier 5 — deferred / low urgency
 
@@ -87,7 +91,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #68 — CSV export screen
 - #69 — Purge non-financial screen
 - #70 — Rerun parser screen
-- #71 — In-app autoupdater
 
 ## Deferrals (no tier — decision log)
 
@@ -96,10 +99,12 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 ## Unvetted external suggestions
 
 - #73 — External agent critique — unvetted framings and suggestions
+- #95 — Introduce test data that can be injected into an emulator
 
 ## Unlabelled
 
 - #79 — Add an easter egg somewhere in the app
+- #100 — Swipes weird
 
 ## Label conventions
 
