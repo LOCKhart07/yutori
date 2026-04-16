@@ -41,7 +41,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #37 — Annual-cost smoothing buckets
 - #38 — Per-category pacing baseline (median-of-3 historical)
 - #85 — MigrationErrorScreen: stack trace not scrollable; Copy has no feedback
-- #86 — Budget-alert notifications: subtitle missing "· ₹Y over" suffix on over-budget alerts
 - #87 — Permission gate: row order mismatch + misleading check/warning glyphs
 - #93 — Auto-promote active accounts from SUGGESTED to CONFIRMED *(follow-up to #82)*
 - #94 — Dashboard has no P99 headroom — fix before piling on animations *(gates #52–#56)*
