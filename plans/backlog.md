@@ -36,7 +36,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #32 — Review unmatched screen
 - #75 — Backfill account_id on existing txs when a new account is registered
 - #76 — Add Kotlin linter (detekt or ktlint) + wire into CI
-- #81 — TransactionDetail leaks raw enum tokens to UI
 - #82 — Settings > My accounts: SUGGESTED renders above CONFIRMED
 - #83 — MigrationErrorScreen: destructive button styled as primary
 - #84 — Alert thresholds screen leaks dev-facing copy

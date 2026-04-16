@@ -275,7 +275,7 @@ private fun MetaSection(tx: TransactionEntity) {
             mono = true,
         )
         tx.category?.let { MetaRow("Category", prettyCategory(it)) }
-        MetaRow("Month", tx.monthKey, mono = true)
+        MetaRow("Month", prettyMonth(tx.monthKey))
         val origAmt = tx.originalAmount
         if (tx.originalCurrency != "INR" && origAmt != null) {
             MetaRow(
@@ -352,7 +352,7 @@ private fun SourceBlock(src: TransactionSourceEntity, log: SmsLogEntity?) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = src.role.uppercase(),
+                    text = prettyRole(src.role),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = SpendWiseTheme.colors.onMuted,
                 )
@@ -372,7 +372,7 @@ private fun SourceBlock(src: TransactionSourceEntity, log: SmsLogEntity?) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "From ${log.sender} · ${log.classification}",
+                    text = "From ${log.sender} · ${prettyClassification(log.classification)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = SpendWiseTheme.colors.onFaint,
                 )
@@ -387,6 +387,35 @@ private fun SourceBlock(src: TransactionSourceEntity, log: SmsLogEntity?) {
     }
 }
 
+// Classification / role enums use upper-snake tokens that include
+// acronyms (UPI, CC, ATM, OTP). Default Title-Casing mangles them —
+// "UPI_PAYMENT" → "Upi Payment" — so preserve the known acronyms.
+private val CLASSIFICATION_ACRONYMS = setOf("UPI", "CC", "ATM", "OTP")
+private val ROLE_ACRONYMS = setOf("UPI", "CC", "ATM", "OTP", "ACK", "NOTIF")
+
 private fun prettyClassification(name: String): String =
-    name.lowercase().split("_")
-        .joinToString(" ") { it.replaceFirstChar { c -> c.titlecase() } }
+    name.split("_").joinToString(" ") { tok ->
+        if (tok in CLASSIFICATION_ACRONYMS) tok
+        else tok.lowercase().replaceFirstChar { c -> c.titlecase() }
+    }
+
+// SMS-source card header: sentence-case with acronyms preserved.
+// BANK_DEBIT → "Bank debit", CC_PAYMENT_RECEIPT → "CC payment receipt",
+// MERCHANT_ACK → "Merchant ACK".
+private fun prettyRole(role: String): String =
+    role.split("_").mapIndexed { i, tok ->
+        when {
+            tok in ROLE_ACRONYMS -> tok
+            i == 0 -> tok.lowercase().replaceFirstChar { c -> c.titlecase() }
+            else -> tok.lowercase()
+        }
+    }.joinToString(" ")
+
+private fun prettyMonth(monthKey: String): String = try {
+    val (y, m) = monthKey.split("-").let { it[0] to it[1].toInt() }
+    val name = listOf(
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+    )[m - 1]
+    "$name $y"
+} catch (_: Exception) { monthKey }
