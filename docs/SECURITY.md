@@ -27,6 +27,33 @@ If anything shows up, rewrite history with `git filter-repo` before
 flipping the repo public. See *"How the 2026-04-16 scrub was done"*
 below for the pattern.
 
+**Don't forget remote-tracking branches.** Stale `claude/*` PR
+branches (closed or merged) may still live on `origin` with
+pre-scrub content. Check `gh api repos/:owner/:repo/branches` and
+delete anything stale before flipping public.
+
+### 1a. GitHub orphaned-commit retention
+
+History rewrites leave the old SHAs **unreachable but still
+addressable** on GitHub. Anyone with the old SHA can still view the
+pre-rewrite content via direct URL (e.g. `/commit/<old-sha>`) for as
+long as GitHub retains the orphans. GitHub's garbage collection runs
+opportunistically — typically within ~14 days, but can take up to
+~90 days.
+
+Before flipping the repo public:
+
+- Verify that known pre-rewrite SHAs no longer resolve:
+  `gh api repos/:owner/:repo/commits/<old-sha>` should 404.
+- If any still resolve and you can't wait out the GC, email GitHub
+  Support and ask them to force-run GC on the repo. They will.
+- Alternative: delete + re-create the repo after the rewrite. Loses
+  issues, stars, CI history, and any public URLs — nuclear option.
+
+This applies to **every** historical scrub, not just the one on
+2026-04-16. If you do another scrub later, the same GC-retention
+window applies to whatever orphans that run creates.
+
 ### 2. Verify `.gitignore` covers private artifacts
 
 The repo intentionally keeps a few files local-only. Re-check each is
