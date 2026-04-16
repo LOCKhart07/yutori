@@ -100,7 +100,7 @@ fun CategoryDrillDownScreen(
                     Spacer(Modifier.width(14.dp))
                     Column {
                         Text(
-                            text = "${prettyCategory(category)} · ${prettyMonth(monthKey)}".uppercase(),
+                            text = "${prettyCategory(category)} · ${prettyMonth(monthKey)}",
                             style = SpendWiseTextStyles.Caps,
                             color = catTint,
                         )

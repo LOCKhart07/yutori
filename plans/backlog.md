@@ -74,7 +74,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #77 — In-app changelog / "What's new" view
 - #78 — Migration error screen: 'Report this error' action (bug-report flow + PII sanitization)
 - #89 — CRED recipient-rule regex contains U+00A1 mojibake
-- #90 — Mixed glyphs / case / paise across dashboard + detail surfaces
 - #91 — Month-picker grid — quick-jump to arbitrary month *(follow-up to #21)*
 - #92 — Dashboard pager peek is invisible *(follow-up to #21)*
 

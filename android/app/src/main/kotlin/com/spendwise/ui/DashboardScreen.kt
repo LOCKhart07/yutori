@@ -354,7 +354,7 @@ private fun ReadyView(
                 Banner(
                     kind = BannerKind.Negative,
                     title = "Budget exceeded.",
-                    detail = "You'll start next month with a ${inr.format(b.deficit)} deficit carried over.",
+                    detail = "You'll start next month with a ${inr.formatAmount(b.deficit, compact = true)} deficit carried over.",
                 )
             }
             is DashboardBanner.Approaching -> {
@@ -362,7 +362,7 @@ private fun ReadyView(
                 Banner(
                     kind = BannerKind.Warn,
                     title = "Pacing hot.",
-                    detail = "Keep to ${inr.format(b.dailyCapInr)}/day to land on budget.",
+                    detail = "Keep to ${inr.formatAmount(b.dailyCapInr, compact = true)}/day to land on budget.",
                 )
             }
             is DashboardBanner.OnTrack -> {
@@ -370,7 +370,7 @@ private fun ReadyView(
                 Banner(
                     kind = BannerKind.Positive,
                     title = "On track.",
-                    detail = "At your current pace you'll carry +${inr.format(b.projectedSurplusInr)} into next month.",
+                    detail = "At your current pace you'll carry +${inr.formatAmount(b.projectedSurplusInr, compact = true)} into next month.",
                 )
             }
             is DashboardBanner.NoBudget -> {
@@ -588,15 +588,16 @@ private fun heroSubLine(
     if (!hasBudget) return "Spent this month"
     val remaining = snap.effectiveBudgetInr - snap.netSpendInr
     val pct = snap.percentUsed
+    val budget = inr.formatAmount(snap.effectiveBudgetInr, compact = true)
     return when {
         pct >= 100.0 ->
-            "of ${inr.format(snap.effectiveBudgetInr)} · ${"%.0f".format(pct)}% · over by ${inr.format(-remaining)}"
+            "of $budget · ${"%.0f".format(pct)}% · over by ${inr.formatAmount(-remaining, compact = true)}"
         derived.daysLeft in 1..3 && pct >= 85.0 ->
-            "of ${inr.format(snap.effectiveBudgetInr)} · ${inr.format(remaining)} for ${derived.daysLeft} days"
+            "of $budget · ${inr.formatAmount(remaining, compact = true)} for ${derived.daysLeft} days"
         derived.daysLeft in 1..3 && pct < 85.0 ->
-            "of ${inr.format(snap.effectiveBudgetInr)} · ${inr.format(remaining)} remaining, ${derived.daysLeft} days left"
+            "of $budget · ${inr.formatAmount(remaining, compact = true)} remaining, ${derived.daysLeft} days left"
         else ->
-            "of ${inr.format(snap.effectiveBudgetInr)} · ${"%.0f".format(pct)}% used"
+            "of $budget · ${"%.0f".format(pct)}% used"
     }
 }
 
@@ -723,8 +724,8 @@ private fun StatRow(
     // Sign-free display — red text + "Deficit" label carry the negative
     // signal without a minus prefix competing visually with the amount.
     val carryV = when {
-        snap.carryOverInr > 0.0 -> "+${inr.format(snap.carryOverInr)}"
-        snap.carryOverInr < 0.0 -> inr.format(-snap.carryOverInr)
+        snap.carryOverInr > 0.0 -> "+${inr.formatAmount(snap.carryOverInr, compact = true)}"
+        snap.carryOverInr < 0.0 -> inr.formatAmount(-snap.carryOverInr, compact = true)
         else                    -> "₹0"
     }
     val colors = SpendWiseTheme.colors
@@ -740,17 +741,17 @@ private fun StatRow(
     val third: StatSlot = when (val b = derived.banner) {
         is DashboardBanner.Over -> StatSlot(
             "Deficit",
-            inr.format(b.deficit),
+            inr.formatAmount(b.deficit, compact = true),
             colors.negative,
         )
         is DashboardBanner.Approaching -> StatSlot(
             "Daily cap",
-            inr.format(b.dailyCapInr),
+            inr.formatAmount(b.dailyCapInr, compact = true),
             colors.warn,
         )
         is DashboardBanner.OnTrack -> StatSlot(
             "Projected surplus",
-            "+${inr.format(b.projectedSurplusInr)}",
+            "+${inr.formatAmount(b.projectedSurplusInr, compact = true)}",
             colors.positive,
         )
         is DashboardBanner.EarlyMonth -> StatSlot(
@@ -765,7 +766,7 @@ private fun StatRow(
         )
         DashboardBanner.Normal -> StatSlot(
             "Daily burn",
-            inr.format(derived.dailyBurnInr),
+            inr.formatAmount(derived.dailyBurnInr, compact = true),
             null,
         )
     }
