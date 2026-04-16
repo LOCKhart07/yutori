@@ -52,6 +52,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #86 — Budget-alert notifications: subtitle missing "· ₹Y over" suffix on over-budget alerts
 - #87 — Permission gate: row order mismatch + misleading check/warning glyphs
 - #88 — Dev-style pluralisation inconsistency ("txn(s)" vs "transaction(s)")
+- #93 — Auto-promote active accounts from SUGGESTED to CONFIRMED *(follow-up to #82)*
 
 ## Tier 4 — nice-to-have polish
 
