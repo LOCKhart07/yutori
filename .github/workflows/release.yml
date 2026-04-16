@@ -18,6 +18,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history — the versionCode is derived from `git rev-list
+          # --count HEAD` at build time, so a shallow clone (depth 1)
+          # would collapse every build to versionCode=1 and break the
+          # autoupdater's "newer APK" comparison.
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4

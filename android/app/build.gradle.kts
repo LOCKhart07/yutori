@@ -1,6 +1,44 @@
+import java.time.Instant
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+}
+
+// Run a git command from the repo root and return stdout trimmed.
+// Returns `fallback` on any failure (non-git clone, shallow CI checkout
+// without fetch-depth: 0, etc.) so builds never break on versioning.
+fun git(fallback: String, vararg args: String): String = runCatching {
+    val process = ProcessBuilder("git", *args)
+        .directory(rootProject.projectDir)
+        .redirectErrorStream(true)
+        .start()
+    val out = process.inputStream.bufferedReader().readText().trim()
+    if (process.waitFor() == 0 && out.isNotEmpty()) out else fallback
+}.getOrDefault(fallback)
+
+// Version derivation.
+//
+// - versionCode = total commit count from HEAD. Monotonic per commit,
+//   so installing a debug build over a release (or vice versa) never
+//   trips Android's downgrade guard as long as the clone has full
+//   history. CI must use `fetch-depth: 0` on checkout or the count
+//   collapses to 1.
+// - versionName, CI with a tag push: strip `v` from GITHUB_REF_NAME
+//   (e.g. "v0.2.0" → "0.2.0").
+// - versionName, everywhere else (local AS builds, CI on non-tag
+//   pushes): "0.0.0-dev+<commitCount>" — clearly not a release.
+val commitCount: Int = git("0", "rev-list", "--count", "HEAD").toIntOrNull() ?: 0
+val commitSha: String = git("unknown", "rev-parse", "--short", "HEAD")
+
+val refName: String? = System.getenv("GITHUB_REF_NAME")
+val refType: String? = System.getenv("GITHUB_REF_TYPE")  // "tag" | "branch"
+val isReleaseTag = refType == "tag" &&
+    refName?.matches(Regex("v\\d+\\.\\d+\\.\\d+(?:-.+)?")) == true
+val derivedVersionName = if (isReleaseTag) {
+    refName!!.removePrefix("v")
+} else {
+    "0.0.0-dev+$commitCount"
 }
 
 android {
@@ -11,9 +49,14 @@ android {
         applicationId = "com.spendwise"
         minSdk = 28          // decision 2026-04-15: API 28 floor
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = commitCount
+        versionName = derivedVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "COMMIT_SHA", "\"$commitSha\"")
+        buildConfigField("String", "COMMIT_COUNT", "\"$commitCount\"")
+        buildConfigField("String", "BUILD_TIME", "\"${Instant.now()}\"")
+        buildConfigField("boolean", "IS_RELEASE_TAG", isReleaseTag.toString())
     }
 
     // Release signing config.
@@ -88,6 +131,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
