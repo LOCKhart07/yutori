@@ -70,6 +70,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #91 — Month-picker grid — quick-jump to arbitrary month *(follow-up to #21)*
 - #92 — Dashboard pager peek is invisible *(follow-up to #21)*
 - #97 — Expose precise pace delta (pp) in a detail/analysis surface *(follow-up to #17)*
+- #99 — Over-banner third pill shows 'Deficit' — redundant with the banner above it *(follow-up to #16)*
 
 ## Tier 5 — deferred / low urgency
 
