@@ -29,9 +29,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.spendwise.R
 import com.spendwise.database.entities.TransactionEntity
 import com.spendwise.ui.theme.SpendWiseTextStyles
 import com.spendwise.ui.theme.SpendWiseTheme
@@ -109,8 +111,11 @@ fun CategoryDrillDownScreen(
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            text = "${transactions.size} transaction(s)" +
-                                if (refunds > 0) " · refunds ${inr.format(refunds)}" else "",
+                            text = pluralStringResource(
+                                R.plurals.transactions,
+                                transactions.size,
+                                transactions.size,
+                            ) + if (refunds > 0) " · refunds ${inr.format(refunds)}" else "",
                             style = MaterialTheme.typography.bodySmall,
                             color = SpendWiseTheme.colors.onMuted,
                         )

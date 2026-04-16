@@ -41,10 +41,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.spendwise.R
 import com.spendwise.budget.MonthSnapshot
 import com.spendwise.transactions.MonthKeyComputer
 import com.spendwise.ui.theme.SpendWiseTextStyles
@@ -424,7 +426,11 @@ private fun ReadyView(
 
         Spacer(Modifier.height(32.dp))
         Text(
-            text = "${state.transactionCount} transaction(s) this month",
+            text = pluralStringResource(
+                R.plurals.transactions_this_month,
+                state.transactionCount,
+                state.transactionCount,
+            ),
             style = MaterialTheme.typography.labelSmall,
             color = SpendWiseTheme.colors.onFaint,
         )
@@ -1000,7 +1006,11 @@ private fun CategoryRow(
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = "${slice.transactionCount} txn(s)",
+                text = pluralStringResource(
+                    R.plurals.transactions,
+                    slice.transactionCount,
+                    slice.transactionCount,
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 color = SpendWiseTheme.colors.onFaint,
             )

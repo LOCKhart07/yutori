@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="transactions">
+        <item quantity="one">%d transaction</item>
+        <item quantity="other">%d transactions</item>
+    </plurals>
+    <plurals name="transactions_this_month">
+        <item quantity="one">%d transaction this month</item>
+        <item quantity="other">%d transactions this month</item>
+    </plurals>
+    <plurals name="suggestions_from_sms">
+        <item quantity="one">%d new suggestion from recent SMSes.</item>
+        <item quantity="other">%d new suggestions from recent SMSes.</item>
+    </plurals>
+</resources>

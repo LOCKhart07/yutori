@@ -22,8 +22,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.spendwise.R
 import com.spendwise.ui.theme.SpendWiseTextStyles
 import com.spendwise.ui.theme.SpendWiseTheme
 
@@ -67,7 +69,11 @@ fun SettingsScreen(
                 SettingsItem(
                     title = "My accounts",
                     subtitle = if (accountSuggestionCount > 0) {
-                        "$accountSuggestionCount new suggestion(s) from recent SMSes."
+                        pluralStringResource(
+                            R.plurals.suggestions_from_sms,
+                            accountSuggestionCount,
+                            accountSuggestionCount,
+                        )
                     } else {
                         "Banks and cards — register UPI handles so self-" +
                             "transfers don't count as spend."
