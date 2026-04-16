@@ -24,7 +24,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #22 — Release-body changelog automation (git-cliff)
 - #24 — Restricted-settings onboarding helper (Android 13+ sideload)
 - #74 — Surface where historical import landed (past-month affordance)
-- #80 — BudgetSetup: input field doesn't reflect last saved budget on re-open
 
 ## Tier 2 — behavior-change core (medium effort)
 

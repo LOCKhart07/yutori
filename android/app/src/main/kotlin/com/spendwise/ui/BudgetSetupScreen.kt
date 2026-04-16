@@ -53,10 +53,16 @@ fun BudgetSetupScreen(
     onSave: (Budget) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var limitText by remember {
+    // #80: the caller loads `currentBudget` asynchronously (initial
+    // null, then the stored Budget once the DAO resolves). Keying the
+    // `remember` on `currentBudget` re-seeds the field when the real
+    // value arrives, instead of latching to the null → "" path (the
+    // field was *always* empty on open; the hard-coded placeholder
+    // "45000" just made it look like the default loaded correctly).
+    var limitText by remember(currentBudget) {
         mutableStateOf(currentBudget?.limitInr?.let { "%.0f".format(it) } ?: "")
     }
-    var warnPct by remember {
+    var warnPct by remember(currentBudget) {
         mutableStateOf(currentBudget?.warnThresholdPct?.toFloat() ?: 80f)
     }
 
