@@ -14,6 +14,7 @@ import androidx.work.workDataOf
 import com.spendwise.ingestion.IngestionCoordinator
 import com.spendwise.ingestion.RawSms
 import com.spendwise.ingestion.SmsSource
+import com.spendwise.transactions.MonthKeyComputer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -73,6 +74,7 @@ class HistoricalImportWorker(
         var inserted = 0
         var duplicates = 0
         var failures = 0
+        var earliestInsertedMs: Long? = null
         val total = cursor.count
 
         setProgress(progressData(processed, total))
@@ -100,7 +102,13 @@ class HistoricalImportWorker(
                 try {
                     val outcome = coordinator.ingestAndNotify(raw)
                     when (outcome) {
-                        is com.spendwise.ingestion.IngestionOutcome.Ingested -> inserted++
+                        is com.spendwise.ingestion.IngestionOutcome.Ingested -> {
+                            inserted++
+                            val prev = earliestInsertedMs
+                            if (prev == null || raw.receivedAtMs < prev) {
+                                earliestInsertedMs = raw.receivedAtMs
+                            }
+                        }
                         is com.spendwise.ingestion.IngestionOutcome.Duplicate -> duplicates++
                     }
                 } catch (e: Throwable) {
@@ -114,6 +122,7 @@ class HistoricalImportWorker(
             }
         }
 
+        val earliestMonth: String? = earliestInsertedMs?.let { MonthKeyComputer.ofDevice(it) }
         Result.success(
             workDataOf(
                 KEY_PROCESSED to processed,
@@ -121,6 +130,7 @@ class HistoricalImportWorker(
                 KEY_DUPLICATES to duplicates,
                 KEY_FAILURES to failures,
                 KEY_TOTAL to total,
+                KEY_EARLIEST_MONTH to earliestMonth,
             ),
         )
     }
@@ -155,6 +165,14 @@ class HistoricalImportWorker(
         const val KEY_DUPLICATES = "duplicates"
         const val KEY_FAILURES = "failures"
         const val KEY_ERROR = "error"
+
+        /**
+         * Earliest `YYYY-MM` among rows inserted this run (Duplicates
+         * don't count — they were already visible). Absent/null when the
+         * run inserted nothing, so UI uses its presence as the gate for
+         * the "Jump to <Month>" affordance (#74).
+         */
+        const val KEY_EARLIEST_MONTH = "earliest_month"
 
         private const val PROGRESS_EVERY_N = 10
 

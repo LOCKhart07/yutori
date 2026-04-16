@@ -19,6 +19,13 @@ sealed interface ImportStatus {
         val inserted: Int,
         val duplicates: Int,
         val failures: Int,
+        /**
+         * Earliest month (`YYYY-MM`) among rows inserted this run, or
+         * null when nothing was inserted. Drives the "Jump to <Month>"
+         * affordance (#74) when the user is viewing a later month than
+         * where the imported rows landed.
+         */
+        val earliestMonthTouched: String?,
     ) : ImportStatus
     data class Failed(val message: String?) : ImportStatus
 }
@@ -39,6 +46,8 @@ fun importStatusFlow(context: Context): Flow<ImportStatus> =
                     inserted = info.outputData.getInt(HistoricalImportWorker.KEY_INSERTED, 0),
                     duplicates = info.outputData.getInt(HistoricalImportWorker.KEY_DUPLICATES, 0),
                     failures = info.outputData.getInt(HistoricalImportWorker.KEY_FAILURES, 0),
+                    earliestMonthTouched = info.outputData
+                        .getString(HistoricalImportWorker.KEY_EARLIEST_MONTH),
                 )
                 WorkInfo.State.FAILED ->
                     ImportStatus.Failed(info.outputData.getString(HistoricalImportWorker.KEY_ERROR))

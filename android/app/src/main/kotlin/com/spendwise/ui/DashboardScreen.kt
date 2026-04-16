@@ -187,6 +187,18 @@ fun DashboardScreen(
                     )
                 }
             }
+            // Jumps the pager to the page for [target] and lets
+            // onMonthSettled propagate the settled month back to the
+            // ViewModel. Mirrors the onResetMonth pattern above. Used
+            // by the import-landing affordance (#74) so the user can
+            // jump back to the earliest month a run wrote into.
+            val onJumpToMonth: (String) -> Unit = { target ->
+                val page = MonthKeyComputer
+                    .monthsBetween(earliestMonthKey, target)
+                    .toInt()
+                    .coerceIn(0, pageCount - 1)
+                scope.launch { pagerState.animateScrollToPage(page) }
+            }
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
@@ -211,6 +223,8 @@ fun DashboardScreen(
                     onCategoryClick = onCategoryClick,
                     onCardClick = onCardClick,
                     isCurrentMonth = monthKey == currentMonthKey,
+                    pageMonthKey = monthKey,
+                    onJumpToMonth = onJumpToMonth,
                 )
             }
         }
@@ -225,15 +239,21 @@ private fun MonthPage(
     onCategoryClick: (String) -> Unit,
     onCardClick: (accountId: Long?, last4: String?) -> Unit,
     isCurrentMonth: Boolean,
+    pageMonthKey: String,
+    onJumpToMonth: (String) -> Unit,
 ) {
     when (state) {
         is DashboardUiState.Loading -> LoadingView()
         is DashboardUiState.NeedsPermission -> NeedsPermissionView()
-        is DashboardUiState.Empty -> EmptyView(state, onSetBudget, importStatus, isCurrentMonth)
+        is DashboardUiState.Empty -> EmptyView(
+            state, onSetBudget, importStatus, isCurrentMonth,
+            pageMonthKey, onJumpToMonth,
+        )
         is DashboardUiState.Ready ->
             ReadyView(
                 state, importStatus,
                 onSetBudget, onCategoryClick, onCardClick,
+                pageMonthKey, onJumpToMonth,
             )
     }
 }
@@ -260,6 +280,8 @@ private fun EmptyView(
     onSetBudget: () -> Unit,
     importStatus: ImportStatus,
     isCurrentMonth: Boolean,
+    pageMonthKey: String,
+    onJumpToMonth: (String) -> Unit,
 ) {
     ScrollingShell {
         Spacer(Modifier.height(24.dp))
@@ -295,7 +317,7 @@ private fun EmptyView(
             )
         }
         Spacer(Modifier.height(24.dp))
-        ImportStatusBlock(importStatus)
+        ImportStatusBlock(importStatus, pageMonthKey, onJumpToMonth)
     }
 }
 
@@ -306,6 +328,8 @@ private fun ReadyView(
     onSetBudget: () -> Unit,
     onCategoryClick: (String) -> Unit,
     onCardClick: (accountId: Long?, last4: String?) -> Unit,
+    pageMonthKey: String,
+    onJumpToMonth: (String) -> Unit,
 ) {
     val inr = remember { NumberFormat.getCurrencyInstance(Locale("en", "IN")) }
     val snap = state.snapshot
@@ -395,7 +419,7 @@ private fun ReadyView(
             )
         }
 
-        ImportStatusBlock(importStatus)
+        ImportStatusBlock(importStatus, pageMonthKey, onJumpToMonth)
 
         // By category
         Spacer(Modifier.height(24.dp))
@@ -1082,7 +1106,11 @@ private fun AccountStrip(
 // ───────────────────────── Import status ─────────────────────────
 
 @Composable
-private fun ImportStatusBlock(status: ImportStatus) {
+private fun ImportStatusBlock(
+    status: ImportStatus,
+    pageMonthKey: String,
+    onJumpToMonth: (String) -> Unit,
+) {
     when (status) {
         is ImportStatus.Idle -> Unit
         is ImportStatus.Running -> {
@@ -1111,12 +1139,33 @@ private fun ImportStatusBlock(status: ImportStatus) {
         }
         is ImportStatus.Succeeded -> {
             Spacer(Modifier.height(12.dp))
-            Text(
-                text = "Imported ${status.inserted} new, skipped ${status.duplicates} duplicates" +
-                    if (status.failures > 0) ", ${status.failures} failed" else "",
-                style = MaterialTheme.typography.bodySmall,
-                color = SpendWiseTheme.colors.onMuted,
-            )
+            val base = "Imported ${status.inserted} new, skipped ${status.duplicates} duplicates" +
+                if (status.failures > 0) ", ${status.failures} failed" else ""
+            val earliest = status.earliestMonthTouched
+            if (earliest != null && earliest < pageMonthKey) {
+                val label = prettyMonthKey(earliest, dayLabel = null)
+                Text(
+                    text = "$base · earliest in $label",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SpendWiseTheme.colors.onMuted,
+                )
+                Text(
+                    text = "Jump to $label",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .clickable { onJumpToMonth(earliest) },
+                )
+            } else {
+                Text(
+                    text = base,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SpendWiseTheme.colors.onMuted,
+                )
+            }
         }
         is ImportStatus.Failed -> {
             Spacer(Modifier.height(12.dp))

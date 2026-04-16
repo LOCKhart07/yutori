@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v7 mockup: historical-import landing affordance (#74)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --accent:        #F5B547;
+    --accent-soft:   rgba(245,181,71,0.12);
+    --info:          #8FB8D8;
+    --info-soft:     rgba(143,184,216,0.12);
+    --positive:      #7FB77E;
+    --positive-soft: rgba(127,183,126,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 80px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 56px 0 18px; font-size: 17px; color: #C9CACD; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 32px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: #8A8E96; font-size: 12px; max-width: 260px; margin: 10px 0 0; line-height: 1.5; }
+  .note strong { color: #C9CACD; }
+
+  .row-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 56px 28px;
+    max-width: 1400px;
+  }
+
+  .frame {
+    width: 300px;
+    border-radius: 28px;
+    background: var(--surface);
+    color: var(--on);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 24px 48px -16px rgba(0,0,0,0.6);
+  }
+  .frame .label {
+    position: absolute;
+    top: -22px;
+    left: 4px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8A8E96;
+    font-weight: 600;
+  }
+  .statusbar {
+    height: 28px; padding: 0 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10px; color: var(--on-muted); font-variant-numeric: tabular-nums;
+  }
+
+  .header {
+    padding: 8px 16px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--divider);
+  }
+  .header .month {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .header .month .chev {
+    width: 24px; height: 24px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-muted); font-size: 14px;
+    position: relative;
+  }
+  .header .month .chev.badge::after {
+    content: "";
+    position: absolute; top: 4px; right: 4px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--surface);
+  }
+  .header .month .chev.badge-count::after {
+    content: attr(data-n);
+    position: absolute; top: -2px; right: -2px;
+    min-width: 16px; height: 16px; padding: 0 4px;
+    border-radius: 8px; background: var(--accent); color: #000;
+    font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 2px var(--surface);
+  }
+  .header .month .name { font-size: 15px; font-weight: 600; }
+  .header .gear { color: var(--on-muted); font-size: 16px; }
+
+  .hero {
+    padding: 20px 18px 18px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .hero .spend { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
+  .hero .of { color: var(--on-muted); font-size: 13px; margin-top: 2px; }
+  .hero .bar {
+    margin-top: 14px; height: 5px; border-radius: 3px;
+    background: var(--surface-el2); overflow: hidden;
+  }
+  .hero .bar .fill {
+    height: 100%; width: 42%; background: var(--positive); border-radius: 3px;
+  }
+
+  .cards {
+    padding: 12px 16px 16px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .card {
+    background: var(--surface-el); border-radius: 12px; padding: 12px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .card .left .t { font-size: 13px; font-weight: 500; }
+  .card .left .s { font-size: 11px; color: var(--on-muted); margin-top: 2px; }
+  .card .amt { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* Variants */
+  .status-line {
+    padding: 10px 16px 16px;
+    font-size: 11px; color: var(--on-muted);
+  }
+  .status-line .inline-btn {
+    display: inline-block;
+    color: var(--accent); font-weight: 600;
+    margin-left: 4px;
+    border-bottom: 1px dotted rgba(245,181,71,0.5);
+    cursor: pointer;
+  }
+
+  .banner {
+    margin: 0 12px 12px;
+    background: var(--accent-soft);
+    border-radius: 14px;
+    padding: 14px 16px 14px;
+    display: flex; flex-direction: column; gap: 10px;
+    border: 1px solid rgba(245,181,71,0.2);
+  }
+  .banner .bhead { display: flex; align-items: flex-start; gap: 10px; }
+  .banner .ic {
+    width: 22px; height: 22px; border-radius: 11px;
+    background: var(--accent); color: #000;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .banner .btxt .h {
+    font-size: 13px; font-weight: 600; color: var(--on);
+  }
+  .banner .btxt .s {
+    font-size: 11px; color: var(--on-muted); margin-top: 3px; line-height: 1.45;
+  }
+  .banner .bbtn {
+    background: var(--on); color: #000;
+    padding: 8px 14px; border-radius: 10px;
+    font-size: 12px; font-weight: 600;
+    align-self: flex-start;
+  }
+  .banner .dismiss {
+    position: absolute; top: 10px; right: 12px;
+    color: var(--on-muted); font-size: 14px; line-height: 1;
+  }
+  .banner-wrap { position: relative; }
+
+</style>
+</head>
+<body>
+
+<h1>v7 · Historical-import landing affordance — issue #74</h1>
+<p class="blurb">
+  When the user runs <em>Import past SMSes</em>, rows almost always land in past months (Jan/Feb/Mar) because that's where the source SMS dates point.
+  Today the dashboard just says <code>Imported 47 new, skipped 2 duplicates</code> and stays on the current month — the user sees no new rows
+  and often believes the import did nothing. The affordance below tells them where the rows landed and jumps them there.
+  Picking one of A/B/C drives the <code>ImportStatus.Succeeded</code> shape: A needs earliest-month + total, B needs the month range + count,
+  C needs per-month-direction counts.
+</p>
+
+<h2>Today (0 · current state)</h2>
+<div class="row-wrap">
+
+  <div class="frame">
+    <div class="label">v0 — current</div>
+    <div class="statusbar"><span>9:41</span><span>●</span></div>
+    <div class="header">
+      <div class="month">
+        <div class="chev">◀</div>
+        <div class="name">April 2026</div>
+        <div class="chev">▶</div>
+      </div>
+      <div class="gear">⚙</div>
+    </div>
+    <div class="hero">
+      <div class="spend">₹12,340</div>
+      <div class="of">of ₹29,000 · 58% left</div>
+      <div class="bar"><div class="fill"></div></div>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="left"><div class="t">Food & drink</div><div class="s">12 txns</div></div><div class="amt">₹3,410</div></div>
+      <div class="card"><div class="left"><div class="t">Groceries</div><div class="s">5 txns</div></div><div class="amt">₹2,180</div></div>
+      <div class="card"><div class="left"><div class="t">Transport</div><div class="s">9 txns</div></div><div class="amt">₹1,640</div></div>
+    </div>
+    <div class="status-line">
+      Imported 47 new, skipped 2 duplicates
+    </div>
+    <p class="note" style="position:absolute; bottom:-96px; left:0; width:100%;">
+      <strong>Problem:</strong> user sees "47 new" but dashboard looks unchanged. No clue rows went to Jan/Feb/Mar.
+    </p>
+  </div>
+
+</div>
+
+<h2>Option A — inline line + jump link (minimal)</h2>
+<div class="row-wrap">
+
+  <div class="frame">
+    <div class="label">A — inline + jump</div>
+    <div class="statusbar"><span>9:41</span><span>●</span></div>
+    <div class="header">
+      <div class="month">
+        <div class="chev">◀</div>
+        <div class="name">April 2026</div>
+        <div class="chev">▶</div>
+      </div>
+      <div class="gear">⚙</div>
+    </div>
+    <div class="hero">
+      <div class="spend">₹12,340</div>
+      <div class="of">of ₹29,000 · 58% left</div>
+      <div class="bar"><div class="fill"></div></div>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="left"><div class="t">Food & drink</div><div class="s">12 txns</div></div><div class="amt">₹3,410</div></div>
+      <div class="card"><div class="left"><div class="t">Groceries</div><div class="s">5 txns</div></div><div class="amt">₹2,180</div></div>
+      <div class="card"><div class="left"><div class="t">Transport</div><div class="s">9 txns</div></div><div class="amt">₹1,640</div></div>
+    </div>
+    <div class="status-line">
+      Imported 47 new · most landed in Jan–Mar
+      <span class="inline-btn">Jump to January</span>
+    </div>
+  </div>
+
+  <p class="note" style="align-self:center;">
+    <strong>Pros:</strong> cheapest — one Text + TextButton. Matches the existing status-line style.<br><br>
+    <strong>Cons:</strong> dismisses itself on any dashboard nav; user can't come back to it. Button is small; easy to miss.<br><br>
+    <strong>Data needed:</strong> <code>earliestMonthTouched</code> + <code>pastMonthCount</code>.
+  </p>
+</div>
+
+<h2>Option B — card banner with prominent CTA</h2>
+<div class="row-wrap">
+
+  <div class="frame">
+    <div class="label">B — card banner</div>
+    <div class="statusbar"><span>9:41</span><span>●</span></div>
+    <div class="header">
+      <div class="month">
+        <div class="chev">◀</div>
+        <div class="name">April 2026</div>
+        <div class="chev">▶</div>
+      </div>
+      <div class="gear">⚙</div>
+    </div>
+    <div class="hero">
+      <div class="spend">₹12,340</div>
+      <div class="of">of ₹29,000 · 58% left</div>
+      <div class="bar"><div class="fill"></div></div>
+    </div>
+    <div class="banner-wrap">
+      <div class="banner">
+        <span class="dismiss">×</span>
+        <div class="bhead">
+          <div class="ic">✓</div>
+          <div class="btxt">
+            <div class="h">Import complete</div>
+            <div class="s">42 of 47 new txns landed in Jan, Feb, Mar. You're looking at April — jump back to see them.</div>
+          </div>
+        </div>
+        <div class="bbtn">Jump to January</div>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="left"><div class="t">Food & drink</div><div class="s">12 txns</div></div><div class="amt">₹3,410</div></div>
+      <div class="card"><div class="left"><div class="t">Groceries</div><div class="s">5 txns</div></div><div class="amt">₹2,180</div></div>
+    </div>
+  </div>
+
+  <p class="note" style="align-self:center;">
+    <strong>Pros:</strong> most discoverable. Survives scroll. Dismissible (×) so it's not sticky forever.<br><br>
+    <strong>Cons:</strong> heavier surface; another thing that could conflict with the FX banner. State needs tracking (dismissed vs. not).<br><br>
+    <strong>Data needed:</strong> <code>earliestMonthTouched</code>, <code>latestMonthTouched</code>, <code>pastMonthCount</code>, <code>currentMonthCount</code>.
+  </p>
+</div>
+
+<h2>Option C — chevron badges (ambient, no banner)</h2>
+<div class="row-wrap">
+
+  <div class="frame">
+    <div class="label">C — chevron badge (dot)</div>
+    <div class="statusbar"><span>9:41</span><span>●</span></div>
+    <div class="header">
+      <div class="month">
+        <div class="chev badge">◀</div>
+        <div class="name">April 2026</div>
+        <div class="chev">▶</div>
+      </div>
+      <div class="gear">⚙</div>
+    </div>
+    <div class="hero">
+      <div class="spend">₹12,340</div>
+      <div class="of">of ₹29,000 · 58% left</div>
+      <div class="bar"><div class="fill"></div></div>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="left"><div class="t">Food & drink</div><div class="s">12 txns</div></div><div class="amt">₹3,410</div></div>
+      <div class="card"><div class="left"><div class="t">Groceries</div><div class="s">5 txns</div></div><div class="amt">₹2,180</div></div>
+      <div class="card"><div class="left"><div class="t">Transport</div><div class="s">9 txns</div></div><div class="amt">₹1,640</div></div>
+    </div>
+    <div class="status-line">
+      Imported 47 new, skipped 2 duplicates
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="label">C' — chevron badge (count)</div>
+    <div class="statusbar"><span>9:41</span><span>●</span></div>
+    <div class="header">
+      <div class="month">
+        <div class="chev badge-count" data-n="42">◀</div>
+        <div class="name">April 2026</div>
+        <div class="chev">▶</div>
+      </div>
+      <div class="gear">⚙</div>
+    </div>
+    <div class="hero">
+      <div class="spend">₹12,340</div>
+      <div class="of">of ₹29,000 · 58% left</div>
+      <div class="bar"><div class="fill"></div></div>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="left"><div class="t">Food & drink</div><div class="s">12 txns</div></div><div class="amt">₹3,410</div></div>
+      <div class="card"><div class="left"><div class="t">Groceries</div><div class="s">5 txns</div></div><div class="amt">₹2,180</div></div>
+      <div class="card"><div class="left"><div class="t">Transport</div><div class="s">9 txns</div></div><div class="amt">₹1,640</div></div>
+    </div>
+    <div class="status-line">
+      Imported 47 new, skipped 2 duplicates
+    </div>
+  </div>
+
+  <p class="note" style="align-self:center;">
+    <strong>Pros:</strong> spatial — the badge is literally on the control that gets them to the right place. Ambient, doesn't block anything.<br><br>
+    <strong>Cons:</strong> easy to miss if user isn't looking at the chevron. Count variant gets crowded with big imports (3-digit numbers). Needs to clear on navigate-back.<br><br>
+    <strong>Data needed:</strong> <code>monthsTouched: Map&lt;String, Int&gt;</code> — richest payload of the three.<br><br>
+    <strong>Could combine</strong> with A (line + badge) so discoverability doesn't depend on one surface.
+  </p>
+</div>
+
+<h2>Recommendation</h2>
+<p class="blurb">
+  <strong>A as the primary affordance.</strong> It's the least risky shape, matches the existing import-status-line style, and needs the smallest
+  <code>ImportStatus.Succeeded</code> change (one nullable <code>earliestMonthTouched</code> field).
+  If discoverability on import is under-performing in practice, promote to B in a follow-up — don't lead with the heavier surface.
+  C is tempting but the chevron is already loaded (the pager swipe gesture lives there) and a badge risks misreading as an error dot.
+</p>
+
+</body>
+</html>
