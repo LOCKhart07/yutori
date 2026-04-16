@@ -6,10 +6,9 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 
 ## Tier 0 — ship-blockers / foundational
 
-- #8 — Lock app name: Yutori — rename SpendWise → Yutori across code, docs, plans
-- #9 — DB migration failure handler
-- #10 — Release-sign the next build
 - #7 — Full app audit via ADB — exercise every surface and file bugs
+- #8 — Lock app name: Yutori — rename SpendWise → Yutori across code, docs, plans
+- #10 — Release-sign the next build
 
 ## Tier 1 — easy wins (hours, no schema)
 
@@ -25,12 +24,9 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #20 — End-to-end profiling round
 - #21 — Swipe between months on dashboard
 - #22 — Release-body changelog automation (git-cliff)
-- #23 — Decimal-display consistency in money amounts
 - #24 — Restricted-settings onboarding helper (Android 13+ sideload)
-- #25 — CI gate on release (run tests before publishing APK)
-- #5 — Fix tx-list amount sort ordering + make large-to-small the default
-- #6 — Account drill-down from dashboard footer shows ₹0 spend
-- #74 — Historical import doesn't update the dashboard incrementally
+- #74 — Surface where historical import landed (past-month affordance)
+- #80 — BudgetSetup: input field doesn't reflect last saved budget on re-open
 
 ## Tier 2 — behavior-change core (medium effort)
 
@@ -42,6 +38,11 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #31 — "Offer" reclassify confirm dialog after saving account UPI handle
 - #32 — Review unmatched screen
 - #75 — Backfill account_id on existing txs when a new account is registered
+- #76 — Add Kotlin linter (detekt or ktlint) + wire into CI
+- #81 — TransactionDetail leaks raw enum tokens to UI
+- #82 — Settings > My accounts: SUGGESTED renders above CONFIRMED
+- #83 — MigrationErrorScreen: destructive button styled as primary
+- #84 — Alert thresholds screen leaks dev-facing copy
 
 ## Tier 3 — structurally important, bigger lifts
 
@@ -51,6 +52,10 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #36 — Goals entity + translator
 - #37 — Annual-cost smoothing buckets
 - #38 — Per-category pacing baseline (median-of-3 historical)
+- #85 — MigrationErrorScreen: stack trace not scrollable; Copy has no feedback
+- #86 — Budget-alert notifications: subtitle missing "· ₹Y over" suffix on over-budget alerts
+- #87 — Permission gate: row order mismatch + misleading check/warning glyphs
+- #88 — Dev-style pluralisation inconsistency ("txn(s)" vs "transaction(s)")
 
 ## Tier 4 — nice-to-have polish
 
@@ -67,13 +72,15 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #49 — Category drill-down hero pace bucket
 - #50 — Per-category pacing tag on dashboard rows
 - #51 — Tx-detail Edit / Mark as payback
-- #78 — Migration error screen: add 'Report this error' action (bug-report flow + PII sanitization)
 - #52 — Animation: traffic-light hero color transition
 - #53 — Animation: AnimatedVisibility on dashboard banners
 - #54 — Animation: progress-bar fill
 - #55 — Animation: money counter on hero
 - #56 — Animation: screen transitions
-- #57 — Play Protect install-warning mitigation
+- #77 — In-app changelog / "What's new" view
+- #78 — Migration error screen: 'Report this error' action (bug-report flow + PII sanitization)
+- #89 — CRED recipient-rule regex contains U+00A1 mojibake
+- #90 — Mixed glyphs / case / paise across dashboard + detail surfaces
 
 ## Tier 5 — deferred / low urgency
 
@@ -99,6 +106,10 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 ## Unvetted external suggestions
 
 - #73 — External agent critique — unvetted framings and suggestions
+
+## Unlabelled
+
+- #79 — Add an easter egg somewhere in the app
 
 ## Label conventions
 
