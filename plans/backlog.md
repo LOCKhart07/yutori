@@ -6,7 +6,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 
 ## Tier 0 — ship-blockers / foundational
 
-- #7 — Full app audit via ADB — exercise every surface and file bugs
 - #8 — Lock app name: Yutori — rename SpendWise → Yutori across code, docs, plans
 
 ## Tier 1 — easy wins (hours, no schema)
@@ -21,7 +20,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #18 — Late-arriving past-month alert stamping
 - #19 — Rebuild database screen
 - #20 — End-to-end profiling round
-- #22 — Release-body changelog automation (git-cliff)
 - #24 — Restricted-settings onboarding helper (Android 13+ sideload)
 - #74 — Surface where historical import landed (past-month affordance)
 
