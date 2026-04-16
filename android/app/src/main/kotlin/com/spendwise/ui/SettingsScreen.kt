@@ -87,7 +87,7 @@ fun SettingsScreen(
                 SettingsItem(
                     title = "Alert thresholds",
                     subtitle = "Tune the per-transaction \"impact\" push and " +
-                        "(later) the cumulative budget alerts.",
+                        "the cumulative budget alerts.",
                     onClick = onAlertSettings,
                 )
             }

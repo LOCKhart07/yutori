@@ -41,6 +41,7 @@ import com.spendwise.ui.theme.SpendWiseTheme
 fun AlertSettingsScreen(
     settings: ImpactAlertSettings,
     onBack: () -> Unit,
+    warnThresholdPct: Int = 80,
 ) {
     val cfg by settings.state.collectAsStateWithLifecycle(initialValue = settings.get())
     val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
@@ -62,8 +63,8 @@ fun AlertSettingsScreen(
             Spacer(Modifier.height(8.dp))
             Text(
                 "Tune when SpendWise pings you. The cumulative budget " +
-                    "alerts (50%, warn %, 100%) live on the budget setup " +
-                    "screen for now.",
+                    "alerts (50%, $warnThresholdPct%, 100%) live on the " +
+                    "budget setup screen for now.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.onMuted,
             )

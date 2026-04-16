@@ -37,7 +37,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #75 — Backfill account_id on existing txs when a new account is registered
 - #76 — Add Kotlin linter (detekt or ktlint) + wire into CI
 - #83 — MigrationErrorScreen: destructive button styled as primary
-- #84 — Alert thresholds screen leaks dev-facing copy
 
 ## Tier 3 — structurally important, bigger lifts
 

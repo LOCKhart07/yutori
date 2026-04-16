@@ -457,9 +457,24 @@ private fun AppContent() {
         }
 
         is Screen.AlertSettings -> {
+            val budgetDao = database.budgetDao()
+            val currentMonthKey: String = remember {
+                com.spendwise.transactions.MonthKeyComputer
+                    .ofDevice(System.currentTimeMillis())
+            }
+            val warnPct: Int by produceState(
+                initialValue = 80,
+                currentMonthKey,
+            ) {
+                value = budgetDao.getByMonth(currentMonthKey)
+                    ?.thresholdWarnPct
+                    ?: 80
+            }
+
             AlertSettingsScreen(
                 settings = app.impactAlertSettings,
                 onBack = { goBack() },
+                warnThresholdPct = warnPct,
             )
         }
     }
