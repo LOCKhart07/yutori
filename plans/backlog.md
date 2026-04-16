@@ -8,7 +8,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 
 - #7 — Full app audit via ADB — exercise every surface and file bugs
 - #8 — Lock app name: Yutori — rename SpendWise → Yutori across code, docs, plans
-- #10 — Release-sign the next build
 
 ## Tier 1 — easy wins (hours, no schema)
 
@@ -22,7 +21,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #18 — Late-arriving past-month alert stamping
 - #19 — Rebuild database screen
 - #20 — End-to-end profiling round
-- #21 — Swipe between months on dashboard
 - #22 — Release-body changelog automation (git-cliff)
 - #24 — Restricted-settings onboarding helper (Android 13+ sideload)
 - #74 — Surface where historical import landed (past-month affordance)
@@ -81,6 +79,8 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #78 — Migration error screen: 'Report this error' action (bug-report flow + PII sanitization)
 - #89 — CRED recipient-rule regex contains U+00A1 mojibake
 - #90 — Mixed glyphs / case / paise across dashboard + detail surfaces
+- #91 — Month-picker grid — quick-jump to arbitrary month *(follow-up to #21)*
+- #92 — Dashboard pager peek is invisible *(follow-up to #21)*
 
 ## Tier 5 — deferred / low urgency
 
