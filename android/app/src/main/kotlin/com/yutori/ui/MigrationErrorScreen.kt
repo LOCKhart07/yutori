@@ -4,12 +4,10 @@ import android.app.ActivityManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -34,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +45,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.yutori.ui.theme.YutoriTheme
+import kotlinx.coroutines.delay
 import java.io.PrintWriter
 import java.io.StringWriter
 
@@ -71,9 +72,17 @@ fun MigrationErrorScreen(error: Throwable) {
     val context = LocalContext.current
     var detailsExpanded by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
+    var justCopied by remember { mutableStateOf(false) }
     val errorText = remember(error) { stackTraceString(error) }
     val statusInset = WindowInsets.statusBars.asPaddingValues()
-    val negative = Color(0xFFE06C61)
+    val negative = YutoriTheme.colors.negative
+
+    if (justCopied) {
+        LaunchedEffect(Unit) {
+            delay(2_000)
+            justCopied = false
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -119,11 +128,12 @@ fun MigrationErrorScreen(error: Throwable) {
 
             Spacer(Modifier.size(12.dp))
 
-            // Body — copy is verbatim from error-states-spec §5.1.
+            // Body — copy updated from error-states-spec §5.1 to only
+            // reference actions the UI actually exposes (#85).
             Text(
-                "This shouldn't happen. Please reinstall from backup, or " +
-                    "if that's not an option, clear app data to start " +
-                    "fresh (your Android SMS inbox is untouched).",
+                "This shouldn't happen. Reinstall the APK you came from, " +
+                    "or clear app data to start fresh (your Android SMS " +
+                    "inbox is untouched).",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
@@ -146,7 +156,10 @@ fun MigrationErrorScreen(error: Throwable) {
 
             if (detailsExpanded) {
                 Spacer(Modifier.size(12.dp))
-                Box(
+                // Column-with-verticalScroll (not Box) so long traces
+                // scroll reliably via drag — the previous Box variant
+                // sometimes swallowed the gesture (#85).
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 80.dp, max = 200.dp)
@@ -171,22 +184,29 @@ fun MigrationErrorScreen(error: Throwable) {
 
             Spacer(Modifier.weight(1f))
 
-            // Actions
+            // Actions — destructive-first, filled; safe Copy action is
+            // demoted to an outlined button underneath (#83).
             Button(
-                onClick = { copyToClipboard(context, errorText) },
+                onClick = { confirmClear = true },
                 modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = negative,
+                    contentColor = Color.White,
+                ),
             ) {
-                Text("Copy error details")
+                Text("Clear app data")
             }
 
             Spacer(Modifier.size(8.dp))
 
             OutlinedButton(
-                onClick = { confirmClear = true },
+                onClick = {
+                    copyToClipboard(context, errorText)
+                    justCopied = true
+                },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = negative),
             ) {
-                Text("Clear app data")
+                Text(if (justCopied) "✓ Copied" else "Copy error details")
             }
         }
     }
@@ -230,10 +250,10 @@ internal fun stackTraceString(t: Throwable): String {
 private fun copyToClipboard(context: Context, text: String) {
     val clip = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     clip.setPrimaryClip(ClipData.newPlainText("Yutori migration error", text))
-    // Android 13+ shows its own clipboard toast; older versions don't.
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-        Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
-    }
+    // In-app feedback is handled by the calling composable (button
+    // label flips to "✓ Copied" for 2s). Android 13+ also shows a
+    // system clipboard chip; the in-app feedback is the authoritative
+    // signal the user can't miss.
 }
 
 private fun clearAppData(context: Context) {
