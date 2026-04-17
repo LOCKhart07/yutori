@@ -59,6 +59,41 @@ signingConfig. The APK is installable via side-load, but:
 The workflow emits a GitHub Actions warning on every debug-signed
 release so you can't miss it.
 
+## Autoupdater PAT (private repo only)
+
+While `LOCKhart07/yutori` is private, the in-app autoupdater can't call
+the GitHub Releases API anonymously — GitHub 404s private-repo reads,
+and the app surfaces that as "Updater offline." The workflow bakes a
+fine-grained PAT into the APK so installed builds can read releases.
+
+Repo secret:
+
+| Secret | Contents |
+| --- | --- |
+| `RELEASES_TOKEN` | fine-grained PAT, scoped to `LOCKhart07/yutori`, *Contents: Read* |
+
+The secret is named `RELEASES_TOKEN` — GH rejects any secret name
+starting with `GITHUB_`. The Gradle build still reads env var
+`GITHUB_RELEASES_TOKEN` into `BuildConfig.GITHUB_RELEASES_TOKEN`; the
+workflow maps `secrets.RELEASES_TOKEN` onto that env var.
+
+Token setup:
+1. github.com → Settings → Developer settings → Personal access tokens
+   → Fine-grained tokens → Generate new token.
+2. Resource owner: `LOCKhart07`. Repository access: only
+   `LOCKhart07/yutori`. Repository permissions: **Contents — Read**.
+   Expiry: 1 year.
+3. Copy the token, add it as repo secret `RELEASES_TOKEN`.
+
+When the token expires, "Updater offline" will return for any APK
+built against the stale PAT. Rotate by creating a new PAT and
+overwriting the secret; the next release embeds the fresh one. APKs
+already on users' phones keep the old token until they're replaced.
+
+Remove this whole section (and the corresponding `buildConfigField`
+in `android/app/build.gradle.kts`) when the repo goes public — see
+autoupdater-spec §11.2 and issue #71(a).
+
 ## Generating a keystore
 
 One-time setup on your local machine (not in the repo — the keystore
