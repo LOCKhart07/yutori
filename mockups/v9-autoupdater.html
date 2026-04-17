@@ -197,6 +197,46 @@
   .alert .actions { display: flex; gap: 6px; justify-content: flex-end; }
   .alert .actions .btn { padding: 7px 14px; font-size: 12px; }
 
+  /* ─── Option D — Final AlertDialog (pinned actions + expanded height) ─── */
+  .alert.tall {
+    height: 82%;
+    display: flex; flex-direction: column;
+    padding: 22px 22px 14px;
+  }
+  .alert.tall .title { font-size: 16px; margin-bottom: 3px; }
+  .alert.tall .subtitle { margin-bottom: 14px; }
+  .alert.tall .scroll-body {
+    flex: 1; min-height: 0;
+    position: relative;
+    margin: 0 -22px 10px;
+    padding: 0 22px 28px;
+    overflow-y: auto;
+    font-size: 12px; line-height: 1.65; color: #C9CACD;
+  }
+  .alert.tall .scroll-body h4 { margin: 8px 0 6px; font-size: 12px; font-weight: 600; color: var(--on); }
+  .alert.tall .scroll-body h4:first-child { margin-top: 0; }
+  .alert.tall .scroll-body ul { padding-left: 18px; margin: 6px 0 12px; }
+  .alert.tall .scroll-body li { margin-bottom: 4px; }
+  .alert.tall .scroll-body code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--surface); padding: 1px 5px; border-radius: 3px; }
+  .alert.tall .fade {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 28px;
+    background: linear-gradient(to bottom, rgba(23,23,26,0) 0%, var(--surface-el) 100%);
+    pointer-events: none;
+  }
+  .alert.tall .pinned-actions {
+    border-top: 1px solid var(--divider);
+    margin: 0 -22px;
+    padding: 12px 22px 2px;
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+  .alert.tall .pinned-actions .btn { padding: 8px 16px; font-size: 12px; }
+  .alert.tall .ghost-link {
+    font-size: 11px; color: var(--on-muted);
+    text-align: center; padding: 6px 0 0;
+  }
+  .alert.tall .ghost-link a { color: var(--info); text-decoration: none; }
+
   /* ─── Settings screen ─── */
   .settings {
     min-height: 520px;
@@ -289,9 +329,12 @@
   tweak on the restricted-settings first-run screen is a one-liner and doesn't need its own mockup — noted
   at the bottom.
 </p>
-<div class="legend">
-  <strong>Decisions to make:</strong> bottom sheet vs AlertDialog for the update prompt,
-  status-line wording on the settings row, and whether "Check now" should be a button or an inline action.
+<div class="legend" style="background: rgba(127,183,126,0.07); border-color: rgba(127,183,126,0.22); color: #A9D1A1;">
+  <strong style="color: #C5E5BC;">Decisions locked (2026-04-17):</strong>
+  dialog = <b>AlertDialog</b>, with the long-notes mitigations in <b>section D</b> below (pinned actions +
+  expanded max-height). Status wording = <i>"Update available: 0.3.0 ›"</i>. <i>Check now</i> = dedicated
+  button. Error CTA = <i>"Try again"</i>.<br>
+  Sections A &amp; B are kept as the design record — D is the chosen variant for slice 5.
 </div>
 
 <hr>
@@ -465,9 +508,147 @@
 </div>
 
 <p class="note">
-  <strong>Leaning toward A (bottom sheet).</strong> The release body can grow long once
-  git-cliff starts formatting commit groups; the sheet's larger max-height reads better. AlertDialog wins
-  only on code simplicity, and we pay that cost once.
+  <strong>Superseded by D below.</strong> B's shortcoming (cramped body for long release notes) is fixed in
+  D by pinning the actions outside the scroll area and giving the dialog ~82% of screen height — so it
+  reads almost like a full-screen sheet while staying a plain <code>AlertDialog</code>.
+</p>
+
+<hr>
+
+<h2>D · AlertDialog — final (pinned actions + expanded height)</h2>
+<p class="blurb">
+  What slice 5 builds. <code>AlertDialog</code> + <code>DialogProperties(usePlatformDefaultWidth = false)</code>
+  for a wider-than-default panel that fills ~82% of the screen. The release-notes body scrolls independently
+  within the panel, while Later / Update stay pinned at the bottom — no matter how long the notes are the
+  user can always act. Fade gradient at the bottom of the scroll area hints "more below" without a
+  scrollbar. Optional "See full notes on GitHub" escape hatch at the bottom — pairs naturally with #77
+  once that lands.
+</p>
+
+<div class="row-wrap">
+  <!-- D1 — available, long release notes -->
+  <div class="frame"><span class="label">D1 · update available</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="dash-bg">
+      <div class="top"><span>Yutori</span><span style="opacity:0.5">⋮</span></div>
+      <div class="hero"></div>
+      <div class="chip-row"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="alert-wrap">
+        <div class="alert tall">
+          <div class="title">Yutori 0.3.0</div>
+          <div class="subtitle">Current 0.2.0 → New 0.3.0</div>
+          <div class="scroll-body">
+            <h4>Added</h4>
+            <ul>
+              <li>Dashboard pacing tint on the Daily-burn pill</li>
+              <li>Mid-month overshoot projection banner</li>
+              <li>Per-category pacing tag on dashboard rows</li>
+              <li>Category drill-down hero pace bucket</li>
+              <li>Month-picker quick-jump grid</li>
+            </ul>
+            <h4>Fixed</h4>
+            <ul>
+              <li>Scrolling jank on large tx lists</li>
+              <li>Incorrect refund bucket on <code>KotakCcSpend</code></li>
+              <li>Dashboard flashing "₹0" when re-entered</li>
+              <li>Permission gate row order + misleading glyph</li>
+            </ul>
+            <h4>Changed</h4>
+            <ul>
+              <li>Migration error screen: destructive button no longer styled as primary</li>
+              <li>Release run names now reference the tag, not the SHA</li>
+            </ul>
+            <div class="fade"></div>
+          </div>
+          <div class="pinned-actions">
+            <button class="btn ghost">Later</button>
+            <button class="btn primary">Update</button>
+          </div>
+          <div class="ghost-link"><a href="#">See full notes on GitHub ›</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- D2 — downloading -->
+  <div class="frame"><span class="label">D2 · downloading</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="dash-bg">
+      <div class="top"><span>Yutori</span><span style="opacity:0.5">⋮</span></div>
+      <div class="hero"></div>
+      <div class="chip-row"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="alert-wrap">
+        <div class="alert tall">
+          <div class="title">Downloading 0.3.0</div>
+          <div class="subtitle">12.4 MB of 20.0 MB</div>
+          <div class="scroll-body" style="padding-top: 8px;">
+            <div style="background: var(--surface); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--divider);">
+              <div style="display:flex; justify-content:space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--on-muted); margin-bottom: 8px;">
+                <span>yutori-0.3.0.apk</span><span style="color: var(--on)">62%</span>
+              </div>
+              <div style="height:6px; background: var(--surface-el3); border-radius:999px; overflow:hidden;">
+                <div style="height:100%; width:62%; background: var(--info); border-radius:999px;"></div>
+              </div>
+            </div>
+            <p class="note" style="margin-top: 14px; max-width: none;">
+              Android's install confirmation will appear automatically when the download finishes. If
+              "Install unknown apps" is off for Yutori, the system will ask you to enable it first.
+            </p>
+          </div>
+          <div class="pinned-actions">
+            <button class="btn ghost">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- D3 — download failed -->
+  <div class="frame"><span class="label">D3 · download failed</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="dash-bg">
+      <div class="top"><span>Yutori</span><span style="opacity:0.5">⋮</span></div>
+      <div class="hero"></div>
+      <div class="chip-row"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="alert-wrap">
+        <div class="alert tall">
+          <div class="title">Yutori 0.3.0</div>
+          <div class="subtitle">Current 0.2.0 → New 0.3.0</div>
+          <div class="scroll-body" style="padding-top: 8px;">
+            <div style="background: rgba(226,122,122,0.08); border: 1px solid rgba(226,122,122,0.25); border-radius: 10px; padding: 14px 16px;">
+              <div style="color: var(--negative); font-weight: 600; margin-bottom: 6px; font-size: 12px;">Download interrupted</div>
+              <div style="font-size: 12px; line-height: 1.55; color: #E5B4B4;">
+                Check your connection and try again. If the problem persists, download the APK directly
+                from GitHub Releases.
+              </div>
+            </div>
+          </div>
+          <div class="pinned-actions">
+            <button class="btn ghost">Dismiss</button>
+            <button class="btn primary">Try again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="note">
+  <strong>Implementation notes for slice 5:</strong>
+  use <code>AlertDialog</code> with <code>DialogProperties(usePlatformDefaultWidth = false)</code> and a custom
+  <code>Modifier.fillMaxWidth(0.92f).fillMaxHeight(0.85f)</code> panel. Body: <code>Column { Row(title)
+  Row(subtitle) Box(Modifier.weight(1f)) { LazyColumn(markdown) + BottomFade } Row(actions) }</code>.
+  Markdown: lightweight hand-rolled renderer for <code>#</code>, <code>##</code>, <code>-</code>, <code>`code`</code>,
+  <code>[link](...)</code>. No full CommonMark — git-cliff output is predictable.
 </p>
 
 <hr>
@@ -561,14 +742,12 @@
 
 <hr>
 
-<h2>Open questions for approval</h2>
+<h2>Decisions (locked 2026-04-17)</h2>
 <p class="blurb">
-  1. <b>Dialog shape</b> — sheet (A) or AlertDialog (B)?<br>
-  2. <b>Status-line wording</b> — "Update available: 0.3.0 ›" vs "New version: 0.3.0" vs "Yutori 0.3.0 ready"?<br>
-  3. <b>"Check now" placement</b> — filled button below the card (mocked), or a trailing "↻" icon on the
-     Status row itself? The button is more discoverable but takes an extra touch target.<br>
-  4. <b>Error state CTA</b> — "Try again" (mocked) or just "Check now" with the error string above? Spec §6.5
-     says "check logs" which is opaque for a user.
+  1. <b>Dialog shape</b> — <b>D</b> (AlertDialog with pinned actions + expanded height). A &amp; B kept as design record.<br>
+  2. <b>Status-line wording</b> — <i>"Update available: 0.3.0 ›"</i> (per C2).<br>
+  3. <b>"Check now" placement</b> — dedicated button below the card (per C1–C5).<br>
+  4. <b>Error-state CTA</b> — <i>"Try again"</i> in both the dialog (D3) and the settings row (C4).
 </p>
 
 <p class="note">
