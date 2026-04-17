@@ -48,6 +48,8 @@ import com.spendwise.ui.RecipientRulesScreen
 import com.spendwise.ui.SettingsScreen
 import com.spendwise.ui.TransactionDetailScreen
 import com.spendwise.ui.importStatusFlow
+import com.spendwise.ui.update.UpdateViewModel
+import com.spendwise.update.UpdateModule
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -334,12 +336,32 @@ private fun AppContent() {
             val suggestedCount: Int by database.accountDao()
                 .observeCountByStatus("SUGGESTED")
                 .collectAsStateWithLifecycle(initialValue = 0)
+            val updateViewModel: UpdateViewModel = viewModel(
+                factory = remember(app) {
+                    val client = UpdateModule.createHttpClient()
+                    UpdateViewModel.Factory(
+                        repo = UpdateModule.createRepository(client),
+                        downloader = UpdateModule.createDownloader(client, app),
+                        installer = UpdateModule.createInstaller(app),
+                        prefs = UpdateModule.createPrefs(app),
+                        currentVersion = BuildConfig.VERSION_NAME,
+                    )
+                },
+            )
+            val updateState by updateViewModel.state.collectAsStateWithLifecycle()
             SettingsScreen(
                 onBack = { goBack() },
                 onAccounts = { goTo(Screen.Accounts) },
                 onRecipientRules = { goTo(Screen.RecipientRules) },
                 onAlertSettings = { goTo(Screen.AlertSettings) },
                 accountSuggestionCount = suggestedCount,
+                updateState = updateState,
+                onCheckForUpdates = { updateViewModel.onCheckNow() },
+                onToggleCheckOnOpen = { updateViewModel.onToggleCheckOnOpen(it) },
+                onOpenUpdateDialog = { updateViewModel.onOpenDialog() },
+                onDismissUpdateDialog = { updateViewModel.onDismissDialog() },
+                onStartUpdateDownload = { updateViewModel.onStartDownload() },
+                onCancelUpdateDownload = { updateViewModel.onCancelDownload() },
             )
         }
 

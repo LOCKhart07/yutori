@@ -28,6 +28,9 @@ import androidx.compose.ui.unit.dp
 import com.spendwise.R
 import com.spendwise.ui.theme.SpendWiseTextStyles
 import com.spendwise.ui.theme.SpendWiseTheme
+import com.spendwise.ui.update.AppUpdatesSection
+import com.spendwise.ui.update.UpdateDialog
+import com.spendwise.ui.update.UpdateScreenState
 
 /**
  * Settings hub — v2 per mockups/v2.html frame 7. Grouped sections
@@ -41,6 +44,13 @@ fun SettingsScreen(
     onRecipientRules: () -> Unit,
     onAlertSettings: () -> Unit = {},
     accountSuggestionCount: Int = 0,
+    updateState: UpdateScreenState? = null,
+    onCheckForUpdates: () -> Unit = {},
+    onToggleCheckOnOpen: (Boolean) -> Unit = {},
+    onOpenUpdateDialog: () -> Unit = {},
+    onDismissUpdateDialog: () -> Unit = {},
+    onStartUpdateDownload: () -> Unit = {},
+    onCancelUpdateDownload: () -> Unit = {},
 ) {
     val backup = rememberBackupActions()
     val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
@@ -112,7 +122,26 @@ fun SettingsScreen(
                     onClick = backup.onImportClick,
                 )
             }
+
+            if (updateState != null) {
+                AppUpdatesSection(
+                    state = updateState,
+                    onToggleCheckOnOpen = onToggleCheckOnOpen,
+                    onCheckNow = onCheckForUpdates,
+                    onOpenDialog = onOpenUpdateDialog,
+                )
+            }
+
             Spacer(Modifier.height(32.dp))
+        }
+
+        if (updateState != null) {
+            UpdateDialog(
+                state = updateState,
+                onDismiss = onDismissUpdateDialog,
+                onStartDownload = onStartUpdateDownload,
+                onCancelDownload = onCancelUpdateDownload,
+            )
         }
     }
 }
