@@ -444,6 +444,107 @@ class IngestionPipelineTest {
     }
 
     @Test
+    fun `past-month jump past multiple thresholds stamps all with isCurrentMonth=false`() = runTest {
+        // §7.6: past-month crossings stamp every threshold they cross,
+        // same as current-month, but eval.isCurrentMonth=false so no
+        // notification is dispatched.
+        budgets.upsert(
+            com.yutori.database.entities.BudgetEntity(
+                monthKey = "2026-01",
+                limitInr = 10_000.0,
+                thresholdWarnPct = 80,
+                createdAtMs = 0, updatedAtMs = 0,
+            ),
+        )
+        val oldJanSms = rawSms(
+            sender = "JD-KOTAKB-S",
+            body = "Sent Rs.12000.00 from Kotak Bank AC X0000 to a@b on 15-01-26.UPI Ref 1. Not you, URL",
+            receivedAtMs = 1_768_587_300_000L,    // 2026-01-16 in IST
+        )
+        val outcome = pipeline.ingest(oldJanSms) as IngestionOutcome.Ingested
+        val eval = outcome.alertEvaluation!!
+        eval.newlyFired shouldBe listOf(50, 80, 100, 110, 120)
+        eval.isCurrentMonth shouldBe false
+        alertState.all().map { it.monthKey to it.thresholdPct } shouldBe listOf(
+            "2026-01" to 50,
+            "2026-01" to 80,
+            "2026-01" to 100,
+            "2026-01" to 110,
+            "2026-01" to 120,
+        )
+    }
+
+    @Test
+    fun `past-month refund then re-cross does not re-stamp threshold`() = runTest {
+        // §7.6 + §7.5: threshold idempotency holds for past months too —
+        // a past-month refund that drops spend under 50, followed by a
+        // past-month spend that re-crosses 50, must not stamp again.
+        budgets.upsert(
+            com.yutori.database.entities.BudgetEntity(
+                monthKey = "2026-01",
+                limitInr = 10_000.0,
+                thresholdWarnPct = 80,
+                createdAtMs = 0, updatedAtMs = 0,
+            ),
+        )
+        val janBaseMs = 1_768_587_300_000L    // 2026-01-16 IST
+        pipeline.ingest(
+            rawSms(
+                sender = "JD-KOTAKB-S",
+                body = "Sent Rs.6000.00 from Kotak Bank AC X0000 to a@b on 15-01-26.UPI Ref 1. Not you, URL",
+                receivedAtMs = janBaseMs,
+            ),
+        )
+        pipeline.ingest(
+            rawSms(
+                sender = "JK-blnkit-S",
+                body = "We have initiated a refund of Rs.3000.00 for the cancelled order ORD0000000 into your UPI after applying a cancellation fee of Rs 20.00. -blinkit",
+                receivedAtMs = janBaseMs + 60_000L,
+            ),
+        )
+        val recross = pipeline.ingest(
+            rawSms(
+                sender = "JD-KOTAKB-S",
+                body = "Sent Rs.4000.00 from Kotak Bank AC X0000 to c@d on 17-01-26.UPI Ref 2. Not you, URL",
+                receivedAtMs = janBaseMs + 120_000L,
+            ),
+        ) as IngestionOutcome.Ingested
+        recross.alertEvaluation!!.newlyFired shouldBe emptyList()
+        recross.alertEvaluation!!.isCurrentMonth shouldBe false
+        alertState.all().map { it.monthKey to it.thresholdPct } shouldBe
+            listOf("2026-01" to 50)
+    }
+
+    @Test
+    fun `past-month SPEND produces no impact notification`() = runTest {
+        // maybeBuildImpact guards on eval.isCurrentMonth — a past-month
+        // SPEND that would clear the threshold must still return null.
+        budgets.upsert(
+            com.yutori.database.entities.BudgetEntity(
+                monthKey = "2026-01", limitInr = 10_000.0,
+                createdAtMs = 0, updatedAtMs = 0,
+            ),
+        )
+        val impactPipeline = IngestionPipeline(
+            smsLogDao = smsLog, transactionDao = transactions,
+            transactionSourceDao = sources, accountDao = accounts,
+            recipientRuleDao = rules, budgetDao = budgets,
+            budgetAlertStateDao = alertState,
+            zone = ZoneId.of("Asia/Kolkata"),
+            nowMs = { 1_774_918_800_000L },    // "now" is March 27
+            impactConfigProvider = { ImpactConfig(enabled = true, thresholdPct = 10) },
+        )
+        // 15% of the budget → would fire in the current month.
+        val oldJanSms = rawSms(
+            sender = "JD-KOTAKB-S",
+            body = "Sent Rs.1500.00 from Kotak Bank AC X0000 to merchant@oksbi on 15-01-26.UPI Ref 1. Not you, URL",
+            receivedAtMs = 1_768_587_300_000L,    // 2026-01-16 IST
+        )
+        val outcome = impactPipeline.ingest(oldJanSms) as IngestionOutcome.Ingested
+        outcome.impactNotification.shouldBeNull()
+    }
+
+    @Test
     fun `refund does not re-arm a previously fired threshold`() = runTest {
         budgets.upsert(
             com.yutori.database.entities.BudgetEntity(

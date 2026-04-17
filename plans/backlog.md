@@ -11,7 +11,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #14 — Budgets roll forward by default
 - #15 — Budget suggestions from history
 - #16 — Daily-burn stat pill — pace tint + target value
-- #18 — Late-arriving past-month alert stamping
 - #19 — Rebuild database screen
 - #98 — Scrolling issues
 
