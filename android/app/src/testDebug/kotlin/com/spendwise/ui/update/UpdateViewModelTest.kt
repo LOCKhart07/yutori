@@ -292,24 +292,31 @@ class UpdateViewModelTest {
     }
 
     @Test
-    fun `install Failure outcome flips Downloading to DownloadFailed`() = runTest(dispatcher) {
-        val outcomes = MutableSharedFlow<UpdateInstallEvents.Outcome>(extraBufferCapacity = 4)
-        val vm = buildVm(
-            fetchLatest = { Result.success(release("v0.3.0")) },
-            downloadAsset = { flow { /* stays Downloading */ } },
-            installOutcomes = outcomes,
-        )
-        vm.onCheckNow()
-        advanceUntilIdle()
-        vm.onStartDownload()
-        advanceUntilIdle()
-        assertTrue(vm.state.value.phase is UpdateScreenState.Phase.Downloading)
+    fun `install Failure outcome flips Downloading to InstallFailed with status and message`() =
+        runTest(dispatcher) {
+            val outcomes = MutableSharedFlow<UpdateInstallEvents.Outcome>(extraBufferCapacity = 4)
+            val vm = buildVm(
+                fetchLatest = { Result.success(release("v0.3.0")) },
+                downloadAsset = { flow { /* stays Downloading */ } },
+                installOutcomes = outcomes,
+            )
+            vm.onCheckNow()
+            advanceUntilIdle()
+            vm.onStartDownload()
+            advanceUntilIdle()
+            assertTrue(vm.state.value.phase is UpdateScreenState.Phase.Downloading)
 
-        outcomes.tryEmit(UpdateInstallEvents.Outcome.Failure(status = -1, message = "aborted"))
-        advanceUntilIdle()
+            outcomes.tryEmit(
+                UpdateInstallEvents.Outcome.Failure(status = 4, message = "INSTALL_FAILED_VERSION_DOWNGRADE"),
+            )
+            advanceUntilIdle()
 
-        assertTrue(vm.state.value.phase is UpdateScreenState.Phase.DownloadFailed)
-    }
+            val phase = vm.state.value.phase
+            assertTrue(phase is UpdateScreenState.Phase.InstallFailed)
+            val failed = phase as UpdateScreenState.Phase.InstallFailed
+            assertEquals(4, failed.status)
+            assertEquals("INSTALL_FAILED_VERSION_DOWNGRADE", failed.message)
+        }
 
     @Test
     fun `install Success outcome does not change Downloading phase`() = runTest(dispatcher) {

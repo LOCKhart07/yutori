@@ -61,7 +61,13 @@ class UpdateViewModel(
                     val phase = _state.value.phase
                     if (phase is UpdateScreenState.Phase.Downloading) {
                         _state.update {
-                            it.copy(phase = UpdateScreenState.Phase.DownloadFailed(phase.release))
+                            it.copy(
+                                phase = UpdateScreenState.Phase.InstallFailed(
+                                    release = phase.release,
+                                    status = outcome.status,
+                                    message = outcome.message,
+                                ),
+                            )
                         }
                     }
                 }
@@ -113,6 +119,7 @@ class UpdateViewModel(
         val release = when (phase) {
             is UpdateScreenState.Phase.Available -> phase.release
             is UpdateScreenState.Phase.DownloadFailed -> phase.release
+            is UpdateScreenState.Phase.InstallFailed -> phase.release
             else -> return
         }
         val asset = release.asset ?: return

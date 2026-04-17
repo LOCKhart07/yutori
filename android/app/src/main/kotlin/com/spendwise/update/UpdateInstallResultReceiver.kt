@@ -10,15 +10,33 @@ import android.util.Log
 // the system's own install/confirmation UI is what the user sees.
 class UpdateInstallResultReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        Log.i(TAG, "onReceive: action=${intent.action} extras=${intent.extras?.keySet()}")
         if (intent.action != ACTION_INSTALL_RESULT) return
         val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, Int.MIN_VALUE)
         val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
+        Log.i(TAG, "onReceive: status=$status message=$message")
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 // System needs the user to confirm via its install UI.
                 // The Intent to launch is stashed in EXTRA_INTENT.
                 val confirm = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
-                confirm?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.also { context.startActivity(it) }
+                Log.i(TAG, "pending user action — launching confirm=${confirm?.component}")
+                if (confirm == null) {
+                    Log.e(TAG, "no EXTRA_INTENT on pending_user_action — treating as failure")
+                    UpdateInstallEvents.publish(
+                        UpdateInstallEvents.Outcome.Failure(status, "no confirm intent"),
+                    )
+                    return
+                }
+                try {
+                    confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(confirm)
+                } catch (t: Throwable) {
+                    Log.e(TAG, "startActivity for confirm threw", t)
+                    UpdateInstallEvents.publish(
+                        UpdateInstallEvents.Outcome.Failure(status, t.message),
+                    )
+                }
             }
             PackageInstaller.STATUS_SUCCESS -> {
                 Log.i(TAG, "install succeeded")
@@ -33,6 +51,6 @@ class UpdateInstallResultReceiver : BroadcastReceiver() {
 
     companion object {
         const val ACTION_INSTALL_RESULT = "com.spendwise.update.INSTALL_RESULT"
-        private const val TAG = "UpdateInstall"
+        private const val TAG = "YutoriUpdater"
     }
 }

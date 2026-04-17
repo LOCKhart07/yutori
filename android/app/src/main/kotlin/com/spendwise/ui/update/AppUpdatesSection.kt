@@ -152,6 +152,8 @@ private fun StatusLine(phase: UpdateScreenState.Phase) {
             Text("Downloading…", style = mono, color = SpendWiseTheme.colors.info)
         is UpdateScreenState.Phase.DownloadFailed ->
             Text("Download failed", style = mono, color = SpendWiseTheme.colors.negative)
+        is UpdateScreenState.Phase.InstallFailed ->
+            Text("Install failed", style = mono, color = SpendWiseTheme.colors.negative)
         is UpdateScreenState.Phase.ErrorChecking ->
             Text("Updater offline", style = mono, color = SpendWiseTheme.colors.negative)
     }

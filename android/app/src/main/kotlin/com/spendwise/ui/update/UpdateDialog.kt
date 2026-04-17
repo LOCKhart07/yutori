@@ -58,6 +58,7 @@ fun UpdateDialog(
         is UpdateScreenState.Phase.Available -> phase.release
         is UpdateScreenState.Phase.Downloading -> phase.release
         is UpdateScreenState.Phase.DownloadFailed -> phase.release
+        is UpdateScreenState.Phase.InstallFailed -> phase.release
         else -> return
     }
     val targetVersion = release.tagName.removePrefix("v")
@@ -92,7 +93,8 @@ fun UpdateDialog(
                 when (phase) {
                     is UpdateScreenState.Phase.Available -> ReleaseNotes(body = release.body)
                     is UpdateScreenState.Phase.Downloading -> DownloadingBody(phase = phase)
-                    is UpdateScreenState.Phase.DownloadFailed -> ErrorBody()
+                    is UpdateScreenState.Phase.DownloadFailed -> DownloadErrorBody()
+                    is UpdateScreenState.Phase.InstallFailed -> InstallErrorBody(phase = phase)
                     else -> Unit
                 }
             }
@@ -271,7 +273,24 @@ private fun DownloadingBody(phase: UpdateScreenState.Phase.Downloading) {
 }
 
 @Composable
-private fun ErrorBody() {
+private fun DownloadErrorBody() {
+    ErrorCard(
+        heading = "Download interrupted",
+        body = "Check your connection and try again. If the problem persists, download the APK " +
+            "directly from GitHub Releases.",
+    )
+}
+
+@Composable
+private fun InstallErrorBody(phase: UpdateScreenState.Phase.InstallFailed) {
+    ErrorCard(
+        heading = installFailHeading(phase.status),
+        body = installFailBody(phase.status, phase.message),
+    )
+}
+
+@Composable
+private fun ErrorCard(heading: String, body: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -285,18 +304,57 @@ private fun ErrorBody() {
             .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
         Text(
-            text = "Download interrupted",
+            text = heading,
             style = MaterialTheme.typography.labelLarge,
             color = SpendWiseTheme.colors.negative,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "Check your connection and try again. If the problem persists, download the APK " +
-                "directly from GitHub Releases.",
+            text = body,
             style = MaterialTheme.typography.bodySmall,
             color = SpendWiseTheme.colors.onMuted,
         )
     }
+}
+
+// PackageInstaller status codes — see android.content.pm.PackageInstaller.
+private fun installFailHeading(status: Int): String = when (status) {
+    android.content.pm.PackageInstaller.STATUS_FAILURE_ABORTED -> "Install cancelled"
+    android.content.pm.PackageInstaller.STATUS_FAILURE_BLOCKED -> "Install blocked"
+    android.content.pm.PackageInstaller.STATUS_FAILURE_CONFLICT -> "Install conflict"
+    android.content.pm.PackageInstaller.STATUS_FAILURE_STORAGE -> "Not enough storage"
+    android.content.pm.PackageInstaller.STATUS_FAILURE_INCOMPATIBLE -> "Incompatible build"
+    android.content.pm.PackageInstaller.STATUS_FAILURE_INVALID -> "Install rejected"
+    else -> "Install failed"
+}
+
+private fun installFailBody(status: Int, message: String?): String {
+    val osLine = message?.takeIf { it.isNotBlank() }?.let { "\nSystem: $it" }.orEmpty()
+    val primary = when (status) {
+        android.content.pm.PackageInstaller.STATUS_FAILURE_ABORTED ->
+            "You dismissed Android's install confirmation. Tap Try again to retry."
+        android.content.pm.PackageInstaller.STATUS_FAILURE_BLOCKED ->
+            "Android blocked the install — usually because \"Install unknown apps\" isn't " +
+                "allowed for Yutori. Grant it in system settings and try again."
+        android.content.pm.PackageInstaller.STATUS_FAILURE_CONFLICT ->
+            "Package conflicts with an existing install. Uninstall the old version and retry."
+        android.content.pm.PackageInstaller.STATUS_FAILURE_STORAGE ->
+            "Not enough free storage to install this update."
+        android.content.pm.PackageInstaller.STATUS_FAILURE_INCOMPATIBLE ->
+            "This APK isn't compatible with your device."
+        android.content.pm.PackageInstaller.STATUS_FAILURE_INVALID -> {
+            // VERSION_DOWNGRADE shows up here — system embeds the
+            // specific reason in the message; surface it verbatim.
+            if (message?.contains("DOWNGRADE", ignoreCase = true) == true) {
+                "The release APK is older than the build you're on — Android refuses downgrades. " +
+                    "You're already ahead of the published version."
+            } else {
+                "Android rejected the APK as invalid."
+            }
+        }
+        else -> "The install could not be completed."
+    }
+    return primary + osLine
 }
 
 @Composable
@@ -320,6 +378,11 @@ private fun PinnedActions(
                 GhostButton(label = "Cancel", onClick = onCancelDownload)
             }
             is UpdateScreenState.Phase.DownloadFailed -> {
+                GhostButton(label = "Dismiss", onClick = onDismiss)
+                Spacer(Modifier.width(8.dp))
+                PrimaryButton(label = "Try again", onClick = onStartDownload)
+            }
+            is UpdateScreenState.Phase.InstallFailed -> {
                 GhostButton(label = "Dismiss", onClick = onDismiss)
                 Spacer(Modifier.width(8.dp))
                 PrimaryButton(label = "Try again", onClick = onStartDownload)

@@ -41,6 +41,22 @@ val derivedVersionName = if (isReleaseTag) {
     "0.0.0-dev+$commitCount"
 }
 
+// Dogfood-only overrides for testing the in-app autoupdater flow. Real
+// CI builds should never set these — versionCode is meant to grow with
+// commitCount so downgrade protection works. Locally we sometimes need
+// to pretend the build is older than the latest GitHub release, so the
+// updater finds an "upgrade" to offer. Pass as env vars or Gradle
+// properties, e.g.:
+//   YUTORI_VERSION_CODE_OVERRIDE=50 ./gradlew :app:assembleDebug
+val versionCodeOverride: Int? =
+    (providers.gradleProperty("YUTORI_VERSION_CODE_OVERRIDE")
+        .orElse(providers.environmentVariable("YUTORI_VERSION_CODE_OVERRIDE"))
+        .orNull)?.toIntOrNull()
+val versionNameOverride: String? =
+    providers.gradleProperty("YUTORI_VERSION_NAME_OVERRIDE")
+        .orElse(providers.environmentVariable("YUTORI_VERSION_NAME_OVERRIDE"))
+        .orNull
+
 android {
     namespace = "com.spendwise"
     compileSdk = 34
@@ -49,8 +65,8 @@ android {
         applicationId = "com.spendwise"
         minSdk = 28          // decision 2026-04-15: API 28 floor
         targetSdk = 34
-        versionCode = commitCount
-        versionName = derivedVersionName
+        versionCode = versionCodeOverride ?: commitCount
+        versionName = versionNameOverride ?: derivedVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "COMMIT_SHA", "\"$commitSha\"")

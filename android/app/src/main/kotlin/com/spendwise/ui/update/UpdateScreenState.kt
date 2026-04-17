@@ -19,6 +19,11 @@ data class UpdateScreenState(
             val total: Long,
         ) : Phase
         data class DownloadFailed(val release: LatestRelease) : Phase
+        data class InstallFailed(
+            val release: LatestRelease,
+            val status: Int,
+            val message: String?,
+        ) : Phase
         data object ErrorChecking : Phase
     }
 }
