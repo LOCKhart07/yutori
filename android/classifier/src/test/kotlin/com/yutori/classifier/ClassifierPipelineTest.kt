@@ -16,8 +16,8 @@ import org.junit.jupiter.api.Test
  */
 class ClassifierPipelineTest {
 
-    // --- Fixture: user's registered accounts, seeded from the
-    //     feasibility dataset memo (spendwise_accounts.md). ---
+    // --- Fixture: user's registered accounts, modeled on the shape of
+    //     the real portfolio (Kotak + Axis + Vasai Janata + Paytm Money). ---
 
     private val kotakSavings =
         Account(id = 1, kind = AccountKind.SAVINGS, issuer = "Kotak",
