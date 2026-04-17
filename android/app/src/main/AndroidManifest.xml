@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- In-app autoupdater (plans/autoupdater-spec.md §8). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <application
         android:name=".SpendWiseApp"
         android:allowBackup="true"
@@ -31,6 +34,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Receives PackageInstaller.Session outcomes for the in-app
+             autoupdater (plans/autoupdater-spec.md §4.5 & §8). Unexported —
+             only our own install sessions target it. -->
+        <receiver
+            android:name=".update.UpdateInstallResultReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

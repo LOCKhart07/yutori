@@ -1,5 +1,6 @@
 package com.spendwise.update
 
+import android.content.Context
 import com.spendwise.BuildConfig
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -35,4 +36,12 @@ object UpdateModule {
             .create(GithubApi::class.java)
         return UpdateRepository(api)
     }
+
+    fun createDownloader(client: OkHttpClient, context: Context): UpdateDownloader =
+        UpdateDownloader(client = client, cacheDir = context.cacheDir)
+
+    fun createInstaller(context: Context): UpdateInstaller =
+        UpdateInstaller(context.applicationContext)
+
+    fun createPrefs(context: Context): UpdatePrefs = UpdatePrefs(context.applicationContext)
 }
