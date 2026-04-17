@@ -40,7 +40,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #36 — Goals entity + translator
 - #37 — Annual-cost smoothing buckets
 - #38 — Per-category pacing baseline (median-of-3 historical)
-- #71 — In-app autoupdater *(spec: plans/autoupdater-spec.md; shares markdown renderer with #77)*
 - #85 — MigrationErrorScreen: stack trace not scrollable; Copy has no feedback
 - #87 — Permission gate: row order mismatch + misleading check/warning glyphs
 - #93 — Auto-promote active accounts from SUGGESTED to CONFIRMED *(follow-up to #82)*
@@ -76,6 +75,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #101 — Add horizontal pager-swipe benchmark to :macrobenchmark
 - #102 — Set HorizontalPager beyondViewportPageCount=0 on the dashboard
 - #103 — Currency-agnostic display *(needs clarification — UI symbol swap vs. full display-currency conversion)*
+- #106 — Autoupdater dialog polish — readability, skipped-versions, dismiss semantics *(follow-up to #71)*
 
 ## Tier 5 — deferred / low urgency
 
