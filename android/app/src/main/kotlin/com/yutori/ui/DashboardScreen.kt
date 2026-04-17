@@ -32,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -117,11 +118,21 @@ fun DashboardScreen(
     )
     // Emit onMonthSettled whenever the pager lands on a page. Uses
     // settledPage (not currentPage) so mid-drag values don't thrash the
-    // ViewModel; the topbar label waits until the gesture commits.
+    // ViewModel. The topbar label is driven separately from currentPage
+    // below so it stays in sync with the page content during the swipe.
     LaunchedEffect(pagerState, earliestMonthKey) {
         snapshotFlow { pagerState.settledPage }.collect { page ->
             val mk = MonthKeyComputer.shift(earliestMonthKey, page.toLong())
             onMonthSettled(mk)
+        }
+    }
+    // Month currently rendered by the pager — follows currentPage, which
+    // snaps at the midpoint of a swipe/animation, matching when the
+    // neighbouring page's content takes over. Drives the topbar label
+    // and the "Today" affordance so they don't lag behind the content.
+    val displayedMonthKey by remember(earliestMonthKey) {
+        derivedStateOf {
+            MonthKeyComputer.shift(earliestMonthKey, pagerState.currentPage.toLong())
         }
     }
     // If earliestMonthKey shifts earlier (historical import lands),
@@ -149,7 +160,7 @@ fun DashboardScreen(
                 .padding(top = statusInset.calculateTopPadding() + 8.dp),
         ) {
             TopBar(
-                monthLabel = prettyMonthKey(viewedMonthKey, dayLabel = null),
+                monthLabel = prettyMonthKey(displayedMonthKey, dayLabel = null),
                 onImport = onImport,
                 onSettings = onSettings,
                 hasSettingsBadge = hasSettingsBadge,
@@ -175,7 +186,7 @@ fun DashboardScreen(
                 },
                 canGoPrev = pagerState.currentPage > 0,
                 canGoNext = pagerState.currentPage < pageCount - 1,
-                isCurrentMonth = viewedMonthKey == currentMonthKey,
+                isCurrentMonth = displayedMonthKey == currentMonthKey,
                 modifier = Modifier.padding(horizontal = 24.dp),
             )
             if (showNotificationPermissionBanner) {
