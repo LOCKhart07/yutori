@@ -1,13 +1,19 @@
 package com.spendwise.update
 
 import com.spendwise.BuildConfig
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 
 // One-stop wiring for the in-app autoupdater. Both the JSON Releases API
 // and the APK asset download share the same OkHttpClient so the auth
 // interceptor is registered exactly once — matters for #71(a) removal.
 object UpdateModule {
+    private const val GITHUB_BASE_URL = "https://api.github.com/"
+
     fun createHttpClient(
         token: String = BuildConfig.GITHUB_RELEASES_TOKEN,
     ): OkHttpClient = OkHttpClient.Builder()
@@ -15,4 +21,18 @@ object UpdateModule {
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
+
+    fun createRepository(
+        client: OkHttpClient,
+        baseUrl: String = GITHUB_BASE_URL,
+    ): UpdateRepository {
+        val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+        val api = Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(client)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(GithubApi::class.java)
+        return UpdateRepository(api)
+    }
 }

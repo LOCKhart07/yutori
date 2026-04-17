@@ -212,9 +212,13 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
 
-    // In-app autoupdater networking. OkHttp only in this commit; Retrofit
-    // + Moshi join in the next commit when UpdateRepository lands.
+    // In-app autoupdater networking. Retrofit for the single GitHub
+    // Releases endpoint; Moshi with reflection-based Kotlin adapter for
+    // parsing (no codegen needed for one small DTO).
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
 
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
