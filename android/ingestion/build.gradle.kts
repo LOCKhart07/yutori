@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.spendwise.ingestion"
+    namespace = "com.yutori.ingestion"
     compileSdk = 34
 
     defaultConfig {

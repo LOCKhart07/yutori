@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.spendwise.database"
+    namespace = "com.yutori.database"
     compileSdk = 34
 
     defaultConfig {

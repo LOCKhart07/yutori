@@ -13,7 +13,7 @@
             receivers (we are not the default SMS app).
         -->
         <receiver
-            android:name="com.spendwise.ingestion.SpendWiseSmsReceiver"
+            android:name="com.yutori.ingestion.YutoriSmsReceiver"
             android:exported="true"
             android:permission="android.permission.BROADCAST_SMS">
             <intent-filter android:priority="999">

@@ -112,7 +112,7 @@ jobs:
             ls -la app/build/outputs/apk/release/ || true
             exit 1
           fi
-          dest="$RUNNER_TEMP/spendwise-${GITHUB_REF_NAME}.apk"
+          dest="$RUNNER_TEMP/yutori-${GITHUB_REF_NAME}.apk"
           cp "$src" "$dest"
           sha=$(sha256sum "$dest" | awk '{print $1}')
           echo "apk_path=$dest"     >> "$GITHUB_OUTPUT"

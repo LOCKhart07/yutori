@@ -1,0 +1,421 @@
+package com.yutori.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.yutori.database.dao.SmsLogDao
+import com.yutori.database.dao.TransactionDao
+import com.yutori.database.dao.TransactionSourceDao
+import com.yutori.database.entities.SmsLogEntity
+import com.yutori.database.entities.TransactionEntity
+import com.yutori.database.entities.TransactionSourceEntity
+import com.yutori.ui.theme.YutoriTextStyles
+import com.yutori.ui.theme.YutoriTheme
+import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+/**
+ * Transaction detail — v2 per mockups/v2.html frames 5, 6, 10.
+ * Hero amount in mono, merchant + when, classification pill with
+ * effect color dot, forex "original + rate" block if applicable,
+ * meta rows, source SMS block (monospace raw body).
+ */
+private data class Details(
+    val tx: TransactionEntity,
+    val sources: List<Pair<TransactionSourceEntity, SmsLogEntity?>>,
+)
+
+@Composable
+fun TransactionDetailScreen(
+    transactionId: Long,
+    transactionDao: TransactionDao,
+    sourceDao: TransactionSourceDao,
+    smsLogDao: SmsLogDao,
+    onBack: () -> Unit,
+) {
+    val details: Details? by produceState<Details?>(null, transactionId) {
+        val tx = transactionDao.getById(transactionId) ?: return@produceState
+        val sources = sourceDao.findByTransactionId(transactionId)
+        val withBodies = sources.map { src -> src to smsLogDao.getById(src.smsLogId) }
+        value = Details(tx, withBodies)
+    }
+
+    // Branch at the top with `when` — no early returns. The Compose
+    // compiler wraps each branch in its own group, so the group count
+    // stays balanced across the null → loaded state change.
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        when (val d = details) {
+            null -> LoadingView(onBack = onBack)
+            else -> ReadyView(details = d, onBack = onBack)
+        }
+    }
+}
+
+@Composable
+private fun LoadingView(onBack: () -> Unit) {
+    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = statusInset.calculateTopPadding() + 8.dp)
+            .padding(horizontal = 24.dp),
+    ) {
+        BackRow(label = "Back", onBack = onBack)
+        LoadingSpinner()
+    }
+}
+
+@Composable
+private fun ReadyView(details: Details, onBack: () -> Unit) {
+    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(top = statusInset.calculateTopPadding() + 8.dp)
+            .padding(horizontal = 24.dp),
+    ) {
+        BackRow(label = "Back", onBack = onBack)
+        Hero(details.tx)
+        Spacer(Modifier.height(24.dp))
+        MetaSection(details.tx)
+        Spacer(Modifier.height(24.dp))
+        if (details.sources.isNotEmpty()) {
+            SourcesSection(details.sources)
+            Spacer(Modifier.height(32.dp))
+        }
+    }
+}
+
+// ───────────────────────── Hero ─────────────────────────
+
+@Composable
+private fun Hero(tx: TransactionEntity) {
+    val inr = remember { NumberFormat.getCurrencyInstance(Locale("en", "IN")) }
+    val timeFmt = remember {
+        SimpleDateFormat("d MMM yyyy · HH:mm", Locale.getDefault())
+    }
+    Spacer(Modifier.height(16.dp))
+
+    Text(
+        text = timeFmt.format(Date(tx.occurredAtMs)).uppercase(),
+        style = YutoriTextStyles.Caps,
+        color = YutoriTheme.colors.onMuted,
+    )
+    Spacer(Modifier.height(10.dp))
+
+    // Primary amount — original currency if forex, INR otherwise.
+    // Pull into locals — cross-module `val` isn't smart-cast-safe.
+    val originalAmt = tx.originalAmount
+    val inrAmt = tx.inrAmount
+    val primary = when {
+        tx.originalCurrency != "INR" && originalAmt != null ->
+            "${tx.originalCurrency} ${"%.2f".format(originalAmt)}"
+        inrAmt != null -> inr.formatAmount(inrAmt)
+        else -> "Pending"
+    }
+    // Read theme tokens unconditionally — reading @Composable getters
+    // inside `when` branches imbalances the Compose group stack.
+    val colors = YutoriTheme.colors
+    val onBackground = MaterialTheme.colorScheme.onBackground
+    val primaryColor = when (tx.budgetEffect) {
+        "REFUND" -> colors.positive
+        "INCOME" -> colors.info
+        "DROP"   -> colors.onFaint
+        else     -> onBackground
+    }
+    Text(
+        text = primary,
+        style = MaterialTheme.typography.displayMedium,
+        color = primaryColor,
+    )
+
+    // Forex sub-line
+    val rate = tx.exchangeRate
+    if (tx.originalCurrency != "INR" && inrAmt != null && rate != null) {
+        Spacer(Modifier.height(4.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "≈ ${inr.formatAmount(inrAmt)}  at  ${"%.4f".format(rate)}  ",
+                style = MaterialTheme.typography.bodySmall,
+                color = YutoriTheme.colors.onMuted,
+            )
+            Text(
+                text = tx.rateSource ?: "—",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+    } else if (tx.rateSource == "pending") {
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "INR conversion pending.",
+            style = MaterialTheme.typography.bodySmall,
+            color = YutoriTheme.colors.info,
+        )
+    }
+
+    Spacer(Modifier.height(14.dp))
+    Text(
+        text = tx.merchant?.takeIf { it.isNotBlank() } ?: "(no merchant)",
+        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Medium),
+    )
+
+    Spacer(Modifier.height(14.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        ClassificationPill(tx.classification, tx.budgetEffect)
+        if (tx.originalCurrency != "INR") {
+            InfoPill(label = "Forex", tint = YutoriTheme.colors.info)
+        }
+    }
+    val origClass = tx.classificationOriginal
+    if (origClass != null && origClass != tx.classification) {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "was ${prettyClassification(origClass)}",
+            style = MaterialTheme.typography.labelSmall,
+            color = YutoriTheme.colors.onFaint,
+        )
+    }
+}
+
+@Composable
+private fun ClassificationPill(classification: String, budgetEffect: String) {
+    val colors = YutoriTheme.colors
+    val tint = when (budgetEffect) {
+        "SPEND"  -> colors.onMuted
+        "REFUND" -> colors.positive
+        "INCOME" -> colors.info
+        "DROP"   -> colors.onFaint
+        else     -> colors.onMuted
+    }
+    Pill(
+        label = "${prettyClassification(classification)} · $budgetEffect",
+        tint = tint,
+    )
+}
+
+@Composable
+private fun InfoPill(label: String, tint: Color) {
+    Pill(label = label, tint = tint)
+}
+
+@Composable
+private fun Pill(label: String, tint: Color) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(YutoriTheme.colors.surfaceElevated)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(tint),
+        )
+        Spacer(Modifier.size(6.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = YutoriTheme.colors.onMuted,
+        )
+    }
+}
+
+// ───────────────────────── Meta rows ─────────────────────────
+
+@Composable
+private fun MetaSection(tx: TransactionEntity) {
+    Column {
+        HorizontalDivider(color = YutoriTheme.colors.divider)
+        MetaRow(
+            label = "Account",
+            value = buildString {
+                tx.issuer?.let { append(it) }
+                if (tx.issuer != null && tx.last4 != null) append(" ")
+                tx.last4?.let { append("••").append(it) }
+                if (tx.issuer == null && tx.last4 == null) append("—")
+            },
+            mono = true,
+        )
+        tx.category?.let { MetaRow("Category", prettyCategory(it)) }
+        MetaRow("Month", prettyMonth(tx.monthKey))
+        val origAmt = tx.originalAmount
+        if (tx.originalCurrency != "INR" && origAmt != null) {
+            MetaRow(
+                label = "Original",
+                value = "${tx.originalCurrency} ${"%.2f".format(origAmt)}",
+                mono = true,
+            )
+        }
+        val rate = tx.exchangeRate
+        if (rate != null && tx.originalCurrency != "INR") {
+            MetaRow(
+                label = "Rate",
+                value = "${"%.4f".format(rate)} INR/${tx.originalCurrency}",
+                mono = true,
+            )
+        }
+        if (tx.manuallyAdjusted) MetaRow("Manually adjusted", "Yes")
+        tx.notes?.let { MetaRow("Notes", it) }
+    }
+}
+
+@Composable
+private fun MetaRow(label: String, value: String, mono: Boolean = false) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = YutoriTheme.colors.onMuted,
+        )
+        Text(
+            text = value,
+            style = if (mono) YutoriTextStyles.Mono.copy(fontWeight = FontWeight.Normal) else MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+// ───────────────────────── Sources ─────────────────────────
+
+@Composable
+private fun SourcesSection(sources: List<Pair<TransactionSourceEntity, SmsLogEntity?>>) {
+    Text(
+        text = if (sources.size == 1) "SOURCE SMS" else "BUILT FROM ${sources.size} SOURCES",
+        style = YutoriTextStyles.Caps,
+        color = YutoriTheme.colors.onFaint,
+    )
+    Spacer(Modifier.height(10.dp))
+    sources.forEach { (src, log) ->
+        SourceBlock(src, log)
+        Spacer(Modifier.height(10.dp))
+    }
+}
+
+@Composable
+private fun SourceBlock(src: TransactionSourceEntity, log: SmsLogEntity?) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(10.dp),
+        color = YutoriTheme.colors.surfaceElevated,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = YutoriTheme.colors.divider,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = prettyRole(src.role),
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = YutoriTheme.colors.onMuted,
+                )
+                if (src.isPrimary) {
+                    Text(
+                        text = "PRIMARY",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+            if (log != null) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = log.body,
+                    style = YutoriTextStyles.MonoSmall,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "From ${log.sender} · ${prettyClassification(log.classification)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = YutoriTheme.colors.onFaint,
+                )
+            } else {
+                Text(
+                    text = "(sms_log row ${src.smsLogId} not found)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = YutoriTheme.colors.onFaint,
+                )
+            }
+        }
+    }
+}
+
+// Classification / role enums use upper-snake tokens that include
+// acronyms (UPI, CC, ATM, OTP). Default Title-Casing mangles them —
+// "UPI_PAYMENT" → "Upi Payment" — so preserve the known acronyms.
+private val CLASSIFICATION_ACRONYMS = setOf("UPI", "CC", "ATM", "OTP")
+private val ROLE_ACRONYMS = setOf("UPI", "CC", "ATM", "OTP", "ACK", "NOTIF")
+
+private fun prettyClassification(name: String): String =
+    name.split("_").joinToString(" ") { tok ->
+        if (tok in CLASSIFICATION_ACRONYMS) tok
+        else tok.lowercase().replaceFirstChar { c -> c.titlecase() }
+    }
+
+// SMS-source card header: sentence-case with acronyms preserved.
+// BANK_DEBIT → "Bank debit", CC_PAYMENT_RECEIPT → "CC payment receipt",
+// MERCHANT_ACK → "Merchant ACK".
+private fun prettyRole(role: String): String =
+    role.split("_").mapIndexed { i, tok ->
+        when {
+            tok in ROLE_ACRONYMS -> tok
+            i == 0 -> tok.lowercase().replaceFirstChar { c -> c.titlecase() }
+            else -> tok.lowercase()
+        }
+    }.joinToString(" ")
+
+private fun prettyMonth(monthKey: String): String = try {
+    val (y, m) = monthKey.split("-").let { it[0] to it[1].toInt() }
+    val name = listOf(
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+    )[m - 1]
+    "$name $y"
+} catch (_: Exception) { monthKey }

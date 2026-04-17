@@ -6,7 +6,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = "spendwise"
+rootProject.name = "yutori"
 
 include(":parser")
 include(":classifier")

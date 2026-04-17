@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.spendwise.macrobenchmark"
+    namespace = "com.yutori.macrobenchmark"
     compileSdk = 34
 
     defaultConfig {

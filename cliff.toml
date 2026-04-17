@@ -42,7 +42,7 @@ body = """
 
 ### {{ g }}
 {% for commit in grouped[g] %}
-- {{ commit.message | split(pat="\n") | first | trim }} ([`{{ commit.id | truncate(length=7, end="") }}`](https://github.com/LOCKhart07/spendwise/commit/{{ commit.id }}))
+- {{ commit.message | split(pat="\n") | first | trim }} ([`{{ commit.id | truncate(length=7, end="") }}`](https://github.com/LOCKhart07/yutori/commit/{{ commit.id }}))
 {%- endfor -%}
 {% endif -%}
 {% endfor -%}
@@ -59,7 +59,7 @@ body = """
 
 **{{ g }}**
 {% for commit in grouped[g] %}
-- {{ commit.message | split(pat="\n") | first | trim }} ([`{{ commit.id | truncate(length=7, end="") }}`](https://github.com/LOCKhart07/spendwise/commit/{{ commit.id }}))
+- {{ commit.message | split(pat="\n") | first | trim }} ([`{{ commit.id | truncate(length=7, end="") }}`](https://github.com/LOCKhart07/yutori/commit/{{ commit.id }}))
 {%- endfor -%}
 {% endif -%}
 {% endfor %}

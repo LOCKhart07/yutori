@@ -58,11 +58,11 @@ val versionNameOverride: String? =
         .orNull
 
 android {
-    namespace = "com.spendwise"
+    namespace = "com.yutori"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.spendwise"
+        applicationId = "com.yutori"
         minSdk = 28          // decision 2026-04-15: API 28 floor
         targetSdk = 34
         versionCode = versionCodeOverride ?: commitCount
@@ -75,7 +75,7 @@ android {
         buildConfigField("boolean", "IS_RELEASE_TAG", isReleaseTag.toString())
 
         // Fine-grained PAT for the in-app autoupdater's Releases API calls
-        // while `LOCKhart07/spendwise` is still a private repo. Empty by
+        // while `LOCKhart07/yutori` is still a private repo. Empty by
         // default — unauthenticated builds still compile and the
         // interceptor no-ops. See plans/autoupdater-spec.md §6 and
         // docs/RELEASING.md. Remove at #71(a) when the repo goes public.
