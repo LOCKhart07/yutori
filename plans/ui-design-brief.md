@@ -1,4 +1,4 @@
-# SpendWise — Android app design brief (for Figma / AI design tools)
+# Yutori — Android app design brief (for Figma / AI design tools)
 
 This is a designer brief, not an engineering spec. Pair with
 [`ui-spec.md`](./ui-spec.md), which is the behavioral contract
@@ -6,7 +6,7 @@ This is a designer brief, not an engineering spec. Pair with
 
 ## Context
 
-SpendWise is a personal, single-user, SMS-driven spending tracker for
+Yutori is a personal, single-user, SMS-driven spending tracker for
 Indian users. All data on-device; the app reads bank SMSes to
 auto-extract transactions. I am the only user, so the UI can afford
 to be opinionated and data-dense rather than mass-market polite.

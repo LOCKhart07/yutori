@@ -1,10 +1,10 @@
-# SpendWise — Ingestion Specification (v1)
+# Yutori — Ingestion Specification (v1)
 
 How SMSes get from Android's telephony stack into `sms_log`. Covers
 real-time receive, historical import, deduplication, retry, and
 permission handling.
 
-Companion docs: [spendwise-plan.md](./spendwise-plan.md) §4, §11.5,
+Companion docs: [yutori-plan.md](./yutori-plan.md) §4, §11.5,
 [parser-spec.md](./parser-spec.md), [schema.md](./schema.md),
 [business-logic-spec.md](./business-logic-spec.md).
 
@@ -90,14 +90,14 @@ enum class SmsSource {
 ### 5.1 The receiver
 
 ```kotlin
-class SpendWiseSmsReceiver : BroadcastReceiver() {
+class YutoriSmsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) { ... }
 }
 ```
 
 Manifest-registered (not dynamic) with:
 ```xml
-<receiver android:name=".SpendWiseSmsReceiver" android:exported="true">
+<receiver android:name=".YutoriSmsReceiver" android:exported="true">
     <intent-filter android:priority="999">
         <action android:name="android.provider.Telephony.SMS_RECEIVED"/>
     </intent-filter>

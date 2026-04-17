@@ -1,7 +1,7 @@
 package com.yutori.parser
 
 /**
- * Spend category per spendwise-plan.md §5.
+ * Spend category per yutori-plan.md §5.
  *
  * Categories only apply to money-moving events (SPEND, REFUND).
  * Drop-effect classifications leave category as null on the

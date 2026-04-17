@@ -1,11 +1,11 @@
-# SpendWise — Settings Specification (v1)
+# Yutori — Settings Specification (v1)
 
 Every settings sub-screen, what it reads/writes, what the UX contract
 is, and how it's tested. Settings is where user configuration lives for
 the open-question resolutions (§12.1–§12.4) and for the one-shot
 operations (import, reparse, purge).
 
-Companion docs: [spendwise-plan.md](./spendwise-plan.md),
+Companion docs: [yutori-plan.md](./yutori-plan.md),
 [ui-spec.md](./ui-spec.md) §10,
 [ingestion-spec.md](./ingestion-spec.md),
 [business-logic-spec.md](./business-logic-spec.md),
@@ -150,7 +150,7 @@ Shipped `recipient_rules` (with `source = SEED`):
 ### 3.4 Layout
 
 1. Top bar: "Recipient rules" + back + add (+).
-2. Info card at top: "Rules let SpendWise reclassify transactions based
+2. Info card at top: "Rules let Yutori reclassify transactions based
    on who you're paying. For example, payments to CRED aren't spend —
    they're bill payments for your credit card."
 3. Tabs or sections:

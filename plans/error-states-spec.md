@@ -1,4 +1,4 @@
-# SpendWise — Error States Specification (v1)
+# Yutori — Error States Specification (v1)
 
 The canonical list of every degraded path and failure mode, with the
 detection, behavior, UX, and recovery for each. Other specs reference
@@ -157,7 +157,7 @@ Companion docs: [ingestion-spec.md](./ingestion-spec.md),
 
 - **Detection:** Room's `onCreate` / `onUpgrade` throws.
 - **Behavior:** App refuses to start normally. No data access.
-- **UX:** Full-screen error: "SpendWise couldn't upgrade your data.
+- **UX:** Full-screen error: "Yutori couldn't upgrade your data.
   This shouldn't happen. Please reinstall from backup, or if that's
   not an option, clear app data to start fresh (your Android SMS inbox
   is untouched)." Two buttons: "Copy error details" and "Clear app
@@ -193,7 +193,7 @@ Companion docs: [ingestion-spec.md](./ingestion-spec.md),
 - **Behavior:** The operation fails; the transaction rolls back. For
   worker operations, the worker retries with backoff; eventually
   WorkManager marks it failed.
-- **UX:** Persistent notification: "SpendWise can't save — device
+- **UX:** Persistent notification: "Yutori can't save — device
   storage is full." Dashboard still shows existing data.
 - **Recovery:** User frees storage. Ingestion / import resumes on next
   trigger.

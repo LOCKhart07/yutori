@@ -8,11 +8,11 @@ still private — a fine-grained PAT embedded at build time unblocks the
 Releases API, and the design isolates that workaround to a single
 interceptor so removal at #71(a) is a two-minute chore.
 
-Companion docs: [spendwise-plan.md](./spendwise-plan.md),
+Companion docs: [yutori-plan.md](./yutori-plan.md),
 [settings-spec.md](./settings-spec.md),
 [docs/RELEASING.md](../docs/RELEASING.md).
 
-Tracks [#71](https://github.com/LOCKhart07/spendwise/issues/71).
+Tracks [#71](https://github.com/LOCKhart07/yutori/issues/71).
 Pairs with the first-run mitigation from #57.
 
 ---
@@ -64,10 +64,10 @@ battery concerns.
 
 ## 3. Module placement
 
-Lives in `:app` under `com.spendwise.update/`:
+Lives in `:app` under `com.yutori.update/`:
 
 ```
-:app/src/main/kotlin/com/spendwise/update/
+:app/src/main/kotlin/com/yutori/update/
     UpdateModule.kt              # wiring (OkHttp + Moshi + repo)
     GithubAuthInterceptor.kt     # #71(a) removal target
     UpdateRepository.kt
@@ -86,7 +86,7 @@ Not a separate Gradle module. Needs Android `PackageInstaller`,
 has no consumers outside `:app`. A pure-JVM carve-out isn't worth the
 module boilerplate.
 
-`com.spendwise.update.ui/` under `:app/src/main/kotlin/com/spendwise/ui/`
+`com.yutori.update.ui/` under `:app/src/main/kotlin/com/yutori/ui/`
 holds the Compose surfaces (dialog + settings row) — standard location
 for this project.
 
@@ -103,7 +103,7 @@ class UpdateRepository(
 ```
 
 - Single endpoint:
-  `GET https://api.github.com/repos/LOCKhart07/spendwise/releases/latest`
+  `GET https://api.github.com/repos/LOCKhart07/yutori/releases/latest`
 - Headers (added by Retrofit annotations):
   `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`.
 - Auth header is added by the interceptor, not by the repo.
@@ -256,7 +256,7 @@ sealed interface CheckResult {
 - On failure, does not update the timestamp — so the next cold start
   retries.
 - Invoked from:
-  - `SpendWiseApplication.onCreate` via a `ProcessLifecycleOwner`
+  - `YutoriApplication.onCreate` via a `ProcessLifecycleOwner`
     observer, inside a `CoroutineScope(SupervisorJob + Dispatchers.IO)`
     scoped to the process.
   - Settings ViewModel (`force = true`).
@@ -371,7 +371,7 @@ location of the signing secrets block.
 
 - Type: fine-grained personal access token.
 - Resource owner: `LOCKhart07`.
-- Repository access: `LOCKhart07/spendwise` only.
+- Repository access: `LOCKhart07/yutori` only.
 - Permission: `Contents: Read`. Nothing else.
 - Expiry: 90 days.
 - Calendar reminder to rotate 7 days before expiry. When the repo

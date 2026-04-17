@@ -1,7 +1,7 @@
-# SpendWise — Room Schema (v1)
+# Yutori — Room Schema (v1)
 
 Concrete schema for the v1 Android app. Companion to
-[spendwise-plan.md](./spendwise-plan.md) §7. Open decisions from the
+[yutori-plan.md](./yutori-plan.md) §7. Open decisions from the
 draft were resolved 2026-04-15 — see "Decisions" at the bottom.
 
 ## Design principles

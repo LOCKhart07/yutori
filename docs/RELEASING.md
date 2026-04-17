@@ -1,6 +1,6 @@
-# Releasing SpendWise
+# Releasing Yutori
 
-SpendWise ships as a side-loaded APK. There is no Play Store listing. A
+Yutori ships as a side-loaded APK. There is no Play Store listing. A
 GitHub Actions workflow (`.github/workflows/release.yml`) builds a
 release APK and attaches it to a GitHub Release whenever a `v*` tag is
 pushed.
@@ -18,7 +18,7 @@ pushed.
    ```
 
 3. GitHub Actions runs `:app:assembleRelease`, creates a release named
-   after the tag, and uploads `spendwise-<tag>.apk` as an asset.
+   after the tag, and uploads `yutori-<tag>.apk` as an asset.
 
 The app's in-app autoupdater (Tachiyomi-style) polls the GitHub
 Releases API for new tags and offers to download the APK.

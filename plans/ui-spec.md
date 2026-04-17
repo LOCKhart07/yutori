@@ -1,10 +1,10 @@
-# SpendWise — UI Specification (v1)
+# Yutori — UI Specification (v1)
 
 Screen-by-screen contract: what each screen queries, what it shows in
 each state, how the user gets there, and what they can do. Built around
 Jetpack Compose + Flow-driven state.
 
-Companion docs: [spendwise-plan.md](./spendwise-plan.md) §8,
+Companion docs: [yutori-plan.md](./yutori-plan.md) §8,
 [business-logic-spec.md](./business-logic-spec.md),
 [schema.md](./schema.md),
 [settings-spec.md](./settings-spec.md).
@@ -87,7 +87,7 @@ Shown on first launch, or whenever no permission has ever been granted.
 ### 4.1 Screens
 
 **Screen 1 — Welcome.** One headline, two paragraphs of plain text:
-"SpendWise reads bank SMSes on this device to auto-track your spending."
+"Yutori reads bank SMSes on this device to auto-track your spending."
 "Nothing leaves your phone." One CTA: "Get started."
 
 **Screen 2 — Permission ask.** Explains exactly what each permission is
@@ -373,7 +373,7 @@ permission needed on modern Android).
 - One row per `transactions` row (not per `sms_log`). Multi-source
   transactions collapse to one row; raw SMS column joins bodies with
   `" || "` separator if included.
-- Filename: `spendwise_{startDate}_to_{endDate}.csv`.
+- Filename: `yutori_{startDate}_to_{endDate}.csv`.
 
 ### 11.4 Scale
 

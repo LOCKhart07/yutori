@@ -1,4 +1,4 @@
-# SpendWise — Testing Specification (v1)
+# Yutori — Testing Specification (v1)
 
 Test infrastructure: how test fixtures are managed, what tools run
 what, how the Python↔Kotlin parity harness works, and what the CI
@@ -112,9 +112,9 @@ One factory per rule in parser-spec §5. Keeps tests terse and makes
 In-memory Room:
 
 ```kotlin
-fun testDb(): SpendWiseDatabase =
+fun testDb(): YutoriDatabase =
     Room.inMemoryDatabaseBuilder(
-        context, SpendWiseDatabase::class.java
+        context, YutoriDatabase::class.java
     )
     .allowMainThreadQueries()  // tests only; real code uses suspend DAOs
     .build()

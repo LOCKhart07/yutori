@@ -1,6 +1,6 @@
-# SpendWise
+# Yutori
 
-> Package name — will be renamed **Yutori** across user-facing surfaces. Rename tracked in issue #8.
+> Was **SpendWise** until 2026-04-17; fully renamed to Yutori across code, packages (`com.yutori.*`), and docs (#8).
 
 Android-only personal spending tracker that reads SMS from Indian banks and UPI apps, classifies each message, and derives a monthly budget view. All data stays on-device (Room). Side-loaded APK; no Play Store.
 

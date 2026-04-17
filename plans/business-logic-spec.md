@@ -1,4 +1,4 @@
-# SpendWise — Business Logic Specification (v1)
+# Yutori — Business Logic Specification (v1)
 
 The layer that converts labeled `sms_log` rows into `transactions`,
 maintains budget state, fires alerts, and handles all the
@@ -8,7 +8,7 @@ This is where the plan's hard-earned design decisions live in code:
 §4.1 (CC double-count), §4.4 (refunds), §4.5 (forex), §6 (budget +
 alerts), §12.1–§12.4 (open-question handling).
 
-Companion docs: [spendwise-plan.md](./spendwise-plan.md),
+Companion docs: [yutori-plan.md](./yutori-plan.md),
 [schema.md](./schema.md), [parser-spec.md](./parser-spec.md),
 [ingestion-spec.md](./ingestion-spec.md).
 

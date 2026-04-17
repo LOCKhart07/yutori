@@ -1,4 +1,4 @@
-# SpendWise — Planning Document
+# Yutori — Planning Document
 > Android spending tracker. Last updated: April 2026.
 
 ---

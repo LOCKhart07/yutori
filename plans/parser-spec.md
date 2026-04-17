@@ -1,11 +1,11 @@
-# SpendWise — Parser Specification (v1)
+# Yutori — Parser Specification (v1)
 
 The parser turns one SMS into one `ParseResult`. This document is the
 contract: regexes, rule ordering, edge behavior, and enumerated test cases
 detailed enough that the Kotlin implementation is written test-first
 against this spec.
 
-Companion docs: [spendwise-plan.md](./spendwise-plan.md) §4,
+Companion docs: [yutori-plan.md](./yutori-plan.md) §4,
 [schema.md](./schema.md).
 
 Reference implementation: `feasibility/scripts/parser.py` (Python, used

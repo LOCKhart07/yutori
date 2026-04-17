@@ -2,11 +2,7 @@
 
 Thin index into GitHub issues. Issues are the source of truth; this file is just a sorted view.
 
-Regenerate or re-order freely — don't trust ordinal numbers in old git revisions of this file. For the current live state filter issues by label: https://github.com/LOCKhart07/spendwise/issues?q=is%3Aissue+is%3Aopen
-
-## Tier 0 — ship-blockers / foundational
-
-- #8 — Lock app name: Yutori — rename SpendWise → Yutori across code, docs, plans
+Regenerate or re-order freely — don't trust ordinal numbers in old git revisions of this file. For the current live state filter issues by label: https://github.com/LOCKhart07/yutori/issues?q=is%3Aissue+is%3Aopen
 
 ## Tier 1 — easy wins (hours, no schema)
 
