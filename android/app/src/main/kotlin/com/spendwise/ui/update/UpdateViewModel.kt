@@ -160,6 +160,68 @@ class UpdateViewModel(
         _state.update { it.copy(checkOnOpenEnabled = enabled) }
     }
 
+    /**
+     * Single entry point for the ProcessLifecycleOwner ON_CREATE hook.
+     * Honors the on-open toggle, debounces to one network call per 6h,
+     * clears stale dismissals when the installed version has advanced
+     * past them, and auto-surfaces the dialog unless the exact tag was
+     * previously dismissed. Spec §2 & §4.6.
+     */
+    fun onColdStartCheck() {
+        if (!prefs.checkOnOpenEnabled) return
+
+        val current = _state.value.currentVersion
+        // Clear dismissed_tag once the installed version has moved past
+        // the tag the user tapped "Later" on — otherwise a stale
+        // suppression silences the next update dialog forever (spec §10).
+        val seen = prefs.lastSeenVersionName
+        if (seen != null && seen != current) {
+            prefs.dismissedTag = null
+        }
+        prefs.lastSeenVersionName = current
+
+        val now = clock()
+        val last = prefs.lastCheckAt
+        // Clock moved backwards → treat as never-checked.
+        val elapsed = if (last <= 0L || last > now) Long.MAX_VALUE else now - last
+        if (elapsed < SIX_HOURS_MS) return
+
+        // Don't stomp on a live manual flow.
+        when (_state.value.phase) {
+            is UpdateScreenState.Phase.Checking,
+            is UpdateScreenState.Phase.Downloading,
+            is UpdateScreenState.Phase.Available,
+            is UpdateScreenState.Phase.DownloadFailed,
+            is UpdateScreenState.Phase.InstallFailed -> return
+            else -> Unit
+        }
+
+        viewModelScope.launch(ioDispatcher) {
+            fetchLatest().onSuccess { release ->
+                prefs.lastCheckAt = now
+                val hasUpdate = release != null &&
+                    VersionComparator.hasUpdate(current, release.tagName)
+                if (!hasUpdate) {
+                    _state.update { it.copy(phase = UpdateScreenState.Phase.UpToDate) }
+                    // Installed version caught up with or passed a
+                    // previously-dismissed tag — drop the suppression.
+                    prefs.dismissedTag = null
+                    return@onSuccess
+                }
+                val rel = release!!
+                val suppressed = prefs.dismissedTag == rel.tagName
+                _state.update {
+                    it.copy(
+                        phase = UpdateScreenState.Phase.Available(rel),
+                        dialogVisible = !suppressed,
+                    )
+                }
+            }
+            // Failure: silent on cold start (§9). No phase transition
+            // so the user doesn't see a misleading "Up to date" either.
+        }
+    }
+
     private fun cancelDownload() {
         downloadJob?.cancel()
         downloadJob = null
@@ -189,5 +251,9 @@ class UpdateViewModel(
                 currentVersion = currentVersion,
             ) as T
         }
+    }
+
+    companion object {
+        private const val SIX_HOURS_MS = 6L * 60L * 60L * 1000L
     }
 }

@@ -319,6 +319,178 @@ class UpdateViewModelTest {
         }
 
     @Test
+    fun `cold start skips when checkOnOpen is disabled`() = runTest(dispatcher) {
+        var called = false
+        val p = prefs().also { it.checkOnOpenEnabled = false }
+        val vm = buildVm(fetchLatest = { called = true; Result.success(null) }, prefs = p)
+
+        vm.onColdStartCheck()
+        advanceUntilIdle()
+
+        assertEquals(false, called)
+    }
+
+    @Test
+    fun `cold start fires when lastCheckAt is zero`() = runTest(dispatcher) {
+        var called = false
+        val p = prefs().also { it.lastCheckAt = 0L; it.checkOnOpenEnabled = true }
+        val vm = buildVm(
+            fetchLatest = { called = true; Result.success(null) },
+            prefs = p,
+        )
+
+        vm.onColdStartCheck()
+        advanceUntilIdle()
+
+        assertEquals(true, called)
+    }
+
+    @Test
+    fun `cold start debounces within 6h window`() = runTest(dispatcher) {
+        var called = false
+        val p = prefs().also { it.lastCheckAt = 1_700_000_000_000L - 60_000L }  // 1m ago
+        val vm = buildVm(
+            fetchLatest = { called = true; Result.success(null) },
+            prefs = p,
+        )
+
+        vm.onColdStartCheck()
+        advanceUntilIdle()
+
+        assertEquals(false, called)
+    }
+
+    @Test
+    fun `cold start fires when last check was more than 6h ago`() = runTest(dispatcher) {
+        var called = false
+        val p = prefs().also { it.lastCheckAt = 1_700_000_000_000L - 7L * 3_600_000L }
+        val vm = buildVm(
+            fetchLatest = { called = true; Result.success(null) },
+            prefs = p,
+        )
+
+        vm.onColdStartCheck()
+        advanceUntilIdle()
+
+        assertEquals(true, called)
+    }
+
+    @Test
+    fun `cold start treats clock-moved-backwards as never checked`() = runTest(dispatcher) {
+        var called = false
+        val p = prefs().also { it.lastCheckAt = 1_700_000_000_000L + 60_000L }  // in the future
+        val vm = buildVm(
+            fetchLatest = { called = true; Result.success(null) },
+            prefs = p,
+        )
+
+        vm.onColdStartCheck()
+        advanceUntilIdle()
+
+        assertEquals(true, called)
+    }
+
+    @Test
+    fun `cold start with update + no dismissal auto-surfaces dialog`() = runTest(dispatcher) {
+        val p = prefs().also { it.lastCheckAt = 0L }
+        val vm = buildVm(
+            fetchLatest = { Result.success(release("v0.3.0")) },
+            prefs = p,
+        )
+
+        vm.onColdStartCheck()
+        advanceUntilIdle()
+
+        assertTrue(vm.state.value.phase is UpdateScreenState.Phase.Available)
+        assertEquals(true, vm.state.value.dialogVisible)
+    }
+
+    @Test
+    fun `cold start with update matching dismissed tag suppresses dialog`() = runTest(dispatcher) {
+        val p = prefs().also {
+            it.lastCheckAt = 0L
+            it.dismissedTag = "v0.3.0"
+            it.lastSeenVersionName = "0.2.0"
+        }
+        val vm = buildVm(
+            fetchLatest = { Result.success(release("v0.3.0")) },
+            prefs = p,
+        )
+
+        vm.onColdStartCheck()
+        advanceUntilIdle()
+
+        assertTrue(vm.state.value.phase is UpdateScreenState.Phase.Available)
+        assertEquals(false, vm.state.value.dialogVisible)
+    }
+
+    @Test
+    fun `cold start clears dismissed_tag when current version advanced past it`() =
+        runTest(dispatcher) {
+            val p = prefs().also {
+                it.lastCheckAt = 0L
+                it.dismissedTag = "v0.3.0"
+                it.lastSeenVersionName = "0.1.0"  // user was here when they tapped Later
+            }
+            val vm = buildVm(
+                fetchLatest = { Result.success(release("v0.3.0")) },
+                prefs = p,
+                currentVersion = "0.3.0",  // user updated some other way
+            )
+
+            vm.onColdStartCheck()
+            advanceUntilIdle()
+
+            // Dismissal cleared because current != lastSeenVersionName.
+            assertNull(p.dismissedTag)
+        }
+
+    @Test
+    fun `cold start with no update clears stale dismissed_tag`() = runTest(dispatcher) {
+        val p = prefs().also {
+            it.lastCheckAt = 0L
+            it.dismissedTag = "v0.2.0"
+        }
+        val vm = buildVm(fetchLatest = { Result.success(null) }, prefs = p)
+
+        vm.onColdStartCheck()
+        advanceUntilIdle()
+
+        assertNull(p.dismissedTag)
+    }
+
+    @Test
+    fun `cold start fetch failure leaves phase unchanged and does not stamp lastCheckAt`() =
+        runTest(dispatcher) {
+            val p = prefs().also { it.lastCheckAt = 0L }
+            val vm = buildVm(fetchLatest = { Result.failure(RuntimeException()) }, prefs = p)
+
+            vm.onColdStartCheck()
+            advanceUntilIdle()
+
+            // Spec §9: silent on cold-start failure. NotCheckedYet stays.
+            assertTrue(vm.state.value.phase is UpdateScreenState.Phase.NotCheckedYet)
+            assertEquals(0L, p.lastCheckAt)
+        }
+
+    @Test
+    fun `cold start does not stomp an in-flight manual Check now`() = runTest(dispatcher) {
+        val p = prefs().also { it.lastCheckAt = 0L }
+        val vm = buildVm(
+            fetchLatest = { Result.success(release("v0.3.0")) },
+            prefs = p,
+        )
+        vm.onCheckNow()  // transitions to Checking synchronously
+        // Don't advance yet — Checking is in flight.
+
+        vm.onColdStartCheck()
+
+        // Still in Checking state; onColdStartCheck should not have
+        // kicked off a parallel fetch.
+        assertTrue(vm.state.value.phase is UpdateScreenState.Phase.Checking)
+    }
+
+    @Test
     fun `install Success outcome does not change Downloading phase`() = runTest(dispatcher) {
         val outcomes = MutableSharedFlow<UpdateInstallEvents.Outcome>(extraBufferCapacity = 4)
         val vm = buildVm(

@@ -336,19 +336,7 @@ private fun AppContent() {
             val suggestedCount: Int by database.accountDao()
                 .observeCountByStatus("SUGGESTED")
                 .collectAsStateWithLifecycle(initialValue = 0)
-            val updateViewModel: UpdateViewModel = viewModel(
-                factory = remember(app) {
-                    val client = UpdateModule.createHttpClient()
-                    UpdateViewModel.Factory(
-                        repo = UpdateModule.createRepository(client),
-                        downloader = UpdateModule.createDownloader(client, app),
-                        installer = UpdateModule.createInstaller(app),
-                        prefs = UpdateModule.createPrefs(app),
-                        currentVersion = BuildConfig.VERSION_NAME,
-                    )
-                },
-            )
-            val updateState by updateViewModel.state.collectAsStateWithLifecycle()
+            val updateState by app.updateViewModel.state.collectAsStateWithLifecycle()
             SettingsScreen(
                 onBack = { goBack() },
                 onAccounts = { goTo(Screen.Accounts) },
@@ -356,12 +344,9 @@ private fun AppContent() {
                 onAlertSettings = { goTo(Screen.AlertSettings) },
                 accountSuggestionCount = suggestedCount,
                 updateState = updateState,
-                onCheckForUpdates = { updateViewModel.onCheckNow() },
-                onToggleCheckOnOpen = { updateViewModel.onToggleCheckOnOpen(it) },
-                onOpenUpdateDialog = { updateViewModel.onOpenDialog() },
-                onDismissUpdateDialog = { updateViewModel.onDismissDialog() },
-                onStartUpdateDownload = { updateViewModel.onStartDownload() },
-                onCancelUpdateDownload = { updateViewModel.onCancelDownload() },
+                onCheckForUpdates = { app.updateViewModel.onCheckNow() },
+                onToggleCheckOnOpen = { app.updateViewModel.onToggleCheckOnOpen(it) },
+                onOpenUpdateDialog = { app.updateViewModel.onOpenDialog() },
             )
         }
 
@@ -500,6 +485,18 @@ private fun AppContent() {
             )
         }
     }
+
+    // App-scoped update dialog overlays every screen. Slice 5's Settings
+    // interaction and slice 6's cold-start auto-surface converge on this
+    // single render point so the user can hit Update / Later from any
+    // destination without duplicate dialog instances.
+    val updateState by app.updateViewModel.state.collectAsStateWithLifecycle()
+    com.spendwise.ui.update.UpdateDialog(
+        state = updateState,
+        onDismiss = { app.updateViewModel.onDismissDialog() },
+        onStartDownload = { app.updateViewModel.onStartDownload() },
+        onCancelDownload = { app.updateViewModel.onCancelDownload() },
+    )
 }
 
 @Composable

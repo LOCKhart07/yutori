@@ -1,6 +1,8 @@
 package com.spendwise
 
 import android.app.Application
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
 import androidx.room.Room
 import com.spendwise.database.SpendWiseDatabase
 import com.spendwise.database.entities.RecipientRuleEntity
@@ -12,6 +14,8 @@ import com.spendwise.ingestion.IngestionPipeline
 import com.spendwise.ingestion.SmsLogReconciler
 import com.spendwise.notifications.AndroidAlertNotifier
 import com.spendwise.ui.Permissions
+import com.spendwise.ui.update.UpdateViewModel
+import com.spendwise.update.UpdateModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -45,6 +49,29 @@ class SpendWiseApp : Application() {
 
     val impactAlertSettings: com.spendwise.settings.ImpactAlertSettings by lazy {
         com.spendwise.settings.ImpactAlertSettings(applicationContext)
+    }
+
+    /**
+     * Process-scoped ViewModel store owned by the Application. Lets
+     * [UpdateViewModel] survive Activity recreation so Settings and the
+     * app-level dialog observer see the same state, and the cold-start
+     * check (fired once per process from [ProcessLifecycleOwner])
+     * doesn't race Activity creation.
+     */
+    private val appViewModelStore = ViewModelStore()
+
+    val updateViewModel: UpdateViewModel by lazy {
+        val client = UpdateModule.createHttpClient()
+        ViewModelProvider(
+            appViewModelStore,
+            UpdateViewModel.Factory(
+                repo = UpdateModule.createRepository(client),
+                downloader = UpdateModule.createDownloader(client, this),
+                installer = UpdateModule.createInstaller(this),
+                prefs = UpdateModule.createPrefs(this),
+                currentVersion = BuildConfig.VERSION_NAME,
+            ),
+        )[UpdateViewModel::class.java]
     }
 
     override fun onCreate() {
@@ -117,6 +144,13 @@ class SpendWiseApp : Application() {
             runCatching { runCatchUpImport(db) }
                 .onFailure { android.util.Log.w(TAG, "Catch-up import failed", it) }
         }
+
+        // Fire the autoupdater cold-start check — runs once per
+        // process via Application.onCreate. The VM's
+        // [UpdateViewModel.onColdStartCheck] internally honors the
+        // on-open toggle, the 6h debounce, and previously-dismissed
+        // tags, so it's a safe no-op when nothing's due.
+        updateViewModel.onColdStartCheck()
     }
 
     /**

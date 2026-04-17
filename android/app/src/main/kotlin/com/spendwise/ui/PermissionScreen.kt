@@ -345,6 +345,15 @@ private fun RestrictedSettingsGuidance(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = "Once Yutori is installed, future updates arrive as an in-app prompt " +
+                    "and install without another Play Protect warning.",
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onFaint,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
             Spacer(Modifier.height(24.dp))
         }
     }

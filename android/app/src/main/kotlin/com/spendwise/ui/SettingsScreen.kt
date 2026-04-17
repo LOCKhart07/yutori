@@ -29,7 +29,6 @@ import com.spendwise.R
 import com.spendwise.ui.theme.SpendWiseTextStyles
 import com.spendwise.ui.theme.SpendWiseTheme
 import com.spendwise.ui.update.AppUpdatesSection
-import com.spendwise.ui.update.UpdateDialog
 import com.spendwise.ui.update.UpdateScreenState
 
 /**
@@ -48,9 +47,6 @@ fun SettingsScreen(
     onCheckForUpdates: () -> Unit = {},
     onToggleCheckOnOpen: (Boolean) -> Unit = {},
     onOpenUpdateDialog: () -> Unit = {},
-    onDismissUpdateDialog: () -> Unit = {},
-    onStartUpdateDownload: () -> Unit = {},
-    onCancelUpdateDownload: () -> Unit = {},
 ) {
     val backup = rememberBackupActions()
     val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
@@ -134,15 +130,9 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(32.dp))
         }
-
-        if (updateState != null) {
-            UpdateDialog(
-                state = updateState,
-                onDismiss = onDismissUpdateDialog,
-                onStartDownload = onStartUpdateDownload,
-                onCancelDownload = onCancelUpdateDownload,
-            )
-        }
+        // Dialog is rendered at AppContent level — it overlays this
+        // screen and the dashboard alike so cold-start auto-surface and
+        // Settings "tap status" share one instance.
     }
 }
 
