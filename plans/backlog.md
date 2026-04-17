@@ -76,6 +76,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #102 — Set HorizontalPager beyondViewportPageCount=0 on the dashboard
 - #103 — Currency-agnostic display *(needs clarification — UI symbol swap vs. full display-currency conversion)*
 - #106 — Autoupdater dialog polish — readability, skipped-versions, dismiss semantics *(follow-up to #71)*
+- #107 — Notification small-icon: replace system warning triangle with Yutori mark *(follow-up to #65)*
 
 ## Tier 5 — deferred / low urgency
 
@@ -86,7 +87,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #62 — Move historical-import from dashboard dialog to Settings
 - #63 — Carry-over genesis month setting
 - #64 — AI-assisted rule creation
-- #65 — Launcher icon / logo design (Yutori)
 - #66 — About screen
 - #67 — Alert thresholds screen
 - #68 — CSV export screen
