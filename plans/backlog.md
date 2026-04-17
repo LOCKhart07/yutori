@@ -75,6 +75,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #99 — Over-banner third pill shows 'Deficit' — redundant with the banner above it *(follow-up to #16)*
 - #101 — Add horizontal pager-swipe benchmark to :macrobenchmark
 - #102 — Set HorizontalPager beyondViewportPageCount=0 on the dashboard
+- #103 — Currency-agnostic display *(needs clarification — UI symbol swap vs. full display-currency conversion)*
 
 ## Tier 5 — deferred / low urgency
 
@@ -91,6 +92,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #68 — CSV export screen
 - #69 — Purge non-financial screen
 - #70 — Rerun parser screen
+- #105 — Shake to report *(blocked on #78; fold into it as a follow-up)*
 
 ## Deferrals (no tier — decision log)
 
@@ -100,6 +102,10 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 
 - #73 — External agent critique — unvetted framings and suggestions
 - #95 — Introduce test data that can be injected into an emulator
+
+## Needs clarification
+
+- #104 — Mark incoming txs — already has blue chip + `+` prefix + info-blue amount; author confirmation needed on whether this is a dupe or a polish ask
 
 ## Unlabelled
 
