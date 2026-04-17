@@ -2,6 +2,7 @@ package com.spendwise.ui.update
 
 import androidx.test.core.app.ApplicationProvider
 import com.spendwise.ui.TestApp
+import com.spendwise.update.UpdateInstallEvents
 import com.spendwise.update.UpdatePrefs
 import com.spendwise.update.model.DownloadState
 import com.spendwise.update.model.LatestRelease
@@ -9,6 +10,7 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -62,6 +64,7 @@ class UpdateViewModelTest {
         installApk: (File) -> Unit = {},
         currentVersion: String = "0.2.0",
         prefs: UpdatePrefs = prefs(),
+        installOutcomes: MutableSharedFlow<UpdateInstallEvents.Outcome> = MutableSharedFlow(extraBufferCapacity = 4),
     ): UpdateViewModel = UpdateViewModel(
         fetchLatest = fetchLatest,
         downloadAsset = downloadAsset,
@@ -70,6 +73,7 @@ class UpdateViewModelTest {
         currentVersion = currentVersion,
         ioDispatcher = dispatcher,
         clock = { 1_700_000_000_000L },
+        installOutcomes = installOutcomes,
     )
 
     @Test
@@ -285,5 +289,47 @@ class UpdateViewModelTest {
         val p = prefs().also { it.lastCheckAt = 999L }
         val vm = buildVm(prefs = p)
         assertTrue(vm.state.value.phase is UpdateScreenState.Phase.UpToDate)
+    }
+
+    @Test
+    fun `install Failure outcome flips Downloading to DownloadFailed`() = runTest(dispatcher) {
+        val outcomes = MutableSharedFlow<UpdateInstallEvents.Outcome>(extraBufferCapacity = 4)
+        val vm = buildVm(
+            fetchLatest = { Result.success(release("v0.3.0")) },
+            downloadAsset = { flow { /* stays Downloading */ } },
+            installOutcomes = outcomes,
+        )
+        vm.onCheckNow()
+        advanceUntilIdle()
+        vm.onStartDownload()
+        advanceUntilIdle()
+        assertTrue(vm.state.value.phase is UpdateScreenState.Phase.Downloading)
+
+        outcomes.tryEmit(UpdateInstallEvents.Outcome.Failure(status = -1, message = "aborted"))
+        advanceUntilIdle()
+
+        assertTrue(vm.state.value.phase is UpdateScreenState.Phase.DownloadFailed)
+    }
+
+    @Test
+    fun `install Success outcome does not change Downloading phase`() = runTest(dispatcher) {
+        val outcomes = MutableSharedFlow<UpdateInstallEvents.Outcome>(extraBufferCapacity = 4)
+        val vm = buildVm(
+            fetchLatest = { Result.success(release("v0.3.0")) },
+            downloadAsset = { flow { /* stays Downloading */ } },
+            installOutcomes = outcomes,
+        )
+        vm.onCheckNow()
+        advanceUntilIdle()
+        vm.onStartDownload()
+        advanceUntilIdle()
+        assertTrue(vm.state.value.phase is UpdateScreenState.Phase.Downloading)
+
+        outcomes.tryEmit(UpdateInstallEvents.Outcome.Success)
+        advanceUntilIdle()
+
+        // Success is observational only — the process typically dies
+        // with the replacement install before this event is observed.
+        assertTrue(vm.state.value.phase is UpdateScreenState.Phase.Downloading)
     }
 }

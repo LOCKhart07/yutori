@@ -20,8 +20,14 @@ class UpdateInstallResultReceiver : BroadcastReceiver() {
                 val confirm = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
                 confirm?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.also { context.startActivity(it) }
             }
-            PackageInstaller.STATUS_SUCCESS -> Log.i(TAG, "install succeeded")
-            else -> Log.w(TAG, "install failed: status=$status, message=$message")
+            PackageInstaller.STATUS_SUCCESS -> {
+                Log.i(TAG, "install succeeded")
+                UpdateInstallEvents.publish(UpdateInstallEvents.Outcome.Success)
+            }
+            else -> {
+                Log.w(TAG, "install failed: status=$status, message=$message")
+                UpdateInstallEvents.publish(UpdateInstallEvents.Outcome.Failure(status, message))
+            }
         }
     }
 

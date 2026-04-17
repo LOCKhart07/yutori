@@ -141,6 +141,7 @@ private fun ReleaseNotes(body: String) {
                     is MdBlock.Heading -> HeadingBlock(block)
                     is MdBlock.Bullet -> BulletBlock(block)
                     is MdBlock.Paragraph -> ParagraphBlock(block)
+                    is MdBlock.Rule -> RuleBlock()
                 }
             }
         }
@@ -202,18 +203,26 @@ private fun ParagraphBlock(block: MdBlock.Paragraph) {
 private fun toAnnotated(inline: InlineText): AnnotatedString = buildAnnotatedString {
     append(inline.text)
     inline.spans.forEach { span ->
-        when (span.kind) {
-            InlineText.SpanKind.Code -> addStyle(
-                style = SpanStyle(
-                    fontFamily = FontFamily.Monospace,
-                    background = SpendWiseTheme.colors.surfaceElevated2,
-                    fontSize = 12.sp,
-                ),
-                start = span.start,
-                end = span.end,
+        val style = when (span.kind) {
+            InlineText.SpanKind.Code -> SpanStyle(
+                fontFamily = FontFamily.Monospace,
+                background = SpendWiseTheme.colors.surfaceElevated2,
+                fontSize = 12.sp,
             )
+            InlineText.SpanKind.Bold -> SpanStyle(fontWeight = FontWeight.SemiBold)
+            // Tint links info-blue. Not clickable in v1 — tap "See full
+            // notes on GitHub" at the bottom for navigation.
+            InlineText.SpanKind.Link -> SpanStyle(color = SpendWiseTheme.colors.info)
         }
+        addStyle(style, span.start, span.end)
     }
+}
+
+@Composable
+private fun RuleBlock() {
+    Spacer(Modifier.height(6.dp))
+    HorizontalDivider(color = SpendWiseTheme.colors.divider)
+    Spacer(Modifier.height(6.dp))
 }
 
 @Composable

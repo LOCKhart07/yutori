@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.spendwise.update.UpdateDownloader
+import com.spendwise.update.UpdateInstallEvents
 import com.spendwise.update.UpdateInstaller
 import com.spendwise.update.UpdatePrefs
 import com.spendwise.update.UpdateRepository
@@ -17,6 +18,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -29,6 +31,7 @@ class UpdateViewModel(
     currentVersion: String,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val clock: () -> Long = System::currentTimeMillis,
+    installOutcomes: SharedFlow<UpdateInstallEvents.Outcome> = UpdateInstallEvents.outcomes,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -45,6 +48,26 @@ class UpdateViewModel(
     val state: StateFlow<UpdateScreenState> = _state.asStateFlow()
 
     private var downloadJob: Job? = null
+
+    init {
+        // Unstick the Downloading dialog when the system-install flow
+        // ends with anything other than success — user cancelled the
+        // confirmation UI, denied "Install unknown apps", Android
+        // rejected the APK, etc. On success the process usually dies
+        // before we see the event, so no state change is needed there.
+        viewModelScope.launch {
+            installOutcomes.collectLatest { outcome ->
+                if (outcome is UpdateInstallEvents.Outcome.Failure) {
+                    val phase = _state.value.phase
+                    if (phase is UpdateScreenState.Phase.Downloading) {
+                        _state.update {
+                            it.copy(phase = UpdateScreenState.Phase.DownloadFailed(phase.release))
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     fun onCheckNow() {
         if (_state.value.phase is UpdateScreenState.Phase.Checking) return
