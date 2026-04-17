@@ -7,14 +7,18 @@ pushed.
 
 ## Cutting a release
 
-1. Bump `versionCode` and `versionName` in
-   `android/app/build.gradle.kts` and commit.
-2. Tag and push:
+Version numbers come from the tag — `android/app/build.gradle.kts`
+derives `versionCode` from the commit count and `versionName` from
+`GITHUB_REF_NAME` when CI sees a `v*.*.*` tag. Nothing to hand-edit
+in `build.gradle.kts`.
+
+1. Pick the next version — see *Picking the version number* below.
+2. Push main, then tag and push the tag:
 
    ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
-   # or: git push --tags
+   git push origin main
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
    ```
 
 3. GitHub Actions runs `:app:assembleRelease`, creates a release named
@@ -22,6 +26,36 @@ pushed.
 
 The app's in-app autoupdater (Tachiyomi-style) polls the GitHub
 Releases API for new tags and offers to download the APK.
+
+## Picking the version number
+
+**Always anchor on the last release tag**, not on recency. Run:
+
+```bash
+git log $(git describe --tags --abbrev=0)..HEAD --oneline
+```
+
+Eyeballing `git log -5` or the "Recent commits" block in your tooling
+is a trap — commits that look recent are often already shipped.
+
+Map conventional-commit prefixes in that diff to a semver bump:
+
+| Commits since last tag contain … | Bump |
+| --- | --- |
+| Only `fix:` / `ci:` / `test:` / `docs:` / `chore:` / `style:` / `perf:` | **patch** (0.5.0 → 0.5.1) |
+| Any `feat:`, or `refactor:` that changes `applicationId` / schema / a user-visible surface | **minor** (0.5.x → 0.6.0) |
+| A breaking change to behavior users depend on (post-1.0 only) | **major** |
+
+Notes:
+
+- `docs:` is repo-internal only (README, CLAUDE.md, `plans/`, `docs/`)
+  — it never drives a version bump on its own. User-facing copy
+  changes ship as `feat:` or `fix:`.
+- `refactor:` is usually patch-worthy, but a package rename
+  (`com.spendwise` → `com.yutori`) or a DB migration counts as minor
+  because it changes something the user experiences (reinstall
+  prompt, migration screen).
+- Pre-1.0, breaking changes don't force a major bump. Bump minor.
 
 ## Signing modes
 
