@@ -107,8 +107,16 @@ class UpdateRepository(
 - Headers (added by Retrofit annotations):
   `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`.
 - Auth header is added by the interceptor, not by the repo.
-- `Result.success(null)` on 404 (no releases) — treated as *up to
-  date*, not an error.
+- 404 handling is token-aware while the repo is still private:
+  - With token: `Result.success(null)` — repo is reachable and has
+    no releases yet. Treat as *up to date*.
+  - Without token: `Result.failure(...)` — GitHub returns 404 to
+    anonymous callers on private repos to hide their existence, so
+    "no token + 404" is the shape of a missing PAT, not a real
+    absence of releases. Surface as *Updater offline*. This branch
+    is part of the #71(a) removal surface — after the repo goes
+    public, every 404 is legit and the token-aware parameter
+    disappears.
 - `Result.failure(...)` on any other non-2xx, timeout, or parse
   error. Caller logs and shows a user-facing state only for manual
   *Check now*.

@@ -25,7 +25,11 @@ class UpdateRepositoryTest {
 
     private fun repo(token: String = "test-token"): UpdateRepository {
         val client = UpdateModule.createHttpClient(token = token)
-        return UpdateModule.createRepository(client, baseUrl = server.url("/").toString())
+        return UpdateModule.createRepository(
+            client = client,
+            baseUrl = server.url("/").toString(),
+            tokenPresent = token.isNotEmpty(),
+        )
     }
 
     @Test
@@ -89,13 +93,25 @@ class UpdateRepositoryTest {
     }
 
     @Test
-    fun `404 yields success with null release`() = runTest {
+    fun `404 with token yields success with null release`() = runTest {
         server.enqueue(MockResponse().setResponseCode(404).setBody("""{"message":"Not Found"}"""))
 
-        val result = repo().latestRelease()
+        val result = repo(token = "test-token").latestRelease()
 
         result.isSuccess shouldBe true
         result.getOrNull().shouldBeNull()
+    }
+
+    @Test
+    fun `404 without token yields failure`() = runTest {
+        // Private-repo-era safeguard: an anonymous 404 on a private repo
+        // must surface as an error ("Updater offline") rather than a
+        // silent "up to date". Removal target at #71(a).
+        server.enqueue(MockResponse().setResponseCode(404).setBody("""{"message":"Not Found"}"""))
+
+        val result = repo(token = "").latestRelease()
+
+        result.isFailure shouldBe true
     }
 
     @Test

@@ -26,6 +26,10 @@ object UpdateModule {
     fun createRepository(
         client: OkHttpClient,
         baseUrl: String = GITHUB_BASE_URL,
+        // `#71(a)` cleanup: drop this default (and parameter) when the
+        // repo goes public — every build will behave as if a token is
+        // present because 404s will all be legitimate.
+        tokenPresent: Boolean = BuildConfig.GITHUB_RELEASES_TOKEN.isNotEmpty(),
     ): UpdateRepository {
         val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
         val api = Retrofit.Builder()
@@ -34,7 +38,7 @@ object UpdateModule {
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
             .create(GithubApi::class.java)
-        return UpdateRepository(api)
+        return UpdateRepository(api, tokenPresent = tokenPresent)
     }
 
     fun createDownloader(client: OkHttpClient, context: Context): UpdateDownloader =
