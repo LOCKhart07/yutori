@@ -93,6 +93,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #69 — Purge non-financial screen
 - #70 — Rerun parser screen
 - #105 — Shake to report *(blocked on #78; fold into it as a follow-up)*
+- #108 — Launcher icon renders as squircle on OxygenOS — want true circle *(follow-up to #65)*
 
 ## Deferrals (no tier — decision log)
 
