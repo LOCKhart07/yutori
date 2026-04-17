@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v9 mockup: in-app autoupdater dialog + settings (#71)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --surface-el3:   #242428;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --accent:        #F5B547;
+    --info:          #7BA9D1;
+    --positive:      #7FB77E;
+    --warn:          #E0A260;
+    --negative:      #E27A7A;
+    --backdrop:      rgba(0,0,0,0.65);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 56px 32px 80px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 52px 0 14px; font-size: 17px; color: #C9CACD; }
+  h3 { font-weight: 500; margin: 24px 0 8px; font-size: 11px; color: var(--on-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+  .blurb { color: #8A8E96; max-width: 880px; margin: 0 0 22px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: var(--on-muted); font-size: 12px; max-width: 640px; margin: 10px 0 0; line-height: 1.55; }
+  .note strong { color: #C9CACD; }
+  hr { border: 0; border-top: 1px solid var(--divider); margin: 44px 0; }
+
+  .row-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 36px 28px;
+    max-width: 1400px;
+    padding-top: 10px;
+  }
+
+  /* ─── Phone frame ─── */
+  .frame {
+    width: 300px;
+    border-radius: 28px;
+    background: var(--surface);
+    color: var(--on);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 24px 48px -16px rgba(0,0,0,0.6);
+  }
+  .frame .label {
+    position: absolute;
+    top: -22px;
+    left: 4px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8A8E96;
+    font-weight: 500;
+  }
+  .statusbar {
+    height: 26px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 18px 4px;
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
+  /* ─── Dashboard silhouette (behind modal) ─── */
+  .dash-bg {
+    min-height: 420px;
+    position: relative;
+    padding: 10px 18px 0;
+  }
+  .dash-bg .top {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; font-weight: 600;
+    margin-bottom: 14px;
+    opacity: 0.85;
+  }
+  .dash-bg .hero {
+    height: 120px; background: var(--surface-el); border-radius: 16px; opacity: 0.6;
+    margin-bottom: 10px;
+  }
+  .dash-bg .chip-row { display: flex; gap: 6px; margin-bottom: 10px; }
+  .dash-bg .chip { flex: 1; height: 44px; background: var(--surface-el); border-radius: 10px; opacity: 0.55; }
+  .dash-bg .tx { height: 54px; background: var(--surface-el); border-radius: 12px; opacity: 0.5; margin-bottom: 6px; }
+  .dash-bg .scrim {
+    position: absolute; inset: 0; background: var(--backdrop);
+    pointer-events: none;
+  }
+
+  /* ─── Option A — modal bottom sheet ─── */
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--surface-el);
+    border-top-left-radius: 18px; border-top-right-radius: 18px;
+    padding: 14px 20px 22px;
+    box-shadow: 0 -12px 40px rgba(0,0,0,0.55);
+    border-top: 1px solid var(--divider);
+  }
+  .sheet .handle {
+    width: 36px; height: 4px; background: rgba(255,255,255,0.18);
+    border-radius: 999px; margin: 0 auto 14px;
+  }
+  .sheet .title { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .sheet .subtitle {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px; color: var(--on-muted); margin-bottom: 14px;
+  }
+  .sheet .subtitle .from { color: var(--on-faint); }
+  .sheet .subtitle .to { color: var(--info); }
+  .sheet .md {
+    font-size: 12px; line-height: 1.6; color: #C9CACD;
+    max-height: 180px; overflow-y: auto;
+    background: var(--surface); border-radius: 10px;
+    padding: 12px 14px; border: 1px solid var(--divider);
+    margin-bottom: 14px;
+  }
+  .sheet .md h4 { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--on); }
+  .sheet .md ul { padding-left: 18px; margin: 6px 0 10px; }
+  .sheet .md li { margin-bottom: 3px; }
+  .sheet .md code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; background: var(--surface-el2); padding: 1px 5px; border-radius: 3px; }
+  .sheet .actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .btn {
+    padding: 9px 16px; border-radius: 10px; font-size: 13px;
+    font-weight: 600; border: none; cursor: pointer;
+    font-family: inherit;
+  }
+  .btn.primary { background: var(--accent); color: #1a1406; }
+  .btn.ghost { background: transparent; color: var(--on-muted); }
+  .btn.ghost:hover { color: var(--on); }
+
+  /* Progress variant of sheet */
+  .sheet .progress-wrap {
+    background: var(--surface); border-radius: 10px; padding: 12px 14px;
+    border: 1px solid var(--divider); margin-bottom: 14px;
+  }
+  .sheet .progress-head {
+    display: flex; justify-content: space-between;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px; color: var(--on-muted); margin-bottom: 8px;
+  }
+  .sheet .progress-head .pct { color: var(--on); }
+  .sheet .progress-bar {
+    height: 6px; background: var(--surface-el3); border-radius: 999px; overflow: hidden;
+  }
+  .sheet .progress-bar .fill { height: 100%; background: var(--info); width: 62%; border-radius: 999px; }
+  .sheet .error-wrap {
+    background: rgba(226,122,122,0.08); border: 1px solid rgba(226,122,122,0.25);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+    font-size: 12px; line-height: 1.5; color: #E5B4B4;
+  }
+  .sheet .error-wrap .heading { color: var(--negative); font-weight: 600; margin-bottom: 4px; font-size: 12px; }
+
+  /* ─── Option B — AlertDialog (centre-stage) ─── */
+  .alert-wrap {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    background: var(--backdrop);
+  }
+  .alert {
+    width: 100%;
+    background: var(--surface-el);
+    border-radius: 18px;
+    padding: 20px 22px 16px;
+    border: 1px solid var(--divider);
+  }
+  .alert .title { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .alert .subtitle {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px; color: var(--on-muted); margin-bottom: 12px;
+  }
+  .alert .md {
+    font-size: 12px; line-height: 1.6; color: #C9CACD;
+    max-height: 150px; overflow-y: auto;
+    margin-bottom: 16px;
+  }
+  .alert .md h4 { margin: 0 0 4px; font-size: 12px; font-weight: 600; color: var(--on); }
+  .alert .md ul { padding-left: 18px; margin: 4px 0 8px; }
+  .alert .actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .alert .actions .btn { padding: 7px 14px; font-size: 12px; }
+
+  /* ─── Settings screen ─── */
+  .settings {
+    min-height: 520px;
+    padding: 10px 16px 20px;
+  }
+  .settings .appbar {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 16px; font-weight: 600;
+    padding: 6px 4px 18px;
+  }
+  .settings .appbar .back { color: var(--on-muted); font-size: 20px; }
+  .settings .section-header {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint);
+    margin: 18px 6px 8px;
+  }
+  .settings .card {
+    background: var(--surface-el);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .settings .item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .settings .item:last-child { border-bottom: none; }
+  .settings .item .k { color: var(--on); }
+  .settings .item .v {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12px; color: var(--on-muted);
+  }
+  .settings .item .v.avail { color: var(--accent); }
+  .settings .item .v.error { color: var(--negative); }
+  .settings .item .v.checking { color: var(--info); }
+  .settings .item .v.uptodate { color: var(--positive); }
+  .settings .item .v.tap-hint { color: var(--info); font-family: 'Inter', sans-serif; font-size: 12px; }
+  /* toggle */
+  .toggle {
+    width: 36px; height: 20px; border-radius: 999px;
+    background: var(--surface-el3); position: relative;
+    transition: background 200ms;
+  }
+  .toggle.on { background: var(--info); }
+  .toggle::after {
+    content: ""; position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #EDEEF0;
+    transition: transform 200ms;
+  }
+  .toggle.on::after { transform: translateX(16px); }
+
+  .settings .check-now {
+    padding: 10px 16px 14px;
+    display: flex; justify-content: flex-end;
+  }
+  .settings .check-now .btn {
+    padding: 8px 14px; font-size: 12px;
+    background: transparent; color: var(--info);
+    border: 1px solid rgba(123,169,209,0.3);
+  }
+  .settings .check-now .btn.disabled {
+    color: var(--on-faint); border-color: var(--divider); cursor: not-allowed;
+  }
+
+  .legend {
+    background: rgba(245,181,71,0.07);
+    border: 1px solid rgba(245,181,71,0.2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #D7BB78;
+    font-size: 12px;
+    max-width: 880px;
+    margin: 10px 0 20px;
+    line-height: 1.55;
+  }
+  .legend strong { color: #F5D18A; }
+</style>
+</head>
+<body>
+
+<h1>v9 · In-app autoupdater — update dialog + settings row (#71)</h1>
+<p class="blurb">
+  Two surfaces gated on mockup approval per <code>plans/autoupdater-spec.md §7</code>: the
+  <b>update-available modal</b> that appears on cold-start when a newer release is detected, and the
+  <b>Settings → App updates</b> section that houses the toggle + manual <i>Check now</i>. A third copy
+  tweak on the restricted-settings first-run screen is a one-liner and doesn't need its own mockup — noted
+  at the bottom.
+</p>
+<div class="legend">
+  <strong>Decisions to make:</strong> bottom sheet vs AlertDialog for the update prompt,
+  status-line wording on the settings row, and whether "Check now" should be a button or an inline action.
+</div>
+
+<hr>
+
+<h2>A · Modal update-available sheet (bottom sheet)</h2>
+<p class="blurb">
+  Cold-start trigger fires on the dashboard. Sheet slides up; dashboard stays visible underneath (dimmed) so
+  the user has context for what they're leaving. Scrolls independently if release notes are long.
+  Swipe-down / <i>Later</i> dismisses and sets <code>dismissed_tag = v0.3.0</code> so the next cold-start
+  within 6h stays silent.
+</p>
+
+<div class="row-wrap">
+  <!-- A1 — available -->
+  <div class="frame"><span class="label">A1 · update available</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="dash-bg">
+      <div class="top"><span>Yutori</span><span style="opacity:0.5">⋮</span></div>
+      <div class="hero"></div>
+      <div class="chip-row"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="title">Yutori 0.3.0</div>
+        <div class="subtitle"><span class="from">Current 0.2.0</span> → <span class="to">New 0.3.0</span></div>
+        <div class="md">
+          <h4>Added</h4>
+          <ul>
+            <li>Dashboard pacing tint on the Daily-burn pill</li>
+            <li>Mid-month overshoot projection banner</li>
+          </ul>
+          <h4>Fixed</h4>
+          <ul>
+            <li>Scrolling jank on large tx lists</li>
+            <li>Incorrect refund bucket on <code>KotakCcSpend</code></li>
+          </ul>
+        </div>
+        <div class="actions">
+          <button class="btn ghost">Later</button>
+          <button class="btn primary">Download &amp; install</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- A2 — downloading -->
+  <div class="frame"><span class="label">A2 · downloading</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="dash-bg">
+      <div class="top"><span>Yutori</span><span style="opacity:0.5">⋮</span></div>
+      <div class="hero"></div>
+      <div class="chip-row"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="title">Downloading 0.3.0</div>
+        <div class="subtitle"><span class="from">12.4 MB</span> of 20.0 MB</div>
+        <div class="progress-wrap">
+          <div class="progress-head"><span>yutori-0.3.0.apk</span><span class="pct">62%</span></div>
+          <div class="progress-bar"><div class="fill"></div></div>
+        </div>
+        <div class="actions">
+          <button class="btn ghost">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- A3 — error -->
+  <div class="frame"><span class="label">A3 · download failed</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="dash-bg">
+      <div class="top"><span>Yutori</span><span style="opacity:0.5">⋮</span></div>
+      <div class="hero"></div>
+      <div class="chip-row"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="title">Yutori 0.3.0</div>
+        <div class="subtitle"><span class="from">Current 0.2.0</span> → <span class="to">New 0.3.0</span></div>
+        <div class="error-wrap">
+          <div class="heading">Download interrupted</div>
+          Check your connection and try again. If the problem persists, download the APK directly from GitHub Releases.
+        </div>
+        <div class="actions">
+          <button class="btn ghost">Dismiss</button>
+          <button class="btn primary">Retry</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<h2>B · AlertDialog alternative (centre-stage)</h2>
+<p class="blurb">
+  Standard Material <code>AlertDialog</code> — cheaper to wire (one Compose primitive, no ModalBottomSheet
+  state) and visually consistent with Android's own system confirmation UI that fires right after
+  "Download &amp; install" anyway. Trade-off: cramped for long release notes; the markdown area scrolls but
+  it's a smaller window than a sheet.
+</p>
+
+<div class="row-wrap">
+  <div class="frame"><span class="label">B1 · update available</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="dash-bg">
+      <div class="top"><span>Yutori</span><span style="opacity:0.5">⋮</span></div>
+      <div class="hero"></div>
+      <div class="chip-row"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="alert-wrap">
+        <div class="alert">
+          <div class="title">Yutori 0.3.0</div>
+          <div class="subtitle">Current 0.2.0 → New 0.3.0</div>
+          <div class="md">
+            <h4>Added</h4>
+            <ul>
+              <li>Pacing tint on Daily-burn pill</li>
+              <li>Mid-month overshoot projection</li>
+            </ul>
+            <h4>Fixed</h4>
+            <ul>
+              <li>Scrolling jank on large tx lists</li>
+            </ul>
+          </div>
+          <div class="actions">
+            <button class="btn ghost">Later</button>
+            <button class="btn primary">Update</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame"><span class="label">B2 · downloading</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="dash-bg">
+      <div class="top"><span>Yutori</span><span style="opacity:0.5">⋮</span></div>
+      <div class="hero"></div>
+      <div class="chip-row"><div class="chip"></div><div class="chip"></div><div class="chip"></div></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="tx"></div>
+      <div class="alert-wrap">
+        <div class="alert">
+          <div class="title">Downloading 0.3.0</div>
+          <div class="subtitle">12.4 MB of 20.0 MB</div>
+          <div style="background: var(--surface); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--divider); margin-bottom: 16px;">
+            <div style="display:flex; justify-content:space-between; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--on-muted); margin-bottom: 6px;"><span>yutori-0.3.0.apk</span><span style="color: var(--on)">62%</span></div>
+            <div style="height:5px; background: var(--surface-el3); border-radius:999px; overflow:hidden;"><div style="height:100%; width:62%; background: var(--info); border-radius:999px;"></div></div>
+          </div>
+          <div class="actions">
+            <button class="btn ghost">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="note">
+  <strong>Leaning toward A (bottom sheet).</strong> The release body can grow long once
+  git-cliff starts formatting commit groups; the sheet's larger max-height reads better. AlertDialog wins
+  only on code simplicity, and we pay that cost once.
+</p>
+
+<hr>
+
+<h2>C · Settings → App updates</h2>
+<p class="blurb">
+  New section in <code>SettingsScreen</code>, placed before "About" (which doesn't exist yet — #66 is
+  tier-5, so effectively: at the bottom of the screen). States below: up-to-date, update available,
+  checking, error (token expired / offline), first-install (never checked).
+</p>
+
+<div class="row-wrap">
+  <!-- C1 — up to date -->
+  <div class="frame"><span class="label">C1 · up to date</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="settings">
+      <div class="appbar"><span class="back">←</span><span>Settings</span></div>
+      <div class="section-header">App updates</div>
+      <div class="card">
+        <div class="item"><span class="k">Current version</span><span class="v">0.3.0</span></div>
+        <div class="item"><span class="k">Status</span><span class="v uptodate">Up to date</span></div>
+        <div class="item"><span class="k">Check on app open</span><span class="toggle on"></span></div>
+      </div>
+      <div class="check-now"><button class="btn">Check now</button></div>
+    </div>
+  </div>
+
+  <!-- C2 — update available -->
+  <div class="frame"><span class="label">C2 · update available</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="settings">
+      <div class="appbar"><span class="back">←</span><span>Settings</span></div>
+      <div class="section-header">App updates</div>
+      <div class="card">
+        <div class="item"><span class="k">Current version</span><span class="v">0.2.0</span></div>
+        <div class="item" style="background: rgba(245,181,71,0.06);"><span class="k">Status</span><span class="v avail">Update available: 0.3.0 ›</span></div>
+        <div class="item"><span class="k">Check on app open</span><span class="toggle on"></span></div>
+      </div>
+      <div class="check-now"><button class="btn">Check now</button></div>
+    </div>
+    <p class="note" style="padding: 0 18px 14px; margin: 0;">Tapping "Status" row opens the same sheet as A1.</p>
+  </div>
+
+  <!-- C3 — checking -->
+  <div class="frame"><span class="label">C3 · checking now</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="settings">
+      <div class="appbar"><span class="back">←</span><span>Settings</span></div>
+      <div class="section-header">App updates</div>
+      <div class="card">
+        <div class="item"><span class="k">Current version</span><span class="v">0.3.0</span></div>
+        <div class="item"><span class="k">Status</span><span class="v checking">Checking…</span></div>
+        <div class="item"><span class="k">Check on app open</span><span class="toggle on"></span></div>
+      </div>
+      <div class="check-now"><button class="btn disabled">Checking…</button></div>
+    </div>
+  </div>
+
+  <!-- C4 — error (token expired) -->
+  <div class="frame"><span class="label">C4 · updater offline</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="settings">
+      <div class="appbar"><span class="back">←</span><span>Settings</span></div>
+      <div class="section-header">App updates</div>
+      <div class="card">
+        <div class="item"><span class="k">Current version</span><span class="v">0.3.0</span></div>
+        <div class="item"><span class="k">Status</span><span class="v error">Updater offline</span></div>
+        <div class="item"><span class="k">Check on app open</span><span class="toggle on"></span></div>
+      </div>
+      <div class="check-now"><button class="btn">Try again</button></div>
+    </div>
+    <p class="note" style="padding: 0 18px 14px; margin: 0;">Token expired / 401 — per spec §6.5.</p>
+  </div>
+
+  <!-- C5 — toggle off -->
+  <div class="frame"><span class="label">C5 · auto-check disabled</span>
+    <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+    <div class="settings">
+      <div class="appbar"><span class="back">←</span><span>Settings</span></div>
+      <div class="section-header">App updates</div>
+      <div class="card">
+        <div class="item"><span class="k">Current version</span><span class="v">0.3.0</span></div>
+        <div class="item"><span class="k">Status</span><span class="v">Not checked yet</span></div>
+        <div class="item"><span class="k">Check on app open</span><span class="toggle"></span></div>
+      </div>
+      <div class="check-now"><button class="btn">Check now</button></div>
+    </div>
+    <p class="note" style="padding: 0 18px 14px; margin: 0;">Manual <i>Check now</i> always works.</p>
+  </div>
+</div>
+
+<hr>
+
+<h2>Open questions for approval</h2>
+<p class="blurb">
+  1. <b>Dialog shape</b> — sheet (A) or AlertDialog (B)?<br>
+  2. <b>Status-line wording</b> — "Update available: 0.3.0 ›" vs "New version: 0.3.0" vs "Yutori 0.3.0 ready"?<br>
+  3. <b>"Check now" placement</b> — filled button below the card (mocked), or a trailing "↻" icon on the
+     Status row itself? The button is more discoverable but takes an extra touch target.<br>
+  4. <b>Error state CTA</b> — "Try again" (mocked) or just "Check now" with the error string above? Spec §6.5
+     says "check logs" which is opaque for a user.
+</p>
+
+<p class="note">
+  <strong>Third surface, not mocked:</strong> spec §7.3 adds a single line to the existing restricted-settings
+  first-run screen (<code>v6-restricted-settings.html</code>): <i>"Once Yutori is installed, future updates arrive
+  as an in-app prompt and install without another Play Protect warning."</i> — inline copy only, no layout change.
+</p>
+
+</body>
+</html>
