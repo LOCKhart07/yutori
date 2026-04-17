@@ -92,6 +92,7 @@ private sealed interface Screen {
     data class AccountEdit(val accountId: Long?) : Screen       // null = new
     data object RecipientRules : Screen
     data object AlertSettings : Screen
+    data object SendFeedback : Screen
 }
 
 @Composable
@@ -342,11 +343,19 @@ private fun AppContent() {
                 onAccounts = { goTo(Screen.Accounts) },
                 onRecipientRules = { goTo(Screen.RecipientRules) },
                 onAlertSettings = { goTo(Screen.AlertSettings) },
+                onSendFeedback = { goTo(Screen.SendFeedback) },
                 accountSuggestionCount = suggestedCount,
                 updateState = updateState,
                 onCheckForUpdates = { app.updateViewModel.onCheckNow() },
                 onToggleCheckOnOpen = { app.updateViewModel.onToggleCheckOnOpen(it) },
                 onOpenUpdateDialog = { app.updateViewModel.onOpenDialog() },
+            )
+        }
+
+        is Screen.SendFeedback -> {
+            com.yutori.ui.feedback.SendFeedbackScreen(
+                vm = app.feedbackViewModel,
+                onClose = { goBack() },
             )
         }
 

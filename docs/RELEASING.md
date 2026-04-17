@@ -93,40 +93,49 @@ signingConfig. The APK is installable via side-load, but:
 The workflow emits a GitHub Actions warning on every debug-signed
 release so you can't miss it.
 
-## Autoupdater PAT (private repo only)
+## Embedded PATs (private repo only)
 
-While `LOCKhart07/yutori` is private, the in-app autoupdater can't call
-the GitHub Releases API anonymously — GitHub 404s private-repo reads,
-and the app surfaces that as "Updater offline." The workflow bakes a
-fine-grained PAT into the APK so installed builds can read releases.
+Two app features call the GitHub API from the installed APK:
 
-Repo secret:
+| Feature | Endpoint | Reason the PAT is needed |
+| --- | --- | --- |
+| Autoupdater | `GET /repos/{owner}/{repo}/releases/latest` | GitHub 404s anonymous reads on private repos — without auth the app surfaces "Updater offline." |
+| Send feedback (#113) | `POST /repos/{owner}/{repo}/issues` | Anonymous users can't create issues on a private repo; the app would have no way to submit. |
 
-| Secret | Contents |
-| --- | --- |
-| `RELEASES_TOKEN` | fine-grained PAT, scoped to `LOCKhart07/yutori`, *Contents: Read* |
+Two separate fine-grained PATs — so a leak of one doesn't implicate
+the other and rotation cost stays narrow:
 
-The secret is named `RELEASES_TOKEN` — GH rejects any secret name
-starting with `GITHUB_`. The Gradle build still reads env var
-`GITHUB_RELEASES_TOKEN` into `BuildConfig.GITHUB_RELEASES_TOKEN`; the
-workflow maps `secrets.RELEASES_TOKEN` onto that env var.
+| Secret | Permission | BuildConfig field |
+| --- | --- | --- |
+| `RELEASES_TOKEN` | Contents: Read | `GITHUB_RELEASES_TOKEN` |
+| `ISSUES_TOKEN`   | Issues: Write  | `GITHUB_ISSUES_TOKEN` |
 
-Token setup:
+Secrets are named without the `GITHUB_` prefix because GH rejects
+that prefix on secret names. The workflow maps `secrets.RELEASES_TOKEN`
+and `secrets.ISSUES_TOKEN` onto env vars `GITHUB_RELEASES_TOKEN` and
+`GITHUB_ISSUES_TOKEN`, which Gradle reads into the matching
+`BuildConfig` fields.
+
+Token setup (per token):
 1. github.com → Settings → Developer settings → Personal access tokens
    → Fine-grained tokens → Generate new token.
 2. Resource owner: `LOCKhart07`. Repository access: only
-   `LOCKhart07/yutori`. Repository permissions: **Contents — Read**.
+   `LOCKhart07/yutori`. Repository permissions as per the table above.
    Expiry: 1 year.
-3. Copy the token, add it as repo secret `RELEASES_TOKEN`.
+3. Copy the token, add as the matching repo secret.
 
-When the token expires, "Updater offline" will return for any APK
-built against the stale PAT. Rotate by creating a new PAT and
-overwriting the secret; the next release embeds the fresh one. APKs
-already on users' phones keep the old token until they're replaced.
+When a token expires, the corresponding feature breaks quietly —
+the autoupdater flips back to "Updater offline", Send feedback fails
+with an error snackbar. Rotate by creating a new PAT and overwriting
+the secret; the next release embeds the fresh one. APKs already on
+users' phones keep the old token until they're replaced.
 
-Remove this whole section (and the corresponding `buildConfigField`
+Remove this section (and the corresponding `buildConfigField` entries
 in `android/app/build.gradle.kts`) when the repo goes public — see
-autoupdater-spec §11.2 and issue #71(a).
+autoupdater-spec §11.2 and issue #71(a). Once public, the autoupdater
+calls become anonymous and the Send feedback flow can either stay
+authenticated (better rate-limit headroom) or switch to an
+`Intent.ACTION_VIEW` on `https://github.com/.../issues/new?...`.
 
 ## Generating a keystore
 

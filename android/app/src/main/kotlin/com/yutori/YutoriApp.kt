@@ -74,6 +74,14 @@ class YutoriApp : Application() {
         )[UpdateViewModel::class.java]
     }
 
+    val feedbackViewModel: com.yutori.feedback.FeedbackViewModel by lazy {
+        val reporter = com.yutori.feedback.FeedbackModule.createReporter()
+        ViewModelProvider(
+            appViewModelStore,
+            com.yutori.feedback.FeedbackViewModel.Factory(reporter),
+        )[com.yutori.feedback.FeedbackViewModel::class.java]
+    }
+
     override fun onCreate() {
         super.onCreate()
 

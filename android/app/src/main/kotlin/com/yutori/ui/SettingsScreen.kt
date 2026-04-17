@@ -42,6 +42,7 @@ fun SettingsScreen(
     onAccounts: () -> Unit,
     onRecipientRules: () -> Unit,
     onAlertSettings: () -> Unit = {},
+    onSendFeedback: () -> Unit = {},
     accountSuggestionCount: Int = 0,
     updateState: UpdateScreenState? = null,
     onCheckForUpdates: () -> Unit = {},
@@ -125,6 +126,15 @@ fun SettingsScreen(
                     onToggleCheckOnOpen = onToggleCheckOnOpen,
                     onCheckNow = onCheckForUpdates,
                     onOpenDialog = onOpenUpdateDialog,
+                )
+            }
+
+            SettingsSection(title = "Feedback") {
+                SettingsItem(
+                    title = "Send feedback",
+                    subtitle = "Report a bug or suggest an improvement — " +
+                        "filed as a GitHub issue on yutori.",
+                    onClick = onSendFeedback,
                 )
             }
 

@@ -83,6 +83,17 @@ android {
             .orElse(providers.environmentVariable("GITHUB_RELEASES_TOKEN"))
             .orNull.orEmpty()
         buildConfigField("String", "GITHUB_RELEASES_TOKEN", "\"$releasesToken\"")
+
+        // Fine-grained PAT for the in-app "Send feedback" flow — POSTs
+        // user-typed bug reports to the Issues API on this repo. Scoped
+        // Issues:Write. Separate from releasesToken so a leak of one
+        // doesn't implicate the other. Empty default keeps local dev
+        // builds compiling; the UI gracefully disables Send in that case.
+        // See #113, docs/RELEASING.md.
+        val issuesToken: String = providers.gradleProperty("GITHUB_ISSUES_TOKEN")
+            .orElse(providers.environmentVariable("GITHUB_ISSUES_TOKEN"))
+            .orNull.orEmpty()
+        buildConfigField("String", "GITHUB_ISSUES_TOKEN", "\"$issuesToken\"")
     }
 
     // Release signing config.

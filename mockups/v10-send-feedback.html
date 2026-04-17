@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v10 mockup: Settings → Send feedback (#113)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --surface-el3:   #242428;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --accent:        #F5B547;
+    --info:          #7BA9D1;
+    --positive:      #7FB77E;
+    --warn:          #E0A260;
+    --negative:      #E27A7A;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 56px 32px 80px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 52px 0 14px; font-size: 17px; color: #C9CACD; }
+  h3 { font-weight: 500; margin: 24px 0 8px; font-size: 11px; color: var(--on-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+  .blurb { color: #8A8E96; max-width: 880px; margin: 0 0 22px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: var(--on-muted); font-size: 12px; max-width: 640px; margin: 10px 0 0; line-height: 1.55; }
+  .note strong { color: #C9CACD; }
+  hr { border: 0; border-top: 1px solid var(--divider); margin: 44px 0; }
+
+  .row-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 36px 28px;
+    max-width: 1400px;
+    padding-top: 10px;
+  }
+
+  .frame {
+    width: 300px;
+    border-radius: 28px;
+    background: var(--surface);
+    color: var(--on);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 24px 48px -16px rgba(0,0,0,0.6);
+  }
+  .frame .label {
+    position: absolute;
+    top: -22px;
+    left: 4px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8A8E96;
+    font-weight: 500;
+  }
+  .statusbar {
+    height: 26px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 18px 4px;
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
+  /* ─── Settings screen ─── */
+  .settings {
+    min-height: 520px;
+    padding: 10px 16px 20px;
+  }
+  .settings .appbar {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 16px; font-weight: 600;
+    padding: 6px 4px 18px;
+  }
+  .settings .appbar .back { color: var(--on-muted); font-size: 20px; }
+  .settings .section-header {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint);
+    margin: 18px 6px 8px;
+  }
+  .settings .card {
+    background: var(--surface-el);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .settings .item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--divider);
+    cursor: pointer;
+  }
+  .settings .item:last-child { border-bottom: none; }
+  .settings .item .k { color: var(--on); }
+  .settings .item .k .sub {
+    display: block;
+    color: var(--on-muted);
+    font-size: 11px;
+    margin-top: 2px;
+  }
+  .settings .item .v {
+    color: var(--on-faint);
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+  }
+  .settings .item.highlight {
+    outline: 1px dashed rgba(123,169,209,0.35);
+    outline-offset: -2px;
+    border-radius: 10px;
+  }
+
+  /* ─── Compose sheet (full-screen modal) ─── */
+  .compose {
+    min-height: 520px;
+    display: flex; flex-direction: column;
+    background: var(--surface);
+  }
+  .compose .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px 10px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .compose .topbar .close {
+    color: var(--on-muted); font-size: 20px;
+    padding: 2px 6px; cursor: pointer;
+  }
+  .compose .topbar .title { font-weight: 600; font-size: 14px; }
+  .compose .topbar .send {
+    font-weight: 600;
+    color: var(--accent);
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+  .compose .topbar .send.disabled { color: var(--on-faint); cursor: not-allowed; }
+
+  .compose .body {
+    flex: 1;
+    padding: 14px 16px;
+    display: flex; flex-direction: column;
+    gap: 12px;
+  }
+  .compose .field {
+    display: flex; flex-direction: column;
+    gap: 4px;
+  }
+  .compose .field .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--on-faint);
+    font-weight: 600;
+  }
+  .compose .field input,
+  .compose .field textarea {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--on);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--divider);
+    resize: none;
+    width: 100%;
+  }
+  .compose .field.focus input,
+  .compose .field.focus textarea {
+    border-bottom: 1px solid var(--info);
+  }
+  .compose .field textarea {
+    min-height: 120px;
+    line-height: 1.5;
+  }
+  .compose .field .placeholder {
+    color: var(--on-faint);
+  }
+  .compose .context-block {
+    background: var(--surface-el);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--on-muted);
+    line-height: 1.6;
+  }
+  .compose .context-block .heading {
+    font-family: 'Inter', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 10px;
+    color: var(--on-faint);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .compose .context-block .heading .auto {
+    color: var(--on-faint);
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    font-size: 10px;
+    margin-left: 6px;
+  }
+
+  /* Keyboard fake */
+  .keyboard {
+    height: 160px;
+    background: #1a1a1d;
+    border-top: 1px solid var(--divider);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--on-faint);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* ─── Snackbar ─── */
+  .snackbar {
+    position: absolute;
+    left: 12px; right: 12px; bottom: 16px;
+    background: var(--surface-el3);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+  }
+  .snackbar .msg { color: var(--on); }
+  .snackbar .action { color: var(--info); font-weight: 600; cursor: pointer; }
+  .snackbar.error { border-color: rgba(226,122,122,0.3); }
+  .snackbar.error .msg { color: var(--negative); }
+
+  .legend {
+    background: rgba(123,169,209,0.07);
+    border: 1px solid rgba(123,169,209,0.2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #A8C3DC;
+    font-size: 12px;
+    max-width: 880px;
+    margin: 10px 0 20px;
+    line-height: 1.55;
+  }
+  .legend strong { color: #D3E1EE; }
+</style>
+</head>
+<body>
+
+<h1>v10 · Settings → Send feedback (#113)</h1>
+<p class="blurb">
+  In-app quick-capture of bugs and improvement ideas. Today's scope is <strong>single-installer self-service</strong> —
+  you tap, type, send, and the app POSTs to <code>/repos/LOCKhart07/yutori/issues</code> via a fine-grained
+  PAT baked into the APK (secret <code>ISSUES_TOKEN</code>, mirroring the autoupdater's
+  <code>RELEASES_TOKEN</code> pattern).
+</p>
+
+<div class="legend">
+  <strong>Scope note:</strong> Four frames below cover Settings entry, compose (filled + focused), success snackbar with
+  issue URL, and an error snackbar with retry. Empty-state compose (blank fields, <i>Send</i> disabled) isn't
+  drawn — the only difference is the Send action goes grey until the title field is non-empty.
+</div>
+
+<h2>A · Settings → new row</h2>
+<p class="blurb">
+  Lives under a <b>Feedback</b> section header. Placed above the existing App updates section so it's
+  findable without scrolling. Tapping opens the compose sheet (frame B).
+</p>
+<div class="row-wrap">
+  <div class="frame">
+    <div class="label">A · Settings</div>
+    <div class="statusbar"><span>9:41</span><span>100%</span></div>
+    <div class="settings">
+      <div class="appbar"><span class="back">←</span><span>Settings</span></div>
+
+      <div class="section-header">Feedback</div>
+      <div class="card">
+        <div class="item highlight">
+          <div class="k">
+            Send feedback
+            <span class="sub">Report a bug or suggest an improvement</span>
+          </div>
+          <div class="v">›</div>
+        </div>
+      </div>
+
+      <div class="section-header">App updates</div>
+      <div class="card">
+        <div class="item">
+          <div class="k">Auto-check on launch</div>
+          <div class="v" style="color:var(--info)">●</div>
+        </div>
+        <div class="item">
+          <div class="k">Latest version</div>
+          <div class="v" style="color:var(--positive);font-size:12px">Up to date</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>B · Compose — filled, description field focused, keyboard up</h2>
+<p class="blurb">
+  Full-screen modal (not a bottom sheet — two fields plus a keyboard need the real estate). Top bar has
+  <i>Close</i> ← on the left, screen title in the middle, <b>Send</b> on the right (accent amber when the title
+  is non-empty, faint grey when empty). A context preview at the bottom shows what will be auto-appended — read-only,
+  no edit affordance, so the user knows what's being sent but can't tamper.
+</p>
+<div class="row-wrap">
+  <div class="frame">
+    <div class="label">B · Compose sheet</div>
+    <div class="statusbar"><span>9:41</span><span>100%</span></div>
+    <div class="compose">
+      <div class="topbar">
+        <div class="close">✕</div>
+        <div class="title">Send feedback</div>
+        <div class="send">Send</div>
+      </div>
+      <div class="body">
+        <div class="field">
+          <div class="label">Title</div>
+          <input value="Dashboard pager sometimes eats a vertical scroll" />
+        </div>
+        <div class="field focus">
+          <div class="label">Description</div>
+          <textarea>Happens when I flick up quickly just after swiping horizontally — the next scroll gesture doesn't register until I lift and tap.</textarea>
+        </div>
+
+        <div class="context-block">
+          <div class="heading">Included automatically <span class="auto">(no personal data)</span></div>
+          App:&nbsp;&nbsp;&nbsp;&nbsp;0.5.1 (52) · commit 0b817f8<br/>
+          Android: 14 (API 34), en-IN<br/>
+          Device:&nbsp;&nbsp;Pixel 7 (google/panther)
+        </div>
+      </div>
+      <div class="keyboard">keyboard</div>
+    </div>
+  </div>
+</div>
+
+<h2>C · After send — success snackbar with link</h2>
+<p class="blurb">
+  Sheet dismisses. Snackbar appears over Settings (or wherever the user was before opening the sheet) with
+  the issue number and a tap-to-open action. Auto-dismisses after ~4s; tapping the link opens the issue in a
+  Chrome Custom Tab.
+</p>
+<div class="row-wrap">
+  <div class="frame">
+    <div class="label">C · After send</div>
+    <div class="statusbar"><span>9:41</span><span>100%</span></div>
+    <div class="settings">
+      <div class="appbar"><span class="back">←</span><span>Settings</span></div>
+
+      <div class="section-header">Feedback</div>
+      <div class="card">
+        <div class="item">
+          <div class="k">
+            Send feedback
+            <span class="sub">Report a bug or suggest an improvement</span>
+          </div>
+          <div class="v">›</div>
+        </div>
+      </div>
+
+      <div class="section-header">App updates</div>
+      <div class="card">
+        <div class="item">
+          <div class="k">Auto-check on launch</div>
+          <div class="v" style="color:var(--info)">●</div>
+        </div>
+        <div class="item">
+          <div class="k">Latest version</div>
+          <div class="v" style="color:var(--positive);font-size:12px">Up to date</div>
+        </div>
+      </div>
+
+      <div class="snackbar">
+        <span class="msg">Sent · issue #114 opened</span>
+        <span class="action">View</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>D · Error — network/API failure, compose sheet stays open</h2>
+<p class="blurb">
+  On failure the sheet does <b>not</b> dismiss — the user's typed content stays in the fields so nothing is
+  lost. An error snackbar appears above the keyboard with a Retry action. The description keeps its focus.
+</p>
+<div class="row-wrap">
+  <div class="frame">
+    <div class="label">D · Send failed</div>
+    <div class="statusbar"><span>9:41</span><span>100%</span></div>
+    <div class="compose">
+      <div class="topbar">
+        <div class="close">✕</div>
+        <div class="title">Send feedback</div>
+        <div class="send">Send</div>
+      </div>
+      <div class="body">
+        <div class="field">
+          <div class="label">Title</div>
+          <input value="Dashboard pager sometimes eats a vertical scroll" />
+        </div>
+        <div class="field focus">
+          <div class="label">Description</div>
+          <textarea>Happens when I flick up quickly just after swiping horizontally — the next scroll gesture doesn't register until I lift and tap.</textarea>
+        </div>
+
+        <div class="context-block">
+          <div class="heading">Included automatically <span class="auto">(no personal data)</span></div>
+          App:&nbsp;&nbsp;&nbsp;&nbsp;0.5.1 (52) · commit 0b817f8<br/>
+          Android: 14 (API 34), en-IN<br/>
+          Device:&nbsp;&nbsp;Pixel 7 (google/panther)
+        </div>
+
+        <div class="snackbar error">
+          <span class="msg">Couldn't send. Check connection.</span>
+          <span class="action">Retry</span>
+        </div>
+      </div>
+      <div class="keyboard">keyboard</div>
+    </div>
+  </div>
+</div>
+
+<hr />
+
+<h2>Open decisions I want to hear on before coding</h2>
+<ul class="blurb" style="padding-left:20px;margin:0 0 30px;">
+  <li><b>Copy for the Settings row subtitle.</b> Mockup shows "Report a bug or suggest an improvement." Alternatives:
+    "Bugs &amp; ideas," "Contact the developer," "Help me improve Yutori."</li>
+  <li><b>Full-screen modal vs bottom sheet.</b> Drawn as full-screen because the description field wants vertical
+    space alongside the keyboard. Bottom sheet feels lighter for "just a quick note." Either works in Compose — happy
+    to switch if you prefer.</li>
+  <li><b>Context block — show or hide by default.</b> Currently shown inline as a monospace card so you know what's
+    attached. Alternative: collapse behind a "Show details" disclosure like the migration error screen.</li>
+  <li><b>Snackbar action label.</b> Drawn as "View" (tap opens issue in Custom Tab). Alternatives: "Open" or
+    just "#114" as the tappable target.</li>
+</ul>
+
+</body>
+</html>
