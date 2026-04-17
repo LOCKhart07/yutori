@@ -57,6 +57,16 @@ android {
         buildConfigField("String", "COMMIT_COUNT", "\"$commitCount\"")
         buildConfigField("String", "BUILD_TIME", "\"${Instant.now()}\"")
         buildConfigField("boolean", "IS_RELEASE_TAG", isReleaseTag.toString())
+
+        // Fine-grained PAT for the in-app autoupdater's Releases API calls
+        // while `LOCKhart07/spendwise` is still a private repo. Empty by
+        // default — unauthenticated builds still compile and the
+        // interceptor no-ops. See plans/autoupdater-spec.md §6 and
+        // docs/RELEASING.md. Remove at #71(a) when the repo goes public.
+        val releasesToken: String = providers.gradleProperty("GITHUB_RELEASES_TOKEN")
+            .orElse(providers.environmentVariable("GITHUB_RELEASES_TOKEN"))
+            .orNull.orEmpty()
+        buildConfigField("String", "GITHUB_RELEASES_TOKEN", "\"$releasesToken\"")
     }
 
     // Release signing config.
@@ -202,6 +212,10 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
 
+    // In-app autoupdater networking. OkHttp only in this commit; Retrofit
+    // + Moshi join in the next commit when UpdateRepository lands.
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     // Vintage bridges the JUnit 4 Robolectric tests under debug. Kept
@@ -215,6 +229,7 @@ dependencies {
     // is the standard way to exercise JSONObject/JSONArray in :app
     // unit tests without Robolectric.
     testImplementation("org.json:json:20240303")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 
     // Robolectric-backed Compose UI tests — run on JVM, no emulator.
     // Avoids Espresso's API-37 incompatibility (InputManager.getInstance
