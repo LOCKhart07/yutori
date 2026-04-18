@@ -99,6 +99,12 @@ class FakeTransactionDao : TransactionDao {
     }
     override suspend fun delete(row: TransactionEntity) { all.removeIf { it.id == row.id } }
     override suspend fun getById(id: Long): TransactionEntity? = all.firstOrNull { it.id == id }
+    override suspend fun updateNote(id: Long, note: String?): Int {
+        val idx = all.indexOfFirst { it.id == id }
+        if (idx < 0) return 0
+        all[idx] = all[idx].copy(notes = note)
+        return 1
+    }
 
     override fun observeByMonth(monthKey: String) = flowOf(
         all.filter { it.monthKey == monthKey }.sortedByDescending { it.occurredAtMs }

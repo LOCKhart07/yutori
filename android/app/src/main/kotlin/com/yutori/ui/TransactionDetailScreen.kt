@@ -1,6 +1,7 @@
 package com.yutori.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -19,19 +21,29 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.yutori.database.dao.SmsLogDao
 import com.yutori.database.dao.TransactionDao
@@ -41,6 +53,7 @@ import com.yutori.database.entities.TransactionEntity
 import com.yutori.database.entities.TransactionSourceEntity
 import com.yutori.ui.theme.YutoriTextStyles
 import com.yutori.ui.theme.YutoriTheme
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -65,12 +78,17 @@ fun TransactionDetailScreen(
     smsLogDao: SmsLogDao,
     onBack: () -> Unit,
 ) {
-    val details: Details? by produceState<Details?>(null, transactionId) {
+    // Bumped after a mutation (e.g. notes edited) so produceState
+    // re-reads the row without flickering back to the loading state —
+    // produceState keeps its previous value until the block emits.
+    var refreshTick by remember { mutableIntStateOf(0) }
+    val details: Details? by produceState<Details?>(null, transactionId, refreshTick) {
         val tx = transactionDao.getById(transactionId) ?: return@produceState
         val sources = sourceDao.findByTransactionId(transactionId)
         val withBodies = sources.map { src -> src to smsLogDao.getById(src.smsLogId) }
         value = Details(tx, withBodies)
     }
+    val scope = rememberCoroutineScope()
 
     // Branch at the top with `when` — no early returns. The Compose
     // compiler wraps each branch in its own group, so the group count
@@ -81,7 +99,16 @@ fun TransactionDetailScreen(
     ) {
         when (val d = details) {
             null -> LoadingView(onBack = onBack)
-            else -> ReadyView(details = d, onBack = onBack)
+            else -> ReadyView(
+                details = d,
+                onBack = onBack,
+                onSaveNote = { newNote ->
+                    scope.launch {
+                        transactionDao.updateNote(d.tx.id, newNote)
+                        refreshTick++
+                    }
+                },
+            )
         }
     }
 }
@@ -101,7 +128,13 @@ private fun LoadingView(onBack: () -> Unit) {
 }
 
 @Composable
-private fun ReadyView(details: Details, onBack: () -> Unit) {
+private fun ReadyView(
+    details: Details,
+    onBack: () -> Unit,
+    onSaveNote: (String?) -> Unit,
+) {
+    var editingNote by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -122,12 +155,32 @@ private fun ReadyView(details: Details, onBack: () -> Unit) {
             Hero(details.tx)
             Spacer(Modifier.height(24.dp))
             MetaSection(details.tx)
+            if (!details.tx.notes.isNullOrBlank()) {
+                Spacer(Modifier.height(14.dp))
+                NotesCard(note = details.tx.notes!!, onEdit = { editingNote = true })
+            }
+            Spacer(Modifier.height(16.dp))
+            ActionRow(
+                hasNote = !details.tx.notes.isNullOrBlank(),
+                onEditNote = { editingNote = true },
+            )
             Spacer(Modifier.height(24.dp))
             if (details.sources.isNotEmpty()) {
                 SourcesSection(details.sources)
                 Spacer(Modifier.height(32.dp))
             }
         }
+    }
+
+    if (editingNote) {
+        EditNoteSheet(
+            initialNote = details.tx.notes,
+            onDismiss = { editingNote = false },
+            onSave = { newNote ->
+                onSaveNote(newNote)
+                editingNote = false
+            },
+        )
     }
 }
 
@@ -303,7 +356,6 @@ private fun MetaSection(tx: TransactionEntity) {
             )
         }
         if (tx.manuallyAdjusted) MetaRow("Manually adjusted", "Yes")
-        tx.notes?.let { MetaRow("Notes", it) }
     }
 }
 
@@ -325,6 +377,239 @@ private fun MetaRow(label: String, value: String, mono: Boolean = false) {
             text = value,
             style = if (mono) YutoriTextStyles.Mono.copy(fontWeight = FontWeight.Normal) else MaterialTheme.typography.bodyMedium,
         )
+    }
+}
+
+// ───────────────────────── Notes + actions ─────────────────────────
+
+/**
+ * Full-width card hosting the free-text note for a transaction.
+ * Rendered only when the note is non-blank; empty state is handled
+ * by the action row below.
+ */
+@Composable
+private fun NotesCard(note: String, onEdit: () -> Unit) {
+    val colors = YutoriTheme.colors
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceElevated,
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.divider),
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "NOTE",
+                    style = YutoriTextStyles.Caps,
+                    color = colors.onFaint,
+                )
+                Text(
+                    text = "Edit",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable(onClick = onEdit)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = note,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+/**
+ * Forward-looking action row. v1 wires only the note button.
+ * The Ignore and Add-rule slots are rendered disabled so the layout
+ * doesn't shift when #27-part-2 and #29 land.
+ */
+@Composable
+private fun ActionRow(hasNote: Boolean, onEditNote: () -> Unit) {
+    Column {
+        HorizontalDivider(color = YutoriTheme.colors.divider)
+        Spacer(Modifier.height(14.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ActionButton(
+                label = if (hasNote) "Edit note" else "Add note",
+                onClick = onEditNote,
+                enabled = true,
+                modifier = Modifier.weight(1f),
+            )
+            ActionButton(
+                label = "Ignore",
+                onClick = { },
+                enabled = false,
+                modifier = Modifier.weight(1f),
+            )
+            ActionButton(
+                label = "Add rule",
+                onClick = { },
+                enabled = false,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionButton(
+    label: String,
+    onClick: () -> Unit,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val colors = YutoriTheme.colors
+    val bg = if (enabled) colors.surfaceElevated else Color.Transparent
+    val fg = if (enabled) MaterialTheme.colorScheme.onSurface else colors.onFaint
+    Surface(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(enabled = enabled, onClick = onClick),
+        color = bg,
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.divider),
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 8.dp),
+            style = MaterialTheme.typography.labelLarge.copy(
+                fontWeight = FontWeight.Medium,
+            ),
+            color = fg,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+internal const val NOTE_MAX_LEN = 500
+
+/**
+ * Pure decision logic for the EditNoteSheet — split out so it's
+ * unit-testable without spinning up Compose. Save is gated on:
+ *  - respecting [NOTE_MAX_LEN] (by raw character count, so trimming
+ *    whitespace can't smuggle a too-long note past the cap), and
+ *  - having actually changed the note (trim-equivalence with the
+ *    initial value, so a user typing and re-deleting a character
+ *    can't save a no-op).
+ */
+internal fun noteSaveEnabled(text: String, initial: String?): Boolean {
+    if (text.length > NOTE_MAX_LEN) return false
+    return text.trim() != initial.orEmpty().trim()
+}
+
+/** Value to persist — blank → null so cleared notes don't linger as "". */
+internal fun noteSavePayload(text: String): String? =
+    text.trim().ifBlank { null }
+
+/**
+ * Modal bottom sheet wrapping a multi-line note editor. Saves
+ * blank → null so cleared notes don't linger as empty strings.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditNoteSheet(
+    initialNote: String?,
+    onDismiss: () -> Unit,
+    onSave: (String?) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var text by remember { mutableStateOf(initialNote.orEmpty()) }
+    val overLimit = text.length > NOTE_MAX_LEN
+    val saveEnabled = noteSaveEnabled(text, initialNote)
+    val colors = YutoriTheme.colors
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = colors.surfaceElevated,
+        dragHandle = null,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .imePadding()
+                .padding(horizontal = 20.dp)
+                .padding(top = 8.dp, bottom = 20.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .size(width = 36.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(colors.divider),
+            )
+            Spacer(Modifier.height(14.dp))
+            Text(
+                text = if (initialNote.isNullOrBlank()) "Add note" else "Edit note",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
+            )
+            Spacer(Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                placeholder = {
+                    Text(
+                        text = "e.g. \"dentist\", \"birthday gift\"",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.onFaint,
+                    )
+                },
+                textStyle = MaterialTheme.typography.bodyMedium,
+                minLines = 3,
+                maxLines = 6,
+                isError = overLimit,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = colors.divider,
+                    errorBorderColor = colors.negative,
+                    focusedContainerColor = colors.surfaceElevated2,
+                    unfocusedContainerColor = colors.surfaceElevated2,
+                    errorContainerColor = colors.surfaceElevated2,
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                ),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "${text.length} / $NOTE_MAX_LEN",
+                style = YutoriTextStyles.MonoSmall,
+                color = if (overLimit) colors.negative else colors.onFaint,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 4.dp),
+                textAlign = TextAlign.End,
+            )
+            Spacer(Modifier.height(18.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                SecondaryButton(
+                    text = "Cancel",
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                )
+                PrimaryActionButton(
+                    text = "Save",
+                    enabled = saveEnabled,
+                    onClick = { onSave(noteSavePayload(text)) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
     }
 }
 

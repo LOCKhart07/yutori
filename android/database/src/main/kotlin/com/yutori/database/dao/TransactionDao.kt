@@ -24,6 +24,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: Long): TransactionEntity?
 
+    @Query("UPDATE transactions SET notes = :note WHERE id = :id")
+    suspend fun updateNote(id: Long, note: String?): Int
+
     @Query(
         """
         SELECT * FROM transactions
