@@ -687,11 +687,7 @@ private fun EditCategorySheet(
     val colors = YutoriTheme.colors
     var selected by remember { mutableStateOf(initialCategory) }
     val options: List<String?> = remember { listOf(null) + Category.entries.map { it.name } }
-    val saveEnabled = if (selected == null) {
-        initiallyOverridden
-    } else {
-        selected != initialCategory
-    }
+    val saveEnabled = selected != initialCategory || (selected == null && initiallyOverridden)
     val currentModeLabel = if (initiallyOverridden) {
         "Currently: overridden"
     } else {

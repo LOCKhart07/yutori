@@ -267,7 +267,11 @@ fun AddEditRecipientRuleScreen(
                     border = BorderStroke(1.dp, colors.divider),
                 ) {
                     Text(
-                        text = "Unavailable for ${reclassifyAs?.let(::classificationLabel) ?: "this target"}",
+                        text = if (reclassifyAs == null) {
+                            "Pick a reclassify target first"
+                        } else {
+                            "Unavailable for ${classificationLabel(reclassifyAs)}"
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.onFaint,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),

@@ -182,7 +182,7 @@ interface TransactionDao {
          WHERE occurred_at_ms >= :cutoffMs
             AND merchant_key IS NOT NULL
             AND (
-              classification IN ('UNMATCHED', 'UPI_PAYMENT')
+              classification = 'UNMATCHED'
               OR (
                 classification = 'UPI_PAYMENT'
                 AND
