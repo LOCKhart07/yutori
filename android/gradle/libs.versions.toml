@@ -6,9 +6,10 @@
 
 # --- Toolchain ---
 agp = "8.4.0"
-kotlin = "1.9.23"
-ksp = "1.9.23-1.0.19"
-composeCompiler = "1.5.11"
+kotlin = "2.3.20"
+# KSP became version-agnostic from 2.3.0 — one KSP build now works
+# with any Kotlin 2.3.x. No more Kotlin-version suffix.
+ksp = "2.3.6"
 
 # --- AndroidX runtime ---
 activityCompose = "1.9.0"
@@ -16,7 +17,11 @@ composeBom = "2024.04.00"
 coreKtx = "1.13.0"
 lifecycle = "2.7.0"
 profileinstaller = "1.4.0"
-room = "2.6.1"
+# Bumped from 2.6.1 in stage 1 (not stage 5 as originally planned):
+# KSP 2.3.x removed the KSP1 backend entirely, and Room 2.6.1's
+# generated classes are incompatible with KSP2's Analysis API. 2.8.4
+# is the first line that builds cleanly under KSP2.
+room = "2.8.4"
 work = "2.9.0"
 
 # --- Networking / serialization (:app) ---
@@ -112,5 +117,9 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 android-test = { id = "com.android.test", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# Drives the Compose compiler automatically now that Kotlin 2.x
+# ships it as a first-class plugin — replaces the old manual
+# composeOptions { kotlinCompilerExtensionVersion = ... } pin.
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

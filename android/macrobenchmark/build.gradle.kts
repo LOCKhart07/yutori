@@ -23,10 +23,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     // One variant — matches the `benchmark` build type on :app so
     // measurements run against a release-shaped (non-debuggable) APK.
     buildTypes {
@@ -54,5 +50,11 @@ dependencies {
 androidComponents {
     beforeVariants(selector().all()) {
         it.enable = it.buildType == "benchmark"
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
