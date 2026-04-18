@@ -71,8 +71,7 @@ fun UpdateDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
-                .fillMaxHeight(0.85f)
-                .clip(RoundedCornerShape(18.dp)),
+                .fillMaxHeight(0.85f),
             color = YutoriTheme.colors.surfaceElevated,
             contentColor = MaterialTheme.colorScheme.onSurface,
             shape = RoundedCornerShape(18.dp),
