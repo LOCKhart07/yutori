@@ -91,6 +91,10 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 # --- Test: JUnit 5 (via BOM) ---
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junitBom" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter" }
+# Gradle 9 no longer auto-injects the launcher when useJUnitPlatform()
+# is called; each module that runs JUnit5 tests must put this on the
+# test runtime classpath explicitly.
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher" }
 junit-vintage-engine = { group = "org.junit.vintage", name = "junit-vintage-engine" }
 
 # --- Test: assertions / mocking / Robolectric ---

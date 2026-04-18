@@ -251,6 +251,7 @@ dependencies {
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
     // Vintage bridges the JUnit 4 Robolectric tests under debug. Kept
     // at testImplementation scope so both variants can load the engine
     // safely (release just won't have JUnit4 tests to route to it).
