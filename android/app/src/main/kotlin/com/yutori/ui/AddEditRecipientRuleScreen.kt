@@ -49,6 +49,7 @@ import com.yutori.database.dao.TransactionDao
 import com.yutori.database.entities.AccountEntity
 import com.yutori.database.entities.RecipientRuleEntity
 import com.yutori.database.entities.RuleSuggestionEntity
+import com.yutori.parser.Category
 import com.yutori.parser.Classification
 import com.yutori.ui.theme.YutoriTextStyles
 import com.yutori.ui.theme.YutoriTheme
@@ -70,6 +71,7 @@ private val RECLASSIFY_OPTIONS = listOf(
 
 private const val TEST_MERCHANT_LIMIT = 100
 private const val TEST_MAX_SHOWN = 20
+private val CATEGORY_OPTIONS: List<Category?> = listOf(null) + Category.entries
 
 @Composable
 fun AddEditRecipientRuleScreen(
@@ -107,6 +109,7 @@ fun AddEditRecipientRuleScreen(
     var pattern by remember { mutableStateOf("") }
     var patternKind by remember { mutableStateOf(PatternKind.LITERAL) }
     var reclassifyAs by remember { mutableStateOf<Classification?>(null) }
+    var assignedCategory by remember { mutableStateOf<Category?>(null) }
     var linkedAccountId by remember { mutableStateOf<Long?>(null) }
     var note by remember { mutableStateOf("") }
     var enabled by remember { mutableStateOf(true) }
@@ -120,6 +123,9 @@ fun AddEditRecipientRuleScreen(
             patternKind = runCatching { PatternKind.valueOf(r.patternKind) }
                 .getOrDefault(PatternKind.LITERAL)
             reclassifyAs = runCatching { Classification.valueOf(r.reclassifyAs) }.getOrNull()
+            assignedCategory = r.assignedCategory?.let {
+                runCatching { Category.valueOf(it) }.getOrNull()
+            }
             linkedAccountId = r.accountId
             note = r.note.orEmpty()
             enabled = r.isEnabled
@@ -131,6 +137,7 @@ fun AddEditRecipientRuleScreen(
                 .getOrDefault(PatternKind.LITERAL)
             reclassifyAs = sg.inferredClassification
                 ?.let { runCatching { Classification.valueOf(it) }.getOrNull() }
+            assignedCategory = null
             linkedAccountId = sg.inferredAccountId
             seededFromLoad = true
         }
@@ -228,6 +235,18 @@ fun AddEditRecipientRuleScreen(
                 enabled = !isReadOnly,
             )
 
+            Spacer(Modifier.height(14.dp))
+            FieldLabel("Assigned category (optional)")
+            EnumDropdown(
+                value = assignedCategory?.let { prettyCategory(it.name) } ?: "None",
+                placeholder = assignedCategory == null,
+                options = CATEGORY_OPTIONS,
+                optionLabel = ::categoryOptionLabel,
+                onPick = { assignedCategory = it },
+                enabled = !isReadOnly,
+            )
+            InlineHelp("Sets dashboard category for matching transactions.")
+
             if (needsAccount) {
                 Spacer(Modifier.height(14.dp))
                 FieldLabel("Linked account")
@@ -286,6 +305,7 @@ fun AddEditRecipientRuleScreen(
                             pattern = patternTrimmed,
                             patternKind = patternKind.name,
                             reclassifyAs = target.name,
+                            assignedCategory = assignedCategory?.name,
                             accountId = linkedAccountId?.takeIf { needsAccount },
                             source = existingRule?.source
                                 ?: if (prefillSuggestion != null) "LEARNED" else "USER",
@@ -702,3 +722,6 @@ private fun accountLabel(a: AccountEntity): String {
     val name = a.displayName?.let { " · $it" } ?: ""
     return "${a.issuer}$last4$name"
 }
+
+private fun categoryOptionLabel(category: Category?): String =
+    category?.let { prettyCategory(it.name) } ?: "None"

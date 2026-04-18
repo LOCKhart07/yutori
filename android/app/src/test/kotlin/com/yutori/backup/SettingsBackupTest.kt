@@ -23,7 +23,14 @@ class SettingsBackupTest {
             insert(account(kind = "SAVINGS", issuer = "Kotak", last4 = "0000"))
         }
         val srcRule = FakeRecipientRuleDao().apply {
-            insert(rule(pattern = "user@upi", accountId = 2, source = "USER"))
+            insert(
+                rule(
+                    pattern = "user@upi",
+                    accountId = 2,
+                    source = "USER",
+                    assignedCategory = "FOOD_DINING",
+                ),
+            )
             // Seed rule — should NOT be exported (source != USER).
             insert(rule(pattern = "CRED.CLUB", accountId = null, source = "SEED"))
         }
@@ -45,6 +52,7 @@ class SettingsBackupTest {
         val rule = dstRule.all.single()
         rule.pattern shouldBe "user@upi"
         rule.source shouldBe "USER"
+        rule.assignedCategory shouldBe "FOOD_DINING"
         // Linked by last4 — should resolve to the newly inserted Kotak id.
         val kotakId = dstAcc.all.single { it.last4 == "0000" }.id
         rule.accountId shouldBe kotakId
@@ -229,10 +237,12 @@ class SettingsBackupTest {
         pattern: String,
         accountId: Long?,
         source: String,
+        assignedCategory: String? = null,
     ) = RecipientRuleEntity(
         pattern = pattern,
         patternKind = "LITERAL",
         reclassifyAs = "SELF_TRANSFER",
+        assignedCategory = assignedCategory,
         accountId = accountId,
         source = source,
         note = null,

@@ -33,4 +33,5 @@ data class TransactionRow(
     val occurredAtMs: Long,
     val monthKey: String,
     val manuallyAdjusted: Boolean = false,
+    val categoryOverride: Boolean = false,
 )

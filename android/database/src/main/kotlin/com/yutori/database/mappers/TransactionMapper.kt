@@ -29,6 +29,7 @@ object TransactionMapper {
         occurredAtMs = entity.occurredAtMs,
         monthKey = entity.monthKey,
         manuallyAdjusted = entity.manuallyAdjusted,
+        categoryOverride = entity.categoryOverride,
     )
 
     fun toEntity(row: TransactionRow): TransactionEntity = TransactionEntity(
@@ -50,5 +51,6 @@ object TransactionMapper {
         occurredAtMs = row.occurredAtMs,
         monthKey = row.monthKey,
         manuallyAdjusted = row.manuallyAdjusted,
+        categoryOverride = row.categoryOverride,
     )
 }

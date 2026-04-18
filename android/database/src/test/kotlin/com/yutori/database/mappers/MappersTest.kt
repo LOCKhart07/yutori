@@ -81,6 +81,7 @@ class MappersTest {
             pattern = """cred\.club[@¡]axisb""",
             patternKind = PatternKind.REGEX,
             reclassifyAs = Classification.CC_BILL_PAYMENT,
+            assignedCategory = Category.BILLS_UTILITIES,
             accountId = null,
             source = RuleSource.SEED,
             isEnabled = true,
@@ -144,6 +145,7 @@ class MappersTest {
             occurredAtMs = 1_700_000_000_000L,
             monthKey = "2026-04",
             manuallyAdjusted = true,
+            categoryOverride = true,
         )
         TransactionMapper.toDomain(TransactionMapper.toEntity(source)) shouldBe source
     }

@@ -442,6 +442,7 @@ class DashboardViewModelTest {
         override suspend fun delete(row: TransactionEntity) = Unit
         override suspend fun getById(id: Long) = null
         override suspend fun updateNote(id: Long, note: String?) = 0
+        override suspend fun updateCategory(id: Long, category: String?, isOverridden: Boolean) = 0
         override fun observeByMonthAndAccount(monthKey: String, accountId: Long) =
             MutableStateFlow(emptyList<TransactionEntity>()).asStateFlow()
         override fun observeByMonthAndCategory(monthKey: String, category: String) =

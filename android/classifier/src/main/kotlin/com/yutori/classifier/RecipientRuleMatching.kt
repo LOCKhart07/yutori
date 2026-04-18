@@ -15,6 +15,10 @@ object RecipientRuleMatching {
     fun isCovered(merchant: String?, rules: List<RecipientRule>): Boolean =
         RecipientRuleMatcher.firstMatch(merchant, rules) != null
 
+    /** First matching enabled rule for [merchant], if any. */
+    fun firstMatch(merchant: String?, rules: List<RecipientRule>): RecipientRule? =
+        RecipientRuleMatcher.firstMatch(merchant, rules)
+
     /**
      * Evaluate a draft pattern against a set of candidate merchant strings.
      * Used by the Test preview panel on the add/edit rule screen.

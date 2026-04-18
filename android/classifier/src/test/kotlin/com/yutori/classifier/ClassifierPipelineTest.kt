@@ -297,4 +297,53 @@ class ClassifierPipelineTest {
         outcome.classificationOriginal shouldBe Classification.UPI_PAYMENT
         outcome.matchedRuleId shouldBe credMiddleman.id
     }
+
+    @Test
+    fun `rule assigned category overrides Categorizer bucket`() {
+        val rule = RecipientRule(
+            id = 300,
+            pattern = "swiggy-newbrand@paytm",
+            patternKind = PatternKind.LITERAL,
+            reclassifyAs = Classification.UPI_PAYMENT,
+            assignedCategory = Category.FOOD_DINING,
+        )
+        val outcome = Classifier.classify(
+            parseResult = ParseResult(
+                classification = Classification.UPI_PAYMENT,
+                amount = 350.0,
+                merchant = "swiggy-newbrand@paytm",
+                pattern = "kotak_upi_debit",
+            ),
+            accounts = accounts,
+            recipientRules = listOf(rule),
+        )
+
+        outcome.finalClassification shouldBe Classification.UPI_PAYMENT
+        outcome.category shouldBe Category.FOOD_DINING
+    }
+
+    @Test
+    fun `rule with reclassify and category applies both`() {
+        val rule = RecipientRule(
+            id = 301,
+            pattern = "refund-merchant@upi",
+            patternKind = PatternKind.LITERAL,
+            reclassifyAs = Classification.REFUND,
+            assignedCategory = Category.SHOPPING,
+        )
+        val outcome = Classifier.classify(
+            parseResult = ParseResult(
+                classification = Classification.UPI_PAYMENT,
+                amount = 100.0,
+                merchant = "refund-merchant@upi",
+                pattern = "kotak_upi_debit",
+            ),
+            accounts = accounts,
+            recipientRules = listOf(rule),
+        )
+
+        outcome.finalClassification shouldBe Classification.REFUND
+        outcome.classificationOriginal shouldBe Classification.UPI_PAYMENT
+        outcome.category shouldBe Category.SHOPPING
+    }
 }

@@ -1,6 +1,7 @@
 package com.yutori.classifier
 
 import com.yutori.parser.Classification
+import com.yutori.parser.Category
 
 /**
  * A recipient-matching rule per §12.2 + §12.4. When a classifier input's
@@ -16,6 +17,7 @@ data class RecipientRule(
     val pattern: String,
     val patternKind: PatternKind,
     val reclassifyAs: Classification,
+    val assignedCategory: Category? = null,
     val accountId: Long? = null,
     val source: RuleSource = RuleSource.USER,
     val isEnabled: Boolean = true,

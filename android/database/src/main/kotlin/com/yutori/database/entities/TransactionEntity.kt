@@ -90,4 +90,7 @@ data class TransactionEntity(
     val manuallyAdjusted: Boolean = false,
 
     val notes: String? = null,
+
+    @ColumnInfo(name = "category_override")
+    val categoryOverride: Boolean = false,
 )

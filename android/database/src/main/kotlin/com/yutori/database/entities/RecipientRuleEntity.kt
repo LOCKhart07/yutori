@@ -41,6 +41,9 @@ data class RecipientRuleEntity(
     @ColumnInfo(name = "reclassify_as")
     val reclassifyAs: String,
 
+    @ColumnInfo(name = "assigned_category")
+    val assignedCategory: String? = null,
+
     @ColumnInfo(name = "account_id")
     val accountId: Long? = null,
 

@@ -105,6 +105,12 @@ class FakeTransactionDao : TransactionDao {
         all[idx] = all[idx].copy(notes = note)
         return 1
     }
+    override suspend fun updateCategory(id: Long, category: String?, isOverridden: Boolean): Int {
+        val idx = all.indexOfFirst { it.id == id }
+        if (idx < 0) return 0
+        all[idx] = all[idx].copy(category = category, categoryOverride = isOverridden)
+        return 1
+    }
 
     override fun observeByMonth(monthKey: String) = flowOf(
         all.filter { it.monthKey == monthKey }.sortedByDescending { it.occurredAtMs }

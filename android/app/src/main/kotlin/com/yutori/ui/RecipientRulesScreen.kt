@@ -648,6 +648,7 @@ private fun RuleCard(
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "${rule.patternKind} · → ${rule.reclassifyAs}" +
+                    (rule.assignedCategory?.let { " · ${prettyCategory(it)}" } ?: "") +
                     (rule.note?.let { " · $it" } ?: "") +
                     if (rule.source == "LEARNED") " · learned" else "",
                 style = MaterialTheme.typography.labelSmall,

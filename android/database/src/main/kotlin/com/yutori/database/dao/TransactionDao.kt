@@ -28,6 +28,13 @@ interface TransactionDao {
     suspend fun updateNote(id: Long, note: String?): Int
 
     @Query(
+        "UPDATE transactions " +
+            "SET category = :category, category_override = :isOverridden " +
+            "WHERE id = :id",
+    )
+    suspend fun updateCategory(id: Long, category: String?, isOverridden: Boolean): Int
+
+    @Query(
         """
         SELECT * FROM transactions
          WHERE month_key = :monthKey
@@ -160,9 +167,10 @@ interface TransactionDao {
 
     /**
      * Rule-suggestion miner source (suggestions-spec §3.2). Groups recent
-     * mis- or un-classified transactions by [merchant_key] and returns
-     * only groups whose count meets [threshold]. Already-covered filtering
-     * happens in Kotlin against the enabled-rule list.
+     * mis-/un-classified transactions plus repeat category-gap merchants
+     * (SPEND/REFUND rows currently in OTHER/UNCATEGORIZED) by [merchant_key]
+     * and returns only groups whose count meets [threshold]. Already-covered
+     * filtering happens in Kotlin against the enabled-rule list.
      */
     @Query(
         """
@@ -172,7 +180,13 @@ interface TransactionDao {
           FROM transactions
          WHERE occurred_at_ms >= :cutoffMs
            AND merchant_key IS NOT NULL
-           AND classification IN ('UNMATCHED', 'UPI_PAYMENT')
+           AND (
+             classification IN ('UNMATCHED', 'UPI_PAYMENT')
+             OR (
+               budget_effect IN ('SPEND', 'REFUND')
+               AND category IN ('OTHER', 'UNCATEGORIZED')
+             )
+           )
          GROUP BY merchant_key
         HAVING COUNT(*) >= :threshold
          ORDER BY total_inr DESC, match_count DESC

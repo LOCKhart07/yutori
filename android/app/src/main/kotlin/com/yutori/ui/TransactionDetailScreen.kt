@@ -47,12 +47,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import android.widget.Toast
+import com.yutori.classifier.Classifier
+import com.yutori.classifier.RecipientRuleMatching
+import com.yutori.database.dao.RecipientRuleDao
 import com.yutori.database.dao.SmsLogDao
 import com.yutori.database.dao.TransactionDao
 import com.yutori.database.dao.TransactionSourceDao
 import com.yutori.database.entities.SmsLogEntity
 import com.yutori.database.entities.TransactionEntity
 import com.yutori.database.entities.TransactionSourceEntity
+import com.yutori.database.mappers.RecipientRuleMapper
+import com.yutori.parser.Category
+import com.yutori.parser.Classification
 import com.yutori.ui.theme.YutoriTextStyles
 import com.yutori.ui.theme.YutoriTheme
 import kotlinx.coroutines.launch
@@ -76,6 +82,7 @@ private data class Details(
 fun TransactionDetailScreen(
     transactionId: Long,
     transactionDao: TransactionDao,
+    recipientRuleDao: RecipientRuleDao,
     sourceDao: TransactionSourceDao,
     smsLogDao: SmsLogDao,
     onBack: () -> Unit,
@@ -110,6 +117,38 @@ fun TransactionDetailScreen(
                         refreshTick++
                     }
                 },
+                onSaveCategory = { selectedCategory ->
+                    scope.launch {
+                        if (selectedCategory != null) {
+                            transactionDao.updateCategory(
+                                id = d.tx.id,
+                                category = selectedCategory,
+                                isOverridden = true,
+                            )
+                        } else {
+                            val rules = recipientRuleDao.getEnabled()
+                                .map(RecipientRuleMapper::toDomain)
+                            val matchedRule = RecipientRuleMatching.firstMatch(d.tx.merchant, rules)
+                            val classification = runCatching {
+                                Classification.valueOf(d.tx.classification)
+                            }.getOrNull()
+                            val fallback = classification?.let {
+                                Classifier.resolveCategory(
+                                    classification = it,
+                                    parserAssignedCategory = null,
+                                    merchantKey = d.tx.merchantKey,
+                                    matchedRule = matchedRule,
+                                )
+                            }
+                            transactionDao.updateCategory(
+                                id = d.tx.id,
+                                category = fallback?.name,
+                                isOverridden = false,
+                            )
+                        }
+                        refreshTick++
+                    }
+                },
             )
         }
     }
@@ -134,8 +173,10 @@ private fun ReadyView(
     details: Details,
     onBack: () -> Unit,
     onSaveNote: (String?) -> Unit,
+    onSaveCategory: (String?) -> Unit,
 ) {
     var editingNote by remember { mutableStateOf(false) }
+    var editingCategory by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -165,6 +206,8 @@ private fun ReadyView(
             ActionRow(
                 hasNote = !details.tx.notes.isNullOrBlank(),
                 onEditNote = { editingNote = true },
+                canEditCategory = details.tx.budgetEffect == "SPEND" || details.tx.budgetEffect == "REFUND",
+                onEditCategory = { editingCategory = true },
             )
             Spacer(Modifier.height(24.dp))
             if (details.sources.isNotEmpty()) {
@@ -181,6 +224,17 @@ private fun ReadyView(
             onSave = { newNote ->
                 onSaveNote(newNote)
                 editingNote = false
+            },
+        )
+    }
+    if (editingCategory) {
+        EditCategorySheet(
+            initialCategory = details.tx.category,
+            initiallyOverridden = details.tx.categoryOverride,
+            onDismiss = { editingCategory = false },
+            onSave = { selected ->
+                onSaveCategory(selected)
+                editingCategory = false
             },
         )
     }
@@ -432,14 +486,15 @@ private fun NotesCard(note: String, onEdit: () -> Unit) {
 }
 
 /**
- * Forward-looking action row. v1 wires only the note button.
- * Ignore and Add-rule slots render in ghost style so users read them
- * as "coming" rather than "broken"; tapping one fires a short Toast
- * instead of doing nothing. The slots stay in place so the row
- * doesn't re-layout when #27-part-2 and #29 land.
+ * Action row for detail-level edits.
  */
 @Composable
-private fun ActionRow(hasNote: Boolean, onEditNote: () -> Unit) {
+private fun ActionRow(
+    hasNote: Boolean,
+    onEditNote: () -> Unit,
+    canEditCategory: Boolean,
+    onEditCategory: () -> Unit,
+) {
     val context = LocalContext.current
     val showSoonToast: () -> Unit = {
         Toast.makeText(context, "Soon\u2122", Toast.LENGTH_SHORT).show()
@@ -454,9 +509,9 @@ private fun ActionRow(hasNote: Boolean, onEditNote: () -> Unit) {
                 modifier = Modifier.weight(1f),
             )
             ActionButton(
-                label = "Ignore",
-                onClick = showSoonToast,
-                ghost = true,
+                label = "Edit category",
+                onClick = if (canEditCategory) onEditCategory else showSoonToast,
+                ghost = !canEditCategory,
                 modifier = Modifier.weight(1f),
             )
             ActionButton(
@@ -613,6 +668,97 @@ private fun EditNoteSheet(
                     text = "Save",
                     enabled = saveEnabled,
                     onClick = { onSave(noteSavePayload(text)) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditCategorySheet(
+    initialCategory: String?,
+    initiallyOverridden: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (String?) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val colors = YutoriTheme.colors
+    var selected by remember { mutableStateOf(initialCategory) }
+    val options: List<String?> = remember { listOf(null) + Category.entries.map { it.name } }
+    val saveEnabled = if (selected == null) {
+        initiallyOverridden
+    } else {
+        selected != initialCategory || !initiallyOverridden
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = colors.surfaceElevated,
+        dragHandle = null,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .imePadding()
+                .padding(horizontal = 20.dp)
+                .padding(top = 8.dp, bottom = 20.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .size(width = 36.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(colors.divider),
+            )
+            Spacer(Modifier.height(14.dp))
+            Text(
+                text = "Edit category",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
+            )
+            Spacer(Modifier.height(10.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(260.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                options.forEach { option ->
+                    val label = option?.let(::prettyCategory) ?: "Use automatic category"
+                    val selectedNow = selected == option
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { selected = option },
+                        color = if (selectedNow) colors.surfaceElevated2 else Color.Transparent,
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (selectedNow) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(18.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                SecondaryButton(
+                    text = "Cancel",
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                )
+                PrimaryActionButton(
+                    text = "Save",
+                    enabled = saveEnabled,
+                    onClick = { onSave(selected) },
                     modifier = Modifier.weight(1f),
                 )
             }

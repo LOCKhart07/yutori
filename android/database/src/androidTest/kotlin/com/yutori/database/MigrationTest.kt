@@ -143,9 +143,45 @@ class MigrationTest {
     }
 
     @Test
-    fun opening_v4_database_after_all_migrations_works() {
+    fun migrate_4_to_5_adds_category_override_columns() {
+        helper.createDatabase(testDbName, 4).close()
+
+        val db = helper.runMigrationsAndValidate(
+            testDbName,
+            5,
+            /* validateDroppedTables = */ true,
+            YutoriDatabase.MIGRATION_4_5,
+        )
+
+        db.execSQL(
+            "INSERT INTO recipient_rules " +
+                "(pattern, pattern_kind, reclassify_as, assigned_category, source, is_enabled) " +
+                "VALUES ('swiggy@paytm', 'LITERAL', 'UPI_PAYMENT', 'FOOD_DINING', 'USER', 1)",
+        )
+        db.query("SELECT assigned_category FROM recipient_rules").use { cur ->
+            assert(cur.moveToFirst())
+            assertEquals("FOOD_DINING", cur.getString(0))
+        }
+
+        db.execSQL(
+            "INSERT INTO transactions " +
+                "(classification, budget_effect, inr_amount, original_amount, original_currency, " +
+                "merchant, merchant_key, category, account_id, last4, issuer, occurred_at_ms, " +
+                "month_key, is_manual_entry, manually_adjusted, notes, category_override) " +
+                "VALUES ('UPI_PAYMENT', 'SPEND', 100.0, NULL, 'INR', 'x@ybl', 'x@ybl', " +
+                "'OTHER', NULL, NULL, NULL, 1, '2026-04', 0, 0, NULL, 1)",
+        )
+        db.query("SELECT category_override FROM transactions").use { cur ->
+            assert(cur.moveToFirst())
+            assertEquals(1, cur.getInt(0))
+        }
+        db.close()
+    }
+
+    @Test
+    fun opening_v5_database_after_all_migrations_works() {
         // End-to-end smoke: build the Room wrapper and let it validate
-        // schema identity against the exported v4 JSON.
+        // schema identity against the exported v5 JSON.
         helper.createDatabase(testDbName, 2).close()
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         val db = Room.databaseBuilder(ctx, YutoriDatabase::class.java, testDbName)
@@ -153,6 +189,7 @@ class MigrationTest {
                 YutoriDatabase.MIGRATION_1_2,
                 YutoriDatabase.MIGRATION_2_3,
                 YutoriDatabase.MIGRATION_3_4,
+                YutoriDatabase.MIGRATION_4_5,
             )
             .build()
         db.openHelper.writableDatabase

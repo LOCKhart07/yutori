@@ -164,6 +164,7 @@ object SettingsBackup {
                     pattern = pattern,
                     patternKind = patternKind,
                     reclassifyAs = obj.optString("reclassifyAs", "SELF_TRANSFER"),
+                    assignedCategory = obj.optStringOrNull("assignedCategory"),
                     accountId = resolvedId,
                     source = obj.optString("source", "USER"),
                     isEnabled = obj.optBoolean("isEnabled", true),
@@ -196,6 +197,7 @@ object SettingsBackup {
             put("pattern", pattern)
             put("patternKind", patternKind)
             put("reclassifyAs", reclassifyAs)
+            putOpt("assignedCategory", assignedCategory)
             put("source", source)
             put("isEnabled", isEnabled)
             putOpt("note", note)

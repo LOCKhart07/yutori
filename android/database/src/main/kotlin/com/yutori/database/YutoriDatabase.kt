@@ -40,7 +40,7 @@ import com.yutori.database.entities.TransactionSourceEntity
         BudgetEntity::class,
         BudgetAlertStateEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(EnumConverters::class)
@@ -127,6 +127,21 @@ abstract class YutoriDatabase : RoomDatabase() {
                     "CREATE INDEX IF NOT EXISTS " +
                         "`index_rule_suggestions_inferred_account_id` " +
                         "ON `rule_suggestions` (`inferred_account_id`)",
+                )
+            }
+        }
+
+        /**
+         * v5 adds category-override support:
+         * - `recipient_rules.assigned_category` optional rule-level category.
+         * - `transactions.category_override` per-row manual-override flag.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE recipient_rules ADD COLUMN assigned_category TEXT")
+                db.execSQL(
+                    "ALTER TABLE transactions " +
+                        "ADD COLUMN category_override INTEGER NOT NULL DEFAULT 0",
                 )
             }
         }
