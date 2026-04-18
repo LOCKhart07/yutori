@@ -153,6 +153,13 @@ class FakeTransactionDao : TransactionDao {
                 it.classification in setOf("UPI_PAYMENT", "INCOMING_CREDIT")
         }
 
+    override suspend fun aggregateSuggestionCandidates(
+        cutoffMs: Long, threshold: Int, limit: Int,
+    ): List<com.yutori.database.dao.MerchantAggregateRow> = emptyList()
+
+    override suspend fun findByMerchantKey(merchantKey: String): List<TransactionEntity> =
+        all.filter { it.merchantKey == merchantKey }
+
     private fun <T> flowOf(value: T): Flow<T> = MutableStateFlow(value).asStateFlow()
 }
 

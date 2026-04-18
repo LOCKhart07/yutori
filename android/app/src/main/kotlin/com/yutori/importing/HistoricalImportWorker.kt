@@ -123,6 +123,12 @@ class HistoricalImportWorker(
         }
 
         val earliestMonth: String? = earliestInsertedMs?.let { MonthKeyComputer.ofDevice(it) }
+
+        // Post-import one-shot: re-mine for rule suggestions now that fresh
+        // transactions have landed. Safe even when `inserted == 0` — miner
+        // is idempotent and cheap.
+        com.yutori.suggestions.SuggestionRescanWorker.enqueueOneShot(applicationContext)
+
         Result.success(
             workDataOf(
                 KEY_PROCESSED to processed,

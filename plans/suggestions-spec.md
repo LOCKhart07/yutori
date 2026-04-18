@@ -447,7 +447,28 @@ specified alongside the LLM spec.
 @Test fun `running the miner during historical import does not deadlock`()
 ```
 
-## 9. Decisions (resolved)
+## 9. Implementation deviations (v1)
+
+Noted here rather than silently shipping — future readers should know
+what's different between this doc and the code.
+
+1. **`SuggestionMiner` lives in `:app`, not `:transactions`.** The module
+   graph has `:database` depending on `:transactions`, so `:transactions`
+   can't see the DAOs. Pure inference (`SuggestionInference`) still lives
+   in `:classifier`; only the orchestrator moved. Testability is
+   preserved — the miner uses hand-rolled DAO fakes against the same
+   interfaces.
+2. **Accept does not trigger reparse.** Issue #30 (reparse pipeline)
+   isn't implemented yet. Accepting a suggestion inserts the
+   `recipient_rules` row so new transactions classify correctly going
+   forward, but past transactions retain their original classification.
+   The Review sheet copy reflects this ("would cover N past transactions
+   going forward"). Retroactive reclassification follows once #30 lands.
+3. **Undo snackbar on dismiss not implemented.** Dismiss writes
+   `dismissed_at_ms` immediately; the auto-resurface rule (§5.3) is the
+   only path back. Can add the snackbar later without schema changes.
+
+## 10. Decisions (resolved)
 
 1. **Storage** — dedicated `rule_suggestions` table, not in-memory or
    derived-on-read. Dismissals and "new" badges need persistence across

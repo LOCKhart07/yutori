@@ -9,6 +9,7 @@ import com.yutori.database.dao.AccountDao
 import com.yutori.database.dao.BudgetAlertStateDao
 import com.yutori.database.dao.BudgetDao
 import com.yutori.database.dao.RecipientRuleDao
+import com.yutori.database.dao.RuleSuggestionDao
 import com.yutori.database.dao.SmsLogDao
 import com.yutori.database.dao.TransactionDao
 import com.yutori.database.dao.TransactionSourceDao
@@ -16,6 +17,7 @@ import com.yutori.database.entities.AccountEntity
 import com.yutori.database.entities.BudgetAlertStateEntity
 import com.yutori.database.entities.BudgetEntity
 import com.yutori.database.entities.RecipientRuleEntity
+import com.yutori.database.entities.RuleSuggestionEntity
 import com.yutori.database.entities.SmsLogEntity
 import com.yutori.database.entities.TransactionEntity
 import com.yutori.database.entities.TransactionSourceEntity
@@ -34,10 +36,11 @@ import com.yutori.database.entities.TransactionSourceEntity
         TransactionSourceEntity::class,
         AccountEntity::class,
         RecipientRuleEntity::class,
+        RuleSuggestionEntity::class,
         BudgetEntity::class,
         BudgetAlertStateEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(EnumConverters::class)
@@ -47,6 +50,7 @@ abstract class YutoriDatabase : RoomDatabase() {
     abstract fun transactionSourceDao(): TransactionSourceDao
     abstract fun accountDao(): AccountDao
     abstract fun recipientRuleDao(): RecipientRuleDao
+    abstract fun ruleSuggestionDao(): RuleSuggestionDao
     abstract fun budgetDao(): BudgetDao
     abstract fun budgetAlertStateDao(): BudgetAlertStateDao
 
@@ -84,6 +88,49 @@ abstract class YutoriDatabase : RoomDatabase() {
          * accounts per issuer are allowed. Card accounts remain
          * de-duped by (issuer, last4).
          */
+        /**
+         * v4 adds the `rule_suggestions` table for the heuristic rule-suggestion
+         * surface (suggestions-spec.md / #64 part 1). Additive — new empty table
+         * on upgrade, no data transformation.
+         */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `rule_suggestions` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`merchant_key` TEXT NOT NULL, " +
+                        "`pattern` TEXT NOT NULL, " +
+                        "`pattern_kind` TEXT NOT NULL, " +
+                        "`inferred_classification` TEXT, " +
+                        "`inferred_account_id` INTEGER, " +
+                        "`reason_code` TEXT NOT NULL, " +
+                        "`match_count` INTEGER NOT NULL, " +
+                        "`total_inr` REAL NOT NULL, " +
+                        "`first_seen_ms` INTEGER NOT NULL, " +
+                        "`last_scanned_ms` INTEGER NOT NULL, " +
+                        "`dismissed_at_ms` INTEGER, " +
+                        "FOREIGN KEY(`inferred_account_id`) REFERENCES `accounts`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE SET NULL" +
+                        ")",
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                        "`index_rule_suggestions_merchant_key` " +
+                        "ON `rule_suggestions` (`merchant_key`)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS " +
+                        "`index_rule_suggestions_dismissed_at_ms` " +
+                        "ON `rule_suggestions` (`dismissed_at_ms`)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS " +
+                        "`index_rule_suggestions_inferred_account_id` " +
+                        "ON `rule_suggestions` (`inferred_account_id`)",
+                )
+            }
+        }
+
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(

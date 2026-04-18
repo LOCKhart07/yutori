@@ -462,15 +462,32 @@ private fun AppContent() {
         is Screen.RecipientRules -> {
             val scope = androidx.compose.runtime.rememberCoroutineScope()
             val ruleDao = database.recipientRuleDao()
+            val suggestionDao = database.ruleSuggestionDao()
+            val controller = app.suggestionsController
 
             RecipientRulesScreen(
                 rulesFlow = ruleDao.observeAll(),
+                suggestionsFlow = suggestionDao.observeActive(),
+                scanningFlow = controller?.scanning
+                    ?: kotlinx.coroutines.flow.MutableStateFlow(false),
                 onBack = { goBack() },
                 onToggleEnabled = { rule, enabled ->
                     scope.launch { ruleDao.update(rule.copy(isEnabled = enabled)) }
                 },
                 onDeleteUserRule = { rule ->
                     scope.launch { ruleDao.delete(rule) }
+                },
+                onAcceptSuggestion = { sg ->
+                    scope.launch { controller?.accept(sg) }
+                },
+                onDismissSuggestion = { id ->
+                    scope.launch { controller?.dismiss(id) }
+                },
+                onRescan = {
+                    scope.launch { controller?.rescanNow() }
+                },
+                loadMatches = { key ->
+                    controller?.loadMatches(key) ?: emptyList()
                 },
             )
         }

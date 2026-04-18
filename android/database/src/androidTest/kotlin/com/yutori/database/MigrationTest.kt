@@ -93,15 +93,66 @@ class MigrationTest {
     }
 
     @Test
-    fun opening_v3_database_after_all_migrations_works() {
+    fun migrate_3_to_4_adds_rule_suggestions_table_with_indices() {
+        helper.createDatabase(testDbName, 3).close()
+
+        val db = helper.runMigrationsAndValidate(
+            testDbName,
+            4,
+            /* validateDroppedTables = */ true,
+            YutoriDatabase.MIGRATION_3_4,
+        )
+
+        // Insert + round-trip proves column set, types, and defaults.
+        db.execSQL(
+            "INSERT INTO rule_suggestions " +
+                "(merchant_key, pattern, pattern_kind, inferred_classification, " +
+                " inferred_account_id, reason_code, match_count, total_inr, " +
+                " first_seen_ms, last_scanned_ms, dismissed_at_ms) " +
+                "VALUES ('cheq@axisbank', 'cheq@axisbank', 'LITERAL', " +
+                " 'CC_BILL_PAYMENT', NULL, 'KEYWORD_MIDDLEMAN', 4, 12500.0, " +
+                " 1713420000000, 1713420000000, NULL)",
+        )
+        db.query(
+            "SELECT merchant_key, inferred_classification, match_count, total_inr " +
+                "FROM rule_suggestions",
+        ).use { cur ->
+            assert(cur.moveToFirst())
+            assertEquals("cheq@axisbank", cur.getString(0))
+            assertEquals("CC_BILL_PAYMENT", cur.getString(1))
+            assertEquals(4, cur.getInt(2))
+            assertEquals(12500.0, cur.getDouble(3), 0.0001)
+        }
+
+        // Unique index on merchant_key — second insert with the same key must fail.
+        var collided = false
+        try {
+            db.execSQL(
+                "INSERT INTO rule_suggestions " +
+                    "(merchant_key, pattern, pattern_kind, inferred_classification, " +
+                    " inferred_account_id, reason_code, match_count, total_inr, " +
+                    " first_seen_ms, last_scanned_ms, dismissed_at_ms) " +
+                    "VALUES ('cheq@axisbank', 'cheq@axisbank', 'LITERAL', NULL, " +
+                    " NULL, 'REPEAT_NO_DEFAULT', 1, 100.0, 0, 0, NULL)",
+            )
+        } catch (t: Throwable) {
+            collided = true
+        }
+        assert(collided) { "Expected unique-index collision on merchant_key" }
+        db.close()
+    }
+
+    @Test
+    fun opening_v4_database_after_all_migrations_works() {
         // End-to-end smoke: build the Room wrapper and let it validate
-        // schema identity against the exported v3 JSON.
+        // schema identity against the exported v4 JSON.
         helper.createDatabase(testDbName, 2).close()
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         val db = Room.databaseBuilder(ctx, YutoriDatabase::class.java, testDbName)
             .addMigrations(
                 YutoriDatabase.MIGRATION_1_2,
                 YutoriDatabase.MIGRATION_2_3,
+                YutoriDatabase.MIGRATION_3_4,
             )
             .build()
         db.openHelper.writableDatabase

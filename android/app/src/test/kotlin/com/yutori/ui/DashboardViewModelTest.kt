@@ -454,6 +454,11 @@ class DashboardViewModelTest {
         override suspend fun sumRefundsForMonth(monthKey: String) = 0.0
         override suspend fun findBySelfTransferCandidateMerchant(merchant: String) =
             emptyList<TransactionEntity>()
+        override suspend fun aggregateSuggestionCandidates(
+            cutoffMs: Long, threshold: Int, limit: Int,
+        ) = emptyList<com.yutori.database.dao.MerchantAggregateRow>()
+        override suspend fun findByMerchantKey(merchantKey: String) =
+            emptyList<TransactionEntity>()
     }
 
     class FakeBudgetDao(

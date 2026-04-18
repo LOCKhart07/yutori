@@ -157,4 +157,44 @@ interface TransactionDao {
     suspend fun findBySelfTransferCandidateMerchant(
         merchant: String,
     ): List<TransactionEntity>
+
+    /**
+     * Rule-suggestion miner source (suggestions-spec §3.2). Groups recent
+     * mis- or un-classified transactions by [merchant_key] and returns
+     * only groups whose count meets [threshold]. Already-covered filtering
+     * happens in Kotlin against the enabled-rule list.
+     */
+    @Query(
+        """
+        SELECT merchant_key            AS merchant_key,
+               COUNT(*)                AS match_count,
+               COALESCE(SUM(inr_amount), 0.0) AS total_inr
+          FROM transactions
+         WHERE occurred_at_ms >= :cutoffMs
+           AND merchant_key IS NOT NULL
+           AND classification IN ('UNMATCHED', 'UPI_PAYMENT')
+         GROUP BY merchant_key
+        HAVING COUNT(*) >= :threshold
+         ORDER BY total_inr DESC, match_count DESC
+         LIMIT :limit
+        """,
+    )
+    suspend fun aggregateSuggestionCandidates(
+        cutoffMs: Long,
+        threshold: Int,
+        limit: Int,
+    ): List<MerchantAggregateRow>
+
+    /**
+     * Backs the suggestion review sheet's "would match these N transactions"
+     * preview. Ordered newest-first.
+     */
+    @Query(
+        """
+        SELECT * FROM transactions
+         WHERE merchant_key = :merchantKey
+         ORDER BY occurred_at_ms DESC
+        """,
+    )
+    suspend fun findByMerchantKey(merchantKey: String): List<TransactionEntity>
 }

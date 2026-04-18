@@ -82,6 +82,10 @@ class YutoriApp : Application() {
         )[com.yutori.feedback.FeedbackViewModel::class.java]
     }
 
+    val suggestionsController: com.yutori.suggestions.SuggestionsController? by lazy {
+        database?.let { com.yutori.suggestions.SuggestionsController(applicationContext, it) }
+    }
+
     override fun onCreate() {
         super.onCreate()
 
@@ -128,6 +132,10 @@ class YutoriApp : Application() {
         // network availability via WorkManager constraints.
         ForexConversionWorker.enqueueOneShot(this)
         ForexConversionWorker.enqueuePeriodic(this)
+
+        // Rule-suggestion miner: daily refresh. The post-import one-shot
+        // and manual Rescan hook into the same worker class.
+        com.yutori.suggestions.SuggestionRescanWorker.enqueuePeriodic(this)
 
         // Post-start reconciliation: fill in `android_sms_id` on rows
         // the broadcast receiver saved before the content provider had
@@ -177,6 +185,7 @@ class YutoriApp : Application() {
                 .addMigrations(
                     YutoriDatabase.MIGRATION_1_2,
                     YutoriDatabase.MIGRATION_2_3,
+                    YutoriDatabase.MIGRATION_3_4,
                 )
                 // No destructive fallback — user data is the point.
                 .build()
