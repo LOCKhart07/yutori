@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v16 mockup: inherited-budget surfacing (#14)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --positive:      #7FB77E;
+    --warn:          #E0A260;
+    --negative:      #E27A7A;
+    --accent:        #A8B5FF;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 80px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 52px 0 10px; font-size: 17px; color: #C9CACD; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 18px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: #8A8E96; font-size: 12px; max-width: 560px; margin: 10px 0 0; line-height: 1.55; }
+  .note strong { color: #C9CACD; }
+
+  .phones { display: flex; gap: 28px; flex-wrap: wrap; }
+  .phone {
+    width: 360px;
+    background: var(--surface);
+    border-radius: 28px;
+    padding: 36px 16px 24px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+    position: relative;
+  }
+  .phone .statusbar {
+    position: absolute;
+    top: 12px; left: 20px; right: 20px;
+    font-size: 11px;
+    color: var(--on-muted);
+    display: flex; justify-content: space-between;
+  }
+  .phone .title {
+    font-size: 12px;
+    color: var(--on-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 14px;
+    padding: 0 8px;
+  }
+
+  .monthrow {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px 14px;
+    font-size: 13px; color: var(--on-muted);
+  }
+  .monthrow .month { color: var(--on); font-weight: 600; font-size: 14px; }
+  .monthrow .gear { opacity: 0.6; }
+
+  .hero {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 18px;
+    padding: 20px 18px;
+  }
+  .hero .primary {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 34px; font-weight: 600; color: var(--on);
+    letter-spacing: -0.02em;
+  }
+  .hero .sub { font-size: 13px; color: var(--on-muted); margin-top: 4px; }
+
+  .banner { margin-top: 16px; border-radius: 14px; padding: 14px; }
+  .banner.neutral { background: rgba(168,181,255,0.06); border: 1px solid rgba(168,181,255,0.18); }
+  .banner .t { color: var(--on); font-weight: 600; font-size: 14px; }
+  .banner .d { color: var(--on-muted); font-size: 12px; margin-top: 4px; line-height: 1.5; }
+  .btn {
+    display: inline-block;
+    margin-top: 14px;
+    background: var(--on); color: #0F0F10;
+    padding: 10px 16px; border-radius: 10px;
+    font-weight: 600; font-size: 13px; cursor: pointer;
+  }
+
+  /* BudgetSetup-screen styling */
+  .setup-title-caps {
+    font-size: 10px; letter-spacing: 0.08em;
+    color: var(--on-muted); text-transform: uppercase; font-weight: 600;
+  }
+  .setup-title-big {
+    font-size: 28px; font-weight: 600; color: var(--on);
+    margin-top: 8px; letter-spacing: -0.01em;
+  }
+  .setup-explainer {
+    font-size: 13px; color: var(--on-muted); line-height: 1.55;
+    margin-top: 18px;
+  }
+  .field-label {
+    font-size: 10px; letter-spacing: 0.08em;
+    color: var(--on-faint); text-transform: uppercase; font-weight: 600;
+    margin-top: 28px; margin-bottom: 8px;
+  }
+  .field {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 22px; color: var(--on);
+  }
+  .field .rupee { color: var(--on-muted); }
+
+  /* The inheritance note — compact, meta, styled as a subtle info card */
+  .inherit-note {
+    display: flex; gap: 10px; align-items: flex-start;
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: rgba(168,181,255,0.05);
+    border: 1px solid rgba(168,181,255,0.14);
+    border-radius: 10px;
+  }
+  .inherit-note .icon {
+    flex: 0 0 16px;
+    margin-top: 2px;
+    color: var(--accent);
+    font-family: system-ui; font-size: 14px; line-height: 1;
+  }
+  .inherit-note .txt {
+    font-size: 12px; color: var(--on-muted); line-height: 1.5;
+  }
+  .inherit-note .txt b { color: var(--on); font-weight: 600; }
+
+  .slider {
+    margin-top: 8px; height: 6px; background: var(--surface-el2);
+    border-radius: 999px; position: relative;
+  }
+  .slider .sel { position: absolute; inset: 0 25% 0 0; background: var(--accent); border-radius: 999px; }
+  .slider .thumb {
+    position: absolute; left: calc(75% - 8px); top: -6px;
+    width: 18px; height: 18px; background: var(--accent);
+    border-radius: 50%;
+  }
+  .buttons { display: flex; gap: 12px; margin-top: 32px; }
+  .buttons .sec, .buttons .pri {
+    flex: 1; text-align: center; padding: 13px;
+    border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .buttons .sec { background: var(--surface-el); border: 1px solid var(--divider); color: var(--on-muted); }
+  .buttons .pri { background: var(--accent); color: #0F0F10; }
+
+  hr { border: 0; border-top: 1px solid var(--divider); margin: 50px 0; }
+</style>
+</head>
+<body>
+
+<h1>v16 · Inherited-budget surfacing (#14)</h1>
+
+<p class="blurb">
+  Revised per review: dashboard stays visually quiet even when the budget is inherited — the only
+  change there is a bug fix so future empty months show the inherited limit instead of ₹0 with no
+  way to set. Provenance (<i>"this came from March"</i>) only appears on BudgetSetup, where the
+  user is actually about to interact with the budget.
+</p>
+
+<h2>Frame A · Dashboard fix for future empty months (no button, no caption, no provenance)</h2>
+<p class="blurb">
+  May 2026 has no <code>budgets</code> row and no transactions. April's ₹45,000 inherits.
+  The hero subline shows the inherited limit — same shape as any zero-spend month ("of ₹X · no
+  spend yet") — and the hero itself becomes tappable, opening BudgetSetup pre-filled (same
+  affordance the Ready state already offers). No CTA button; the hero tap is the single path.
+  Nothing on this screen says "inherited".
+</p>
+
+<div class="phones">
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span>􀋲 85%</span></div>
+    <p class="title">A · today (broken)</p>
+    <div class="monthrow"><div>‹ <span class="month">May 2026</span> ›</div><div class="gear">⚙</div></div>
+    <div class="hero">
+      <div class="primary">₹0</div>
+      <div class="sub">No spend yet this month</div>
+    </div>
+    <div class="banner neutral">
+      <div class="t">No transactions yet.</div>
+      <div class="d">Incoming SMSes will appear here automatically.</div>
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span>􀋲 85%</span></div>
+    <p class="title">A · proposed</p>
+    <div class="monthrow"><div>‹ <span class="month">May 2026</span> ›</div><div class="gear">⚙</div></div>
+    <div class="hero" style="cursor:pointer;">
+      <div class="primary">₹0</div>
+      <div class="sub">of ₹45,000 · no spend yet</div>
+    </div>
+    <div class="banner neutral">
+      <div class="t">No transactions yet.</div>
+      <div class="d">Incoming SMSes will appear here automatically.</div>
+    </div>
+  </div>
+</div>
+
+<p class="note">
+  Two tiny code changes in <code>EmptyView</code>:
+  <br>— hero subline when <code>hasBudget=true</code> switches from "No spend yet this month" to
+    "of ₹X · no spend yet" (X = resolved limit)
+  <br>— <code>HeroAmount</code> picks up <code>onClick = if (hasBudget) onSetBudget else null</code>
+    in Empty state, matching Ready state's wiring
+  <br>No new UI elements. Gear icon still goes to Settings (unchanged); the only BudgetSetup
+  entry point from a Ready-or-inherited-Empty month is tapping the hero.
+</p>
+
+<hr>
+
+<h2>Frame B · BudgetSetup screen · inheritance is surfaced here</h2>
+<p class="blurb">
+  User taps <b>Set budget for this month</b> (or the gear icon from the dashboard) on a month with
+  no explicit row. Fields pre-fill from the nearest prior row. A small info card appears under the
+  amount field explaining where the values came from and that saving creates a real row here.
+  Nothing on the dashboard hinted at this — this screen is where the concept earns its keep.
+</p>
+
+<div class="phones">
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span>􀋲 85%</span></div>
+    <p class="title">B · today (no inheritance context)</p>
+    <div class="monthrow"><div>‹ Dashboard</div><div></div></div>
+    <div style="padding: 4px 8px 0;">
+      <div class="setup-title-caps">May 2026</div>
+      <div class="setup-title-big">Set budget</div>
+      <div class="setup-explainer">How much you want to spend this month. Carry-over from
+        prior months gets added automatically.</div>
+      <div class="field-label">Monthly limit (INR)</div>
+      <div class="field"><span class="rupee">₹ </span>45000</div>
+      <div class="field-label">Warning threshold · <span style="color:var(--accent);text-transform:none;letter-spacing:0;font-size:12px">80%</span></div>
+      <div class="slider"><div class="sel"></div><div class="thumb"></div></div>
+      <div class="buttons"><div class="sec">Cancel</div><div class="pri">Save</div></div>
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span>􀋲 85%</span></div>
+    <p class="title">B · proposed</p>
+    <div class="monthrow"><div>‹ Dashboard</div><div></div></div>
+    <div style="padding: 4px 8px 0;">
+      <div class="setup-title-caps">May 2026</div>
+      <div class="setup-title-big">Set budget</div>
+      <div class="setup-explainer">How much you want to spend this month. Carry-over from
+        prior months gets added automatically.</div>
+      <div class="field-label">Monthly limit (INR)</div>
+      <div class="field"><span class="rupee">₹ </span>45000</div>
+      <!-- NEW — the inheritance hint -->
+      <div class="inherit-note">
+        <div class="icon">ⓘ</div>
+        <div class="txt">Pre-filled from <b>March 2026</b>. Yutori has been using that amount as
+          May's budget until you set one. <b>Save</b> makes it official.</div>
+      </div>
+      <div class="field-label">Warning threshold · <span style="color:var(--accent);text-transform:none;letter-spacing:0;font-size:12px">80%</span></div>
+      <div class="slider"><div class="sel"></div><div class="thumb"></div></div>
+      <div class="buttons"><div class="sec">Cancel</div><div class="pri">Save</div></div>
+    </div>
+  </div>
+</div>
+
+<p class="note">
+  <strong>Shown only when inheritance is active.</strong> An explicit May row already existing →
+  note is hidden; the field simply shows that row's values with no annotation. Tapping Save in the
+  inherited case creates a new <code>budgets</code> row at <code>2026-05</code> with the current
+  field values — behaviour already wired by #14.
+</p>
+
+<hr>
+
+<h2>Open questions</h2>
+<ul class="blurb">
+  <li><b>Note copy</b> — current: "Pre-filled from March 2026. Yutori has been using that amount
+    as May's budget until you set one. Save makes it official."
+    Alternatives:
+    <br>— "Inherited from March 2026. Save to make it an explicit May row."
+    <br>— "Using March 2026's budget. Save creates a new May row."</li>
+  <li><b>Month format in the note</b> — "March 2026" (verbose, safe across years) vs "March" (compact
+    but ambiguous when viewing Jan inheriting from prev-Dec).</li>
+  <li><b>Icon</b> — shown as a generic ⓘ in the mockup. Material's <code>Icons.Outlined.Info</code>
+    is in core; drop it if you'd rather not add another icon to the screen.</li>
+</ul>
+
+</body>
+</html>

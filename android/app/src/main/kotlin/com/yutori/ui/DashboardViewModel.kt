@@ -142,10 +142,14 @@ class DashboardViewModel(
         val hasBudget: Boolean = resolvedLimit != null
 
         if (txEntities.isEmpty() && !hasBudget) {
-            return DashboardUiState.Empty(monthKey, hasBudget = false)
+            return DashboardUiState.Empty(monthKey, hasBudget = false, limitInr = null)
         }
         if (txEntities.isEmpty()) {
-            return DashboardUiState.Empty(monthKey, hasBudget = true)
+            return DashboardUiState.Empty(
+                monthKey = monthKey,
+                hasBudget = true,
+                limitInr = resolvedLimit,
+            )
         }
 
         // Snapshot math uses prior-month budgets too. Load them once.

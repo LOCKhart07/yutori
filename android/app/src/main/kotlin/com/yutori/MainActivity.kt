@@ -255,10 +255,16 @@ private fun AppContent() {
                     ?: budgetDao.getLatestBefore(s.monthKey)
             }
             val currentBudget = currentBudgetEntity?.let(BudgetMapper::toDomain)
+            // #14: if the pre-fill came from a prior row (i.e. the
+            // entity's monthKey isn't the viewed month), expose the
+            // source month so BudgetSetupScreen can explain the origin.
+            val inheritedFromMonthKey: String? =
+                currentBudgetEntity?.monthKey?.takeIf { it != s.monthKey }
 
             BudgetSetupScreen(
                 monthKey = s.monthKey,
                 currentBudget = currentBudget,
+                inheritedFromMonthKey = inheritedFromMonthKey,
                 onSave = { budget ->
                     scope.launch {
                         val now = System.currentTimeMillis()

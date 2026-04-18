@@ -302,15 +302,27 @@ private fun EmptyView(
     pageMonthKey: String,
     onJumpToMonth: (String) -> Unit,
 ) {
+    val inr = remember {
+        NumberFormat.getCurrencyInstance(
+            Locale.Builder().setLanguage("en").setRegion("IN").build(),
+        )
+    }
     ScrollingShell {
         Spacer(Modifier.height(24.dp))
         HeroAmount(
             primaryText = "₹0",
             subText = when {
+                state.hasBudget && state.limitInr != null ->
+                    "of ${inr.formatAmount(state.limitInr, compact = true)} · no spend yet"
                 state.hasBudget -> "No spend yet this month"
                 !isCurrentMonth -> "No budget set for this month"
                 else -> "Spent this month"
             },
+            // When a limit exists (explicit or inherited per #14), the
+            // hero is the affordance to edit it — matches the Ready
+            // state's wiring. No-budget months keep their dedicated
+            // "Set budget" button below and no hero tap.
+            onClick = if (state.hasBudget) onSetBudget else null,
         )
         Spacer(Modifier.height(20.dp))
         if (!state.hasBudget) {

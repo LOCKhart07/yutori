@@ -11,12 +11,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -51,6 +55,7 @@ fun BudgetSetupScreen(
     currentBudget: Budget?,
     onSave: (Budget) -> Unit,
     onCancel: () -> Unit,
+    inheritedFromMonthKey: String? = null,
 ) {
     // #80: the caller loads `currentBudget` asynchronously (initial
     // null, then the stored Budget once the DAO resolves). Keying the
@@ -165,6 +170,16 @@ fun BudgetSetupScreen(
                         text = "Limit must be ≥ 0.",
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.negative,
+                    )
+                }
+
+                // #14: when the pre-fill came from a prior month's row
+                // (inheritance), surface the source + what Save does.
+                if (inheritedFromMonthKey != null) {
+                    Spacer(Modifier.height(10.dp))
+                    InheritedBudgetNote(
+                        sourceMonthKey = inheritedFromMonthKey,
+                        targetMonthKey = monthKey,
                     )
                 }
 
@@ -318,3 +333,47 @@ private fun prettyMonthBudget(monthKey: String): String = try {
     )[m - 1]
     "$name $y"
 } catch (_: Exception) { monthKey }
+
+/**
+ * #14 pre-fill provenance. Shown under the limit input only when the
+ * pre-filled values came from a prior month's row (inheritance),
+ * never when the viewed month has its own explicit row.
+ */
+@Composable
+private fun InheritedBudgetNote(
+    sourceMonthKey: String,
+    targetMonthKey: String,
+) {
+    val colors = YutoriTheme.colors
+    val source = prettyMonthBudget(sourceMonthKey)
+    val target = prettyMonthBudget(targetMonthKey)
+    Surface(
+        color = colors.surfaceElevated,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = colors.divider,
+        ),
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.Top,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Info,
+                contentDescription = null,
+                tint = colors.onMuted,
+                modifier = Modifier
+                    .size(16.dp)
+                    .padding(top = 2.dp),
+            )
+            Text(
+                text = "Pre-filled from $source. Save to create an explicit $target row.",
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onMuted,
+            )
+        }
+    }
+}

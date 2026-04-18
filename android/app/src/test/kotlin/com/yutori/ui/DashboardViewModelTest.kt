@@ -67,6 +67,33 @@ class DashboardViewModelTest {
     }
 
     @Test
+    fun `inherited budget with no transactions yields Empty with limitInr populated (#14)`() =
+        runTest(dispatcher) {
+            // Future empty month: May has no row, no txs; April has a
+            // row at ₹45,000. The dashboard needs to render "of ₹45,000"
+            // in the Empty subline, so limitInr must make it out.
+            val vm = DashboardViewModel(
+                transactionDao = FakeTxDao(),
+                budgetDao = FakeBudgetDao(
+                    month = null,
+                    priors = listOf(
+                        BudgetEntity(
+                            monthKey = "2026-04", limitInr = 45_000.0,
+                            createdAtMs = 0, updatedAtMs = 0,
+                        ),
+                    ),
+                ),
+                hasPermissionProvider = { true },
+                nowMs = { epoch("2026-05-01") },
+                computationDispatcher = dispatcher,
+            )
+            val state = vm.uiState.first { it !is DashboardUiState.Loading }
+            state.shouldBeInstanceOf<DashboardUiState.Empty>()
+            state.hasBudget shouldBe true
+            state.limitInr shouldBe 45_000.0
+        }
+
+    @Test
     fun `inherited budget from a prior month yields Ready with inherited limit (#14)`() =
         runTest(dispatcher) {
             // April has no explicit budget row. March does — ₹45,000

@@ -14,8 +14,18 @@ sealed interface DashboardUiState {
     /** No SMS permission has ever been granted. */
     data object NeedsPermission : DashboardUiState
 
-    /** Permission granted but no transactions yet. */
-    data class Empty(val monthKey: String, val hasBudget: Boolean) : DashboardUiState
+    /**
+     * Permission granted but no transactions yet. [limitInr] is the
+     * resolved limit when one exists (explicit row OR inherited per
+     * #14) — non-null iff [hasBudget] is true. The view uses it to
+     * render "of ₹X · no spend yet" instead of a bare "No spend yet
+     * this month".
+     */
+    data class Empty(
+        val monthKey: String,
+        val hasBudget: Boolean,
+        val limitInr: Double? = null,
+    ) : DashboardUiState
 
     /** The happy path. */
     data class Ready(
