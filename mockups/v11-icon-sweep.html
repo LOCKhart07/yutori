@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v11 mockup: Unicode-glyph-as-icon sweep (#87 widened)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --surface-el3:   #242428;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --accent:        #F5B547;
+    --info:          #7BA9D1;
+    --positive:      #7FB77E;
+    --warn:          #E0A260;
+    --negative:      #E27A7A;
+    --primary:       #8FB8DD;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 48px 32px 80px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 8px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 48px 0 6px; font-size: 16px; color: #C9CACD; }
+  h3 { font-weight: 500; margin: 20px 0 10px; font-size: 11px; color: var(--on-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .blurb { color: #8A8E96; max-width: 860px; margin: 0 0 6px; font-size: 13px; line-height: 1.55; }
+  .blurb code, code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: var(--on-muted); font-size: 12px; max-width: 780px; margin: 8px 0 0; line-height: 1.55; }
+  hr { border: 0; border-top: 1px solid var(--divider); margin: 40px 0; }
+
+  .pair { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center; max-width: 820px; margin-top: 14px; }
+  .pair .arrow { color: var(--on-faint); font-family: 'JetBrains Mono', monospace; font-size: 22px; text-align: center; }
+  .pair .side { background: var(--surface); border-radius: 18px; padding: 18px 18px 16px; border: 1px solid var(--divider); }
+  .pair .side .tag {
+    font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--on-faint); margin-bottom: 10px; font-weight: 600;
+  }
+  .pair .side.before .tag { color: var(--negative); }
+  .pair .side.after  .tag { color: var(--positive); }
+
+  /* Perm card style matches android/app .../PermissionScreen.kt */
+  .perm-card {
+    background: var(--surface-el);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .perm-card:last-child { margin-bottom: 0; }
+  .perm-chip {
+    width: 32px; height: 32px; border-radius: 999px;
+    background: var(--surface-el2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-muted);
+    flex-shrink: 0;
+  }
+  .perm-chip .material-icons { font-size: 18px; color: var(--on-muted); }
+  .perm-chip .ucg { font-size: 17px; color: var(--on-muted); line-height: 1; }
+  .perm-title { font-size: 14px; font-weight: 500; color: var(--on); }
+  .perm-detail { font-size: 12px; color: var(--on-muted); margin-top: 2px; line-height: 1.4; }
+
+  /* fallback glyph rendering for "on OxygenOS" — literally what the user sees */
+  .oxy { color: var(--negative); font-weight: 700; }
+  .oxy::after { content: " (as rendered on OxygenOS)"; font-size: 10px; color: var(--on-faint); font-weight: 400; }
+
+  /* month nav + settings header (Dashboard) */
+  .dash-header {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--divider);
+  }
+  .dash-header .month {
+    flex: 1;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 17px; font-weight: 600; color: var(--on);
+  }
+  .dash-header .chev {
+    width: 32px; height: 32px; border-radius: 999px;
+    background: var(--surface-el);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-muted);
+    cursor: pointer;
+  }
+  .dash-header .chev .ucg { font-size: 20px; line-height: 1; }
+  .dash-header .chev .material-icons { font-size: 20px; }
+  .dash-header .settings {
+    width: 32px; height: 32px; border-radius: 999px;
+    background: var(--surface-el);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-muted);
+    cursor: pointer;
+  }
+  .dash-header .settings .ucg { font-size: 18px; line-height: 1; }
+  .dash-header .settings .material-icons { font-size: 18px; }
+
+  /* Sort chip */
+  .sort-row {
+    display: flex; gap: 8px;
+    padding: 10px 0;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 10px;
+    background: var(--surface-el);
+    border-radius: 999px;
+    font-size: 12px; color: var(--on-muted);
+    border: 1px solid var(--divider);
+  }
+  .chip.active { color: var(--on); background: var(--surface-el2); }
+  .chip .ucg { font-size: 13px; line-height: 1; }
+  .chip .material-icons { font-size: 16px; }
+
+  /* Settings row + AppUpdatesSection trailing */
+  .settings-row {
+    background: var(--surface-el);
+    padding: 13px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .settings-row .label { color: var(--on); }
+  .settings-row .trail { color: var(--on-faint); font-size: 18px; display: inline-flex; align-items: center; }
+  .settings-row .trail .material-icons { font-size: 20px; }
+  .appupdate-trail {
+    color: var(--primary); font-size: 13px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .appupdate-trail .material-icons { font-size: 16px; vertical-align: middle; }
+
+  /* Migration error disclosure + confirm */
+  .disc {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--on-muted); font-size: 13px;
+    padding: 10px 0;
+  }
+  .disc .ucg { font-size: 14px; line-height: 1; }
+  .disc .material-icons { font-size: 18px; }
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--on-muted);
+    font-size: 13px;
+  }
+  .btn-ghost .material-icons { font-size: 16px; color: var(--positive); }
+  .btn-ghost .ucg { color: var(--positive); font-size: 14px; }
+
+  /* Feedback sheet close */
+  .feedback-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--surface);
+    border-radius: 14px 14px 0 0;
+    border: 1px solid var(--divider);
+    border-bottom: 0;
+  }
+  .feedback-header .title { font-weight: 600; font-size: 15px; color: var(--on); }
+  .feedback-header .close {
+    width: 32px; height: 32px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-el); color: var(--on-muted);
+    cursor: pointer;
+  }
+  .feedback-header .close .ucg { font-size: 16px; line-height: 1; }
+  .feedback-header .close .material-icons { font-size: 18px; }
+
+  .mapping {
+    font-size: 12px;
+    color: var(--on-muted);
+    margin: 8px 0 0;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.65;
+  }
+  .mapping b { color: var(--on); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>v11 — Unicode-glyph-as-icon sweep (#87 widened)</h1>
+<p class="blurb">
+  Every "before" column below is exactly what the Kotlin source says today — a <code>Text(text = "&lt;single Unicode char&gt;")</code>
+  being used as an icon. On your OxygenOS device, font fallback maps several of these to unrelated glyphs
+  (✓ instead of ⟲, ! instead of ◉) which is the bug filed in #87. The fix swaps each to a Compose
+  <code>Icons.*</code> from the Material core set already on the classpath — no new dependency, no custom drawables.
+  <br><br>
+  Icons rendered here come from Google's <code>Material Icons</code> web font — same glyph source as Compose's
+  <code>androidx.compose.material.icons</code>. So "After" is a faithful preview of what ships, not an approximation.
+</p>
+
+<hr>
+
+<!-- 1. PermissionScreen (the filed bug) -->
+<h2>1. PermissionScreen — the #87 repro</h2>
+<p class="blurb">Your screenshots: ⟲ rendering as a green <span class="oxy">✓</span>, ◉ as a <span class="oxy">!</span>.</p>
+
+<div class="pair">
+  <div class="side before">
+    <div class="tag">Before — current code</div>
+    <div class="perm-card">
+      <div class="perm-chip"><span class="ucg">✉</span></div>
+      <div><div class="perm-title">Receive SMS</div><div class="perm-detail">Catch new bank messages as they arrive.</div></div>
+    </div>
+    <div class="perm-card">
+      <div class="perm-chip"><span class="ucg">⟲</span></div>
+      <div><div class="perm-title">Read SMS inbox</div><div class="perm-detail">Import past transactions from your phone's SMS history.</div></div>
+    </div>
+    <div class="perm-card">
+      <div class="perm-chip"><span class="ucg">◉</span></div>
+      <div><div class="perm-title">Post notifications</div><div class="perm-detail">Alert you at 50%, 80%, and 100% of your budget.</div></div>
+    </div>
+  </div>
+  <div class="arrow">→</div>
+  <div class="side after">
+    <div class="tag">After</div>
+    <div class="perm-card">
+      <div class="perm-chip"><span class="material-icons">email</span></div>
+      <div><div class="perm-title">Receive SMS</div><div class="perm-detail">Catch new bank messages as they arrive.</div></div>
+    </div>
+    <div class="perm-card">
+      <div class="perm-chip"><span class="material-icons">list</span></div>
+      <div><div class="perm-title">Read SMS inbox</div><div class="perm-detail">Import past transactions from your phone's SMS history.</div></div>
+    </div>
+    <div class="perm-card">
+      <div class="perm-chip"><span class="material-icons">notifications</span></div>
+      <div><div class="perm-title">Post notifications</div><div class="perm-detail">Alert you at 50%, 80%, and 100% of your budget.</div></div>
+    </div>
+  </div>
+</div>
+<p class="mapping">
+  <b>✉</b> → <b>Icons.Default.Email</b> &nbsp;·&nbsp;
+  <b>⟲</b> → <b>Icons.AutoMirrored.Filled.List</b> &nbsp;·&nbsp;
+  <b>◉</b> → <b>Icons.Default.Notifications</b>
+</p>
+
+<hr>
+
+<!-- 2. Dashboard month nav + settings -->
+<h2>2. Dashboard header — month nav + Settings gear</h2>
+
+<div class="pair">
+  <div class="side before">
+    <div class="tag">Before</div>
+    <div class="dash-header">
+      <div class="chev"><span class="ucg">‹</span></div>
+      <div class="month">April 2026</div>
+      <div class="chev"><span class="ucg">›</span></div>
+      <div class="settings"><span class="ucg">⚙</span></div>
+    </div>
+  </div>
+  <div class="arrow">→</div>
+  <div class="side after">
+    <div class="tag">After</div>
+    <div class="dash-header">
+      <div class="chev"><span class="material-icons">keyboard_arrow_left</span></div>
+      <div class="month">April 2026</div>
+      <div class="chev"><span class="material-icons">keyboard_arrow_right</span></div>
+      <div class="settings"><span class="material-icons">settings</span></div>
+    </div>
+  </div>
+</div>
+<p class="mapping">
+  <b>‹</b> <b>›</b> → <b>Icons.Default.KeyboardArrowLeft / Right</b> &nbsp;·&nbsp;
+  <b>⚙</b> → <b>Icons.Default.Settings</b>
+</p>
+
+<hr>
+
+<!-- 3. Sort chips -->
+<h2>3. Dashboard + CategoryDrillDown — sort chips</h2>
+
+<div class="pair">
+  <div class="side before">
+    <div class="tag">Before</div>
+    <div class="sort-row">
+      <span class="chip">Latest</span>
+      <span class="chip active">Amount <span class="ucg">↓</span></span>
+      <span class="chip">Name</span>
+    </div>
+    <div class="sort-row">
+      <span class="chip">Latest</span>
+      <span class="chip active">Amount <span class="ucg">↑</span></span>
+      <span class="chip">Name</span>
+    </div>
+  </div>
+  <div class="arrow">→</div>
+  <div class="side after">
+    <div class="tag">After</div>
+    <div class="sort-row">
+      <span class="chip">Latest</span>
+      <span class="chip active">Amount <span class="material-icons">keyboard_arrow_down</span></span>
+      <span class="chip">Name</span>
+    </div>
+    <div class="sort-row">
+      <span class="chip">Latest</span>
+      <span class="chip active">Amount <span class="material-icons">keyboard_arrow_up</span></span>
+      <span class="chip">Name</span>
+    </div>
+  </div>
+</div>
+<p class="mapping">
+  <b>↓ ↑</b> → <b>Icons.Default.KeyboardArrowDown / Up</b> &nbsp;·&nbsp; two files: DashboardScreen.kt, CategoryDrillDownScreen.kt
+</p>
+
+<hr>
+
+<!-- 4. Settings row + AppUpdatesSection -->
+<h2>4. Settings row chevrons + App updates trailing chevron</h2>
+
+<div class="pair">
+  <div class="side before">
+    <div class="tag">Before</div>
+    <div class="settings-row">
+      <span class="label">Registered accounts</span>
+      <span class="trail"><span class="ucg">›</span></span>
+    </div>
+    <div class="settings-row">
+      <span class="label">Send feedback</span>
+      <span class="trail"><span class="ucg">›</span></span>
+    </div>
+    <div class="settings-row">
+      <span class="label">Status</span>
+      <span class="appupdate-trail">Update available: 0.6.2 <span class="ucg">›</span></span>
+    </div>
+  </div>
+  <div class="arrow">→</div>
+  <div class="side after">
+    <div class="tag">After</div>
+    <div class="settings-row">
+      <span class="label">Registered accounts</span>
+      <span class="trail"><span class="material-icons">keyboard_arrow_right</span></span>
+    </div>
+    <div class="settings-row">
+      <span class="label">Send feedback</span>
+      <span class="trail"><span class="material-icons">keyboard_arrow_right</span></span>
+    </div>
+    <div class="settings-row">
+      <span class="label">Status</span>
+      <span class="appupdate-trail">Update available: 0.6.2 <span class="material-icons">keyboard_arrow_right</span></span>
+    </div>
+  </div>
+</div>
+<p class="mapping">
+  <b>›</b> → <b>Icons.AutoMirrored.Filled.KeyboardArrowRight</b> &nbsp;·&nbsp; SettingsScreen.kt, AppUpdatesSection.kt
+</p>
+
+<hr>
+
+<!-- 5. Send feedback sheet close -->
+<h2>5. Send feedback sheet — close button</h2>
+
+<div class="pair">
+  <div class="side before">
+    <div class="tag">Before</div>
+    <div class="feedback-header">
+      <span class="title">Send feedback</span>
+      <div class="close"><span class="ucg">✕</span></div>
+    </div>
+  </div>
+  <div class="arrow">→</div>
+  <div class="side after">
+    <div class="tag">After</div>
+    <div class="feedback-header">
+      <span class="title">Send feedback</span>
+      <div class="close"><span class="material-icons">close</span></div>
+    </div>
+  </div>
+</div>
+<p class="mapping">
+  <b>✕</b> → <b>Icons.Default.Close</b>
+</p>
+
+<hr>
+
+<!-- 6. MigrationErrorScreen disclosure + confirmation -->
+<h2>6. Migration error — disclosure toggle + Copy confirmation</h2>
+
+<div class="pair">
+  <div class="side before">
+    <div class="tag">Before</div>
+    <div class="disc"><span class="ucg">▸</span> Show error details</div>
+    <div class="disc"><span class="ucg">▾</span> Hide error details</div>
+    <div style="margin-top:10px"></div>
+    <button class="btn-ghost"><span class="ucg">✓</span> Copied</button>
+  </div>
+  <div class="arrow">→</div>
+  <div class="side after">
+    <div class="tag">After</div>
+    <div class="disc"><span class="material-icons">keyboard_arrow_right</span> Show error details</div>
+    <div class="disc"><span class="material-icons">keyboard_arrow_down</span> Hide error details</div>
+    <div style="margin-top:10px"></div>
+    <button class="btn-ghost"><span class="material-icons">check</span> Copied</button>
+  </div>
+</div>
+<p class="mapping">
+  <b>▸</b> <b>▾</b> → <b>Icons.Default.KeyboardArrowRight / Down</b> &nbsp;·&nbsp;
+  <b>✓</b> → <b>Icons.Default.Check</b>
+</p>
+
+<hr>
+
+<!-- Summary table -->
+<h2>Summary of changes</h2>
+<p class="blurb">13 replacements across 8 files, 1 commit, 0 new dependencies, 0 custom drawables.</p>
+
+<table style="border-collapse: collapse; margin-top: 12px; font-size: 12px; color: var(--on-muted);">
+  <thead>
+    <tr style="border-bottom: 1px solid var(--divider); text-align: left;">
+      <th style="padding: 6px 14px 6px 0;">#</th>
+      <th style="padding: 6px 14px 6px 0;">File</th>
+      <th style="padding: 6px 14px 6px 0;">Glyph</th>
+      <th style="padding: 6px 14px 6px 0;">Icon</th>
+    </tr>
+  </thead>
+  <tbody style="font-family: 'JetBrains Mono', monospace;">
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">1</td><td style="padding:6px 14px 6px 0;">PermissionScreen</td><td style="padding:6px 14px 6px 0;">✉</td><td style="padding:6px 14px 6px 0;">Email</td></tr>
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">2</td><td style="padding:6px 14px 6px 0;">PermissionScreen</td><td style="padding:6px 14px 6px 0;">⟲</td><td style="padding:6px 14px 6px 0;">AutoMirrored.List</td></tr>
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">3</td><td style="padding:6px 14px 6px 0;">PermissionScreen</td><td style="padding:6px 14px 6px 0;">◉</td><td style="padding:6px 14px 6px 0;">Notifications</td></tr>
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">4</td><td style="padding:6px 14px 6px 0;">DashboardScreen</td><td style="padding:6px 14px 6px 0;">‹</td><td style="padding:6px 14px 6px 0;">KeyboardArrowLeft</td></tr>
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">5</td><td style="padding:6px 14px 6px 0;">DashboardScreen</td><td style="padding:6px 14px 6px 0;">›</td><td style="padding:6px 14px 6px 0;">KeyboardArrowRight</td></tr>
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">6</td><td style="padding:6px 14px 6px 0;">DashboardScreen</td><td style="padding:6px 14px 6px 0;">⚙</td><td style="padding:6px 14px 6px 0;">Settings</td></tr>
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">7</td><td style="padding:6px 14px 6px 0;">DashboardScreen</td><td style="padding:6px 14px 6px 0;">↓ ↑</td><td style="padding:6px 14px 6px 0;">KeyboardArrowDown / Up</td></tr>
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">8</td><td style="padding:6px 14px 6px 0;">CategoryDrillDownScreen</td><td style="padding:6px 14px 6px 0;">↓ ↑</td><td style="padding:6px 14px 6px 0;">KeyboardArrowDown / Up</td></tr>
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">9</td><td style="padding:6px 14px 6px 0;">SettingsScreen</td><td style="padding:6px 14px 6px 0;">›</td><td style="padding:6px 14px 6px 0;">AutoMirrored.KeyboardArrowRight</td></tr>
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">10</td><td style="padding:6px 14px 6px 0;">SendFeedbackScreen</td><td style="padding:6px 14px 6px 0;">✕</td><td style="padding:6px 14px 6px 0;">Close</td></tr>
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">11</td><td style="padding:6px 14px 6px 0;">MigrationErrorScreen</td><td style="padding:6px 14px 6px 0;">▾ ▸</td><td style="padding:6px 14px 6px 0;">KeyboardArrowDown / Right</td></tr>
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">12</td><td style="padding:6px 14px 6px 0;">MigrationErrorScreen</td><td style="padding:6px 14px 6px 0;">✓</td><td style="padding:6px 14px 6px 0;">Check</td></tr>
+    <tr style="border-bottom: 1px solid var(--divider);"><td style="padding:6px 14px 6px 0;">13</td><td style="padding:6px 14px 6px 0;">AppUpdatesSection</td><td style="padding:6px 14px 6px 0;">›</td><td style="padding:6px 14px 6px 0;">AutoMirrored.KeyboardArrowRight</td></tr>
+  </tbody>
+</table>
+
+<p class="note">
+  <strong>Left alone:</strong> <code>→</code> in descriptive text (UpdateDialog "Current 0.5.1 → New 0.6.1", RecipientRulesScreen rule descriptions) because it's sentence content, not an icon. <code>•</code> in markdown-rendered release notes because it's a list marker. <code>₹</code> everywhere because it's a real currency character with universal coverage.
+</p>
+
+</body>
+</html>

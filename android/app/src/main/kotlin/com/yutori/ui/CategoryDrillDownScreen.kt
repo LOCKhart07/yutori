@@ -15,10 +15,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -152,14 +159,26 @@ fun CategoryDrillDownScreen(
                         color = YutoriTheme.colors.onFaint,
                     )
                     if (transactions.isNotEmpty()) {
-                        Text(
-                            text = txSort.label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = YutoriTheme.colors.onMuted,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clickable { txSort = txSort.next() }
                                 .padding(horizontal = 6.dp, vertical = 4.dp),
-                        )
+                        ) {
+                            Text(
+                                text = txSort.label,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = YutoriTheme.colors.onMuted,
+                            )
+                            txSort.icon?.let { icon ->
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = YutoriTheme.colors.onMuted,
+                                )
+                            }
+                        }
                     }
                 }
                 Spacer(Modifier.height(4.dp))
@@ -203,10 +222,11 @@ internal fun BackRow(label: String, onBack: () -> Unit) {
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = "‹",
-            style = MaterialTheme.typography.headlineSmall,
-            color = YutoriTheme.colors.onMuted,
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+            contentDescription = "Back",
+            modifier = Modifier.size(24.dp),
+            tint = YutoriTheme.colors.onMuted,
         )
         Spacer(Modifier.width(6.dp))
         Text(
@@ -227,11 +247,14 @@ private fun prettyMonth(monthKey: String): String = try {
 } catch (_: Exception) { monthKey }
 
 /** Cycle: biggest first → smallest first → latest first → oldest first → back. */
-internal enum class TxSort(val label: String) {
+internal enum class TxSort(
+    val label: String,
+    val icon: ImageVector? = null,
+) {
     DateDesc("Latest"),
     DateAsc("Oldest"),
-    AmountDesc("Amount ↓"),
-    AmountAsc("Amount ↑");
+    AmountDesc("Amount", Icons.Default.KeyboardArrowDown),
+    AmountAsc("Amount", Icons.Default.KeyboardArrowUp);
 
     fun next(): TxSort = when (this) {
         AmountDesc -> AmountAsc

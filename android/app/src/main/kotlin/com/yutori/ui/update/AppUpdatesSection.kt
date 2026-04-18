@@ -15,7 +15,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -144,11 +147,19 @@ private fun StatusLine(phase: UpdateScreenState.Phase) {
         is UpdateScreenState.Phase.UpToDate ->
             Text("Up to date", style = mono, color = YutoriTheme.colors.positive)
         is UpdateScreenState.Phase.Available ->
-            Text(
-                text = "Update available: ${phase.release.tagName.removePrefix("v")} ›",
-                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.primary,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Update available: ${phase.release.tagName.removePrefix("v")}",
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
         is UpdateScreenState.Phase.Downloading ->
             Text("Downloading…", style = mono, color = YutoriTheme.colors.info)
         is UpdateScreenState.Phase.DownloadFailed ->

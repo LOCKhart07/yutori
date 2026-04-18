@@ -26,10 +26,16 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -142,19 +148,19 @@ private fun InitialGate(onGrant: () -> Unit) {
             Spacer(Modifier.height(32.dp))
 
             PermCard(
-                glyph = "✉",
+                icon = Icons.Default.Email,
                 title = "Receive SMS",
                 detail = "Catch new bank messages as they arrive.",
             )
             Spacer(Modifier.height(12.dp))
             PermCard(
-                glyph = "⟲",
+                icon = Icons.AutoMirrored.Filled.List,
                 title = "Read SMS inbox",
                 detail = "Import past transactions from your phone's SMS history.",
             )
             Spacer(Modifier.height(12.dp))
             PermCard(
-                glyph = "◉",
+                icon = Icons.Default.Notifications,
                 title = "Post notifications",
                 detail = "Alert you at 50%, 80%, and 100% of your budget.",
             )
@@ -186,7 +192,7 @@ private fun InitialGate(onGrant: () -> Unit) {
 }
 
 @Composable
-private fun PermCard(glyph: String, title: String, detail: String) {
+private fun PermCard(icon: ImageVector, title: String, detail: String) {
     val colors = YutoriTheme.colors
     Row(
         modifier = Modifier
@@ -203,10 +209,11 @@ private fun PermCard(glyph: String, title: String, detail: String) {
                 .background(colors.surfaceElevated2),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = glyph,
-                style = MaterialTheme.typography.titleMedium,
-                color = colors.onMuted,
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = colors.onMuted,
             )
         }
         Spacer(Modifier.size(12.dp))

@@ -18,12 +18,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -122,13 +127,14 @@ private fun TopBar(
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = "✕",
+        Icon(
+            imageVector = Icons.Default.Close,
+            contentDescription = "Close feedback sheet",
             modifier = Modifier
                 .clickable(onClick = onClose)
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.titleMedium,
-            color = YutoriTheme.colors.onMuted,
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .size(24.dp),
+            tint = YutoriTheme.colors.onMuted,
         )
         Spacer(Modifier.fillMaxWidth(0.07f))
         Text(
@@ -278,10 +284,11 @@ private fun SentConfirmation(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "✓",
-            style = MaterialTheme.typography.displayMedium,
-            color = YutoriTheme.colors.positive,
+        Icon(
+            imageVector = Icons.Default.Check,
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+            tint = YutoriTheme.colors.positive,
         )
         Spacer(Modifier.padding(vertical = 10.dp))
         Text(

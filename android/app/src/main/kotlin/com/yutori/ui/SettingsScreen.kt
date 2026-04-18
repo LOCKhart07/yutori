@@ -12,10 +12,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -207,10 +211,11 @@ private fun SettingsItem(
                 color = YutoriTheme.colors.onMuted,
             )
         }
-        Text(
-            text = "›",
-            style = MaterialTheme.typography.headlineSmall,
-            color = YutoriTheme.colors.onFaint,
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            modifier = Modifier.size(24.dp),
+            tint = YutoriTheme.colors.onFaint,
         )
     }
     HorizontalDivider(

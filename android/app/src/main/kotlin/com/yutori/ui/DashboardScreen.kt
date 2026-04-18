@@ -24,8 +24,15 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -42,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -440,6 +448,7 @@ private fun ReadyView(
         SortableSectionHead(
             title = "Spend by category",
             sortLabel = catSort.label,
+            sortIcon = catSort.icon,
             onCycle = { catSort = catSort.next() },
             showSort = state.byCategory.isNotEmpty(),
         )
@@ -513,13 +522,14 @@ private fun TopBar(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             // Past chevron dims at the past-edge (earliest sms_log month).
-            Text(
-                text = "‹",
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Previous month",
                 modifier = Modifier
                     .clickable(enabled = canGoPrev, onClick = onMonthPrev)
-                    .padding(horizontal = 6.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.titleMedium,
-                color = if (canGoPrev) {
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                    .size(24.dp),
+                tint = if (canGoPrev) {
                     YutoriTheme.colors.onMuted
                 } else {
                     YutoriTheme.colors.onFaint
@@ -533,13 +543,14 @@ private fun TopBar(
             )
             // Forward chevron is unbounded forward per #21; dim only at
             // the (remote) MAX_FORWARD_MONTHS ceiling.
-            Text(
-                text = "›",
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Next month",
                 modifier = Modifier
                     .clickable(enabled = canGoNext, onClick = onMonthNext)
-                    .padding(horizontal = 6.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.titleMedium,
-                color = if (canGoNext) {
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                    .size(24.dp),
+                tint = if (canGoNext) {
                     YutoriTheme.colors.onMuted
                 } else {
                     YutoriTheme.colors.onFaint
@@ -570,11 +581,14 @@ private fun TopBar(
             androidx.compose.foundation.layout.Box(
                 contentAlignment = Alignment.TopEnd,
             ) {
-                Text(
-                    text = "⚙",
-                    modifier = Modifier.clickable(onClick = onSettings).padding(vertical = 8.dp),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    modifier = Modifier
+                        .clickable(onClick = onSettings)
+                        .padding(vertical = 8.dp)
+                        .size(22.dp),
+                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                 )
                 if (hasSettingsBadge) {
                     androidx.compose.foundation.layout.Box(
@@ -1232,9 +1246,12 @@ private fun prettyMonthKey(monthKey: String, dayLabel: String?): String {
 // ───────────────────────── Sort ─────────────────────────
 
 /** Cycle: amount desc → amount asc → name A–Z → back. */
-internal enum class CategorySort(val label: String) {
-    AmountDesc("Amount ↓"),
-    AmountAsc("Amount ↑"),
+internal enum class CategorySort(
+    val label: String,
+    val icon: ImageVector? = null,
+) {
+    AmountDesc("Amount", Icons.Default.KeyboardArrowDown),
+    AmountAsc("Amount", Icons.Default.KeyboardArrowUp),
     NameAsc("Name A–Z");
 
     fun next(): CategorySort = when (this) {
@@ -1257,6 +1274,7 @@ private fun applyCategorySort(
 private fun SortableSectionHead(
     title: String,
     sortLabel: String,
+    sortIcon: ImageVector?,
     onCycle: () -> Unit,
     showSort: Boolean,
 ) {
@@ -1273,14 +1291,26 @@ private fun SortableSectionHead(
             color = YutoriTheme.colors.onFaint,
         )
         if (showSort) {
-            Text(
-                text = sortLabel,
-                style = MaterialTheme.typography.labelSmall,
-                color = YutoriTheme.colors.onMuted,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clickable(onClick = onCycle)
                     .padding(horizontal = 6.dp, vertical = 4.dp),
-            )
+            ) {
+                Text(
+                    text = sortLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = YutoriTheme.colors.onMuted,
+                )
+                if (sortIcon != null) {
+                    Icon(
+                        imageVector = sortIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = YutoriTheme.colors.onMuted,
+                    )
+                }
+            }
         }
     }
 }

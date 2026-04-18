@@ -10,6 +10,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -23,9 +24,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -144,15 +150,30 @@ fun MigrationErrorScreen(error: Throwable) {
             Spacer(Modifier.size(20.dp))
 
             // Details expander
-            Text(
-                if (detailsExpanded) "▾  Hide error details" else "▸  Show error details",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .clickable { detailsExpanded = !detailsExpanded }
                     .padding(vertical = 4.dp, horizontal = 8.dp),
-            )
+            ) {
+                Icon(
+                    imageVector = if (detailsExpanded) {
+                        Icons.Default.KeyboardArrowDown
+                    } else {
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight
+                    },
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.size(4.dp))
+                Text(
+                    if (detailsExpanded) "Hide error details" else "Show error details",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             if (detailsExpanded) {
                 Spacer(Modifier.size(12.dp))
@@ -206,7 +227,17 @@ fun MigrationErrorScreen(error: Throwable) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (justCopied) "✓ Copied" else "Copy error details")
+                if (justCopied) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.size(6.dp))
+                    Text("Copied")
+                } else {
+                    Text("Copy error details")
+                }
             }
         }
     }
