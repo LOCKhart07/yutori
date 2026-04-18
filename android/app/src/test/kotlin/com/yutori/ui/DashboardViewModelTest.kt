@@ -67,6 +67,59 @@ class DashboardViewModelTest {
     }
 
     @Test
+    fun `inherited budget from a prior month yields Ready with inherited limit (#14)`() =
+        runTest(dispatcher) {
+            // April has no explicit budget row. March does — ₹45,000
+            // with zero spend. Viewing April should treat its limit as
+            // inherited from March (hasBudget=true, effective=45K+45K
+            // carry = 90K). April is not "No budget set".
+            val txs = listOf(
+                txEntity(id = 1, inrAmount = 5_000.0, monthKey = "2026-04"),
+            )
+            val vm = DashboardViewModel(
+                transactionDao = FakeTxDao(txs),
+                budgetDao = FakeBudgetDao(
+                    month = null, // no explicit April row
+                    priors = listOf(
+                        BudgetEntity(
+                            monthKey = "2026-03", limitInr = 45_000.0,
+                            createdAtMs = 0, updatedAtMs = 0,
+                        ),
+                    ),
+                ),
+                hasPermissionProvider = { true },
+                nowMs = { epoch("2026-04-15") },
+                computationDispatcher = dispatcher,
+            )
+            val state = vm.uiState.first { it is DashboardUiState.Ready }
+                    as DashboardUiState.Ready
+            state.snapshot.limitInr shouldBe 45_000.0
+            // March contributed (45K − 0) = 45K carry.
+            state.snapshot.carryOverInr shouldBe (45_000.0 plusOrMinus 1e-9)
+            state.snapshot.effectiveBudgetInr shouldBe (90_000.0 plusOrMinus 1e-9)
+        }
+
+    @Test
+    fun `no explicit and no prior budget still yields Empty with hasBudget=false (#14)`() =
+        runTest(dispatcher) {
+            // Neither an explicit April row nor any prior row exists —
+            // inheritance has nothing to draw from, so the Empty state
+            // should still report hasBudget=false. Guards against a
+            // wiring mistake where the inherited-null path accidentally
+            // sets hasBudget=true.
+            val vm = DashboardViewModel(
+                transactionDao = FakeTxDao(),
+                budgetDao = FakeBudgetDao(),
+                hasPermissionProvider = { true },
+                nowMs = { epoch("2026-04-15") },
+                computationDispatcher = dispatcher,
+            )
+            val state = vm.uiState.first { it !is DashboardUiState.Loading }
+            state.shouldBeInstanceOf<DashboardUiState.Empty>()
+            state.hasBudget shouldBe false
+        }
+
+    @Test
     fun `budget set but no transactions yields Empty with hasBudget=true`() =
         runTest(dispatcher) {
             val vm = DashboardViewModel(
@@ -474,6 +527,8 @@ class DashboardViewModelTest {
             month?.takeIf { it.monthKey == monthKey }
         override suspend fun getAllBefore(monthKey: String) =
             priors.filter { it.monthKey < monthKey }
+        override suspend fun getLatestBefore(monthKey: String) =
+            priors.filter { it.monthKey < monthKey }.maxByOrNull { it.monthKey }
         override suspend fun upsert(row: BudgetEntity) = Unit
         override suspend fun update(row: BudgetEntity) = Unit
         override suspend fun delete(row: BudgetEntity) = Unit

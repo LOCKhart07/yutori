@@ -248,7 +248,11 @@ private fun AppContent() {
                 initialValue = null,
                 s.monthKey,
             ) {
+                // #14: pre-fill from the nearest prior row when this
+                // month has no explicit one. onSave saves at s.monthKey
+                // regardless of where the pre-fill values came from.
                 value = budgetDao.getByMonth(s.monthKey)
+                    ?: budgetDao.getLatestBefore(s.monthKey)
             }
             val currentBudget = currentBudgetEntity?.let(BudgetMapper::toDomain)
 

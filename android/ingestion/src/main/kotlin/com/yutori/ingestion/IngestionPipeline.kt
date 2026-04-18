@@ -297,9 +297,16 @@ class IngestionPipeline(
         val priorBudgets = budgetDao.getAllBefore(monthKey)
             .map { Budget(it.monthKey, it.limitInr, it.thresholdWarnPct) }
         val currentBudgetEntity = budgetDao.getByMonth(monthKey)
-        val allBudgets = priorBudgets + listOfNotNull(
-            currentBudgetEntity?.let { Budget(it.monthKey, it.limitInr, it.thresholdWarnPct) },
-        )
+        // #14: fall back to the nearest prior budget's limit when this
+        // month has no explicit row. warnPct inheritance is out of scope
+        // for this change — inherited months use the default 80%.
+        val inheritedEntity = if (currentBudgetEntity == null) {
+            budgetDao.getLatestBefore(monthKey)
+        } else {
+            null
+        }
+        val resolvedLimit: Double? =
+            currentBudgetEntity?.limitInr ?: inheritedEntity?.limitInr
 
         // 3. Pull prior-month transactions that affect carry-over.
         //    Simple v1 approach: sum prior transactions by month via the
@@ -314,8 +321,9 @@ class IngestionPipeline(
 
         val snapshot: MonthSnapshot = BudgetCalculator.snapshot(
             transactions = priorTxs + thisMonth,
-            budgets = allBudgets,
+            budgets = priorBudgets,
             monthKey = monthKey,
+            currentMonthLimit = resolvedLimit,
         )
 
         // 4. Alert evaluation — only fires when a budget exists. If no

@@ -269,4 +269,69 @@ class BudgetCalculatorTest {
         s.refundsInr shouldBe (2_000.0 plusOrMinus 1e-9)
         s.netSpendInr shouldBe (8_000.0 plusOrMinus 1e-9)
     }
+
+    // ---- #14: budgets roll forward ----
+
+    @Test
+    fun `snapshot uses currentMonthLimit override when provided`() {
+        // April has no explicit budget row — only March does. The
+        // caller resolves the inherited limit and passes it directly.
+        val priorBudgets = listOf(Budget("2026-03", 30_000.0))
+        val txs = listOf(
+            // March: spent 20K of 30K → +10K carry.
+            tx(monthKey = "2026-03", effect = BudgetEffect.SPEND, amount = 20_000.0),
+            // April: 15K spent of 40K effective (30K inherited + 10K carry).
+            tx(monthKey = "2026-04", effect = BudgetEffect.SPEND, amount = 15_000.0),
+        )
+        val s = BudgetCalculator.snapshot(
+            transactions = txs,
+            budgets = priorBudgets,
+            monthKey = "2026-04",
+            currentMonthLimit = 30_000.0,
+        )
+        s.limitInr shouldBe 30_000.0
+        s.carryOverInr shouldBe (10_000.0 plusOrMinus 1e-9)
+        s.effectiveBudgetInr shouldBe (40_000.0 plusOrMinus 1e-9)
+        s.netSpendInr shouldBe (15_000.0 plusOrMinus 1e-9)
+        s.percentUsed shouldBe (37.5 plusOrMinus 1e-9)
+    }
+
+    @Test
+    fun `snapshot inherited month does not add a fresh carry-over contribution`() {
+        // Guards the load-bearing invariant from the #14 spec: a month
+        // with no explicit row must not contribute (inheritedLimit − net)
+        // as its own carry-over term, or every subsequent month would
+        // inflate forever.
+        //
+        // Viewing May (inherited from March). April has no row, no txs.
+        // Expected: carry = (March 30K − 20K spent) = 10K. Nothing more.
+        val priorBudgets = listOf(Budget("2026-03", 30_000.0))
+        val txs = listOf(
+            tx(monthKey = "2026-03", effect = BudgetEffect.SPEND, amount = 20_000.0),
+        )
+        val s = BudgetCalculator.snapshot(
+            transactions = txs,
+            budgets = priorBudgets,
+            monthKey = "2026-05",
+            currentMonthLimit = 30_000.0,
+        )
+        s.carryOverInr shouldBe (10_000.0 plusOrMinus 1e-9)
+        s.effectiveBudgetInr shouldBe (40_000.0 plusOrMinus 1e-9)
+    }
+
+    @Test
+    fun `snapshot currentMonthLimit wins over a matching row in budgets list`() {
+        // Defence-in-depth: if a caller passes BOTH the explicit row
+        // inside budgets AND a currentMonthLimit override, the override
+        // should win (the caller has already resolved what they want).
+        val budgets = listOf(Budget("2026-04", 30_000.0))
+        val s = BudgetCalculator.snapshot(
+            transactions = emptyList(),
+            budgets = budgets,
+            monthKey = "2026-04",
+            currentMonthLimit = 50_000.0,
+        )
+        s.limitInr shouldBe 50_000.0
+        s.effectiveBudgetInr shouldBe 50_000.0
+    }
 }

@@ -75,14 +75,28 @@ object BudgetCalculator {
         return priorBudgets.sumOf { b -> b.limitInr - (netByMonth[b.monthKey] ?: 0.0) }
     }
 
-    /** Full snapshot for a month. Convenience wrapper. */
+    /**
+     * Full snapshot for a month. Convenience wrapper.
+     *
+     * [currentMonthLimit], when non-null, overrides the viewed month's
+     * limit — used for #14 (budgets roll forward). Callers that have
+     * already resolved the limit (explicit or inherited) pass it here
+     * directly and can leave [budgets] as prior-only. When null,
+     * falls back to scanning [budgets] for a row keyed on [monthKey].
+     *
+     * Carry-over is unchanged either way — it only walks months
+     * strictly before [monthKey], so inherited months (no explicit
+     * row) never contribute a fresh `(limit − net)` term (§6.6).
+     */
     fun snapshot(
         transactions: List<Transaction>,
         budgets: List<Budget>,
         monthKey: String,
+        currentMonthLimit: Double? = null,
     ): MonthSnapshot {
-        val budget = budgets.firstOrNull { it.monthKey == monthKey }
-        val limit = budget?.limitInr ?: 0.0
+        val limit = currentMonthLimit
+            ?: budgets.firstOrNull { it.monthKey == monthKey }?.limitInr
+            ?: 0.0
         val carryOverInr = carryOver(transactions, budgets, monthKey)
         val effective = limit + carryOverInr
         val gross = monthSpend(transactions, monthKey)

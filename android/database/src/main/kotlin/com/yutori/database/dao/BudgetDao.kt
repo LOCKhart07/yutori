@@ -33,4 +33,15 @@ interface BudgetDao {
 
     @Query("SELECT * FROM budgets WHERE month_key < :monthKey ORDER BY month_key")
     suspend fun getAllBefore(monthKey: String): List<BudgetEntity>
+
+    /**
+     * Nearest prior budget row. Used for #14 — when a month has no
+     * explicit row, its effective limit inherits from the most recent
+     * prior row. Returns null if there is no prior row at all.
+     */
+    @Query(
+        "SELECT * FROM budgets WHERE month_key < :monthKey " +
+            "ORDER BY month_key DESC LIMIT 1",
+    )
+    suspend fun getLatestBefore(monthKey: String): BudgetEntity?
 }

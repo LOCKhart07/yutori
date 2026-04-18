@@ -131,7 +131,17 @@ class DashboardViewModel(
         budgetEntity: BudgetEntity?,
         pendingForexCount: Int,
     ): DashboardUiState {
-        if (txEntities.isEmpty() && budgetEntity == null) {
+        // #14 budget roll-forward: when this month has no explicit
+        // row, fall back to the nearest prior row's limit. Still
+        // returns Empty(hasBudget=false) only when there's neither an
+        // explicit nor an inherited budget AND zero transactions.
+        val inheritedEntity: BudgetEntity? =
+            if (budgetEntity == null) budgetDao.getLatestBefore(monthKey) else null
+        val resolvedLimit: Double? =
+            budgetEntity?.limitInr ?: inheritedEntity?.limitInr
+        val hasBudget: Boolean = resolvedLimit != null
+
+        if (txEntities.isEmpty() && !hasBudget) {
             return DashboardUiState.Empty(monthKey, hasBudget = false)
         }
         if (txEntities.isEmpty()) {
@@ -139,11 +149,10 @@ class DashboardViewModel(
         }
 
         // Snapshot math uses prior-month budgets too. Load them once.
+        // Inherited months never contribute a fresh (limit − net) term
+        // to carry-over (§6.6), so only true explicit priors go in.
         val priorBudgetEntities = budgetDao.getAllBefore(monthKey)
-        val allBudgets: List<Budget> = buildList {
-            priorBudgetEntities.forEach { add(it.toDomainBudget()) }
-            budgetEntity?.let { add(it.toDomainBudget()) }
-        }
+        val priorBudgets: List<Budget> = priorBudgetEntities.map { it.toDomainBudget() }
 
         // Budget calculator operates over ALL money-moving transactions
         // (prior + this month) because carryOver walks every prior
@@ -155,8 +164,9 @@ class DashboardViewModel(
         val thisMonthTxs = txEntities.map { it.toDomainTransaction() }
         val snapshot = BudgetCalculator.snapshot(
             transactions = priorTxFlat + thisMonthTxs,
-            budgets = allBudgets,
+            budgets = priorBudgets,
             monthKey = monthKey,
+            currentMonthLimit = resolvedLimit,
         )
 
         return DashboardUiState.Ready(

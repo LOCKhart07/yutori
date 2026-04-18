@@ -253,6 +253,8 @@ class FakeBudgetDao(
     override suspend fun getAll() = rows.sortedBy { it.monthKey }
     override suspend fun getAllBefore(monthKey: String) =
         rows.filter { it.monthKey < monthKey }.sortedBy { it.monthKey }
+    override suspend fun getLatestBefore(monthKey: String) =
+        rows.filter { it.monthKey < monthKey }.maxByOrNull { it.monthKey }
 }
 
 class FakeBudgetAlertStateDao(
