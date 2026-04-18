@@ -118,14 +118,24 @@ fun RecipientRulesScreen(
             Spacer(Modifier.height(20.dp))
 
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                if (suggestions.isNotEmpty() || scanning) {
-                    item(key = "suggestions-header") {
-                        SuggestedHeader(
-                            count = suggestions.size,
-                            scanning = scanning,
-                            onRescan = onRescan,
+                // Always render so Rescan is reachable on fresh installs.
+                item(key = "suggestions-header") {
+                    SuggestedHeader(
+                        count = suggestions.size,
+                        scanning = scanning,
+                        onRescan = onRescan,
+                    )
+                }
+                if (suggestions.isEmpty()) {
+                    item(key = "suggestions-empty") {
+                        Text(
+                            text = "No repeat merchants crossed the threshold yet.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.onMuted,
+                            modifier = Modifier.padding(vertical = 4.dp),
                         )
                     }
+                } else {
                     items(suggestions, key = { "sg-${it.id}" }) { sg ->
                         SuggestionCard(
                             suggestion = sg,
@@ -134,8 +144,8 @@ fun RecipientRulesScreen(
                             onDismiss = { onDismissSuggestion(sg.id) },
                         )
                     }
-                    item { Spacer(Modifier.height(14.dp)) }
                 }
+                item { Spacer(Modifier.height(14.dp)) }
 
                 if (seed.isNotEmpty()) {
                     item(key = "seed-header") {
