@@ -4,16 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -69,166 +68,175 @@ fun BudgetSetupScreen(
     val parsedLimit = limitText.trim().toDoubleOrNull()
     val saveEnabled = parsedLimit != null && parsedLimit >= 0.0
 
-    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
     val colors = YutoriTheme.colors
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(top = statusInset.calculateTopPadding() + 8.dp)
-                .padding(horizontal = 24.dp),
-        ) {
-            BackRow(label = "Dashboard", onBack = onCancel)
-            Spacer(Modifier.height(16.dp))
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(top = 8.dp)
+                    .padding(horizontal = 24.dp),
+            ) {
+                BackRow(label = "Dashboard", onBack = onCancel)
+                Spacer(Modifier.height(16.dp))
 
-            Text(
-                text = prettyMonthBudget(monthKey).uppercase(),
-                style = YutoriTextStyles.Caps,
-                color = colors.onMuted,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "Set budget",
-                style = MaterialTheme.typography.headlineLarge,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "How much you want to spend this month. Carry-over from " +
-                    "prior months gets added automatically.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.onMuted,
-            )
-
-            Spacer(Modifier.height(28.dp))
-
-            // Mono input
-            Text(
-                text = "Monthly limit (INR)",
-                style = YutoriTextStyles.Caps,
-                color = colors.onFaint,
-            )
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = limitText,
-                onValueChange = { new ->
-                    if (new.isEmpty() || new.matches(Regex("""\d+(\.\d*)?"""))) {
-                        limitText = new
-                    }
-                },
-                placeholder = {
-                    Text(
-                        "45000",
-                        style = YutoriTextStyles.Mono.copy(
-                            fontSize = 28.sp, lineHeight = 32.sp,
-                            color = colors.onFaint,
-                        ),
-                    )
-                },
-                prefix = {
-                    Text(
-                        "₹ ",
-                        style = YutoriTextStyles.Mono.copy(
-                            fontSize = 28.sp, lineHeight = 32.sp,
-                            color = colors.onMuted,
-                        ),
-                    )
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                textStyle = YutoriTextStyles.Mono.copy(
-                    fontSize = 28.sp, lineHeight = 32.sp,
-                ),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = colors.divider,
-                    focusedContainerColor = colors.surfaceElevated,
-                    unfocusedContainerColor = colors.surfaceElevated,
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (parsedLimit != null && parsedLimit < 0.0) {
-                Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "Limit must be ≥ 0.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.negative,
+                    text = prettyMonthBudget(monthKey).uppercase(),
+                    style = YutoriTextStyles.Caps,
+                    color = colors.onMuted,
                 )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Set budget",
+                    style = MaterialTheme.typography.headlineLarge,
+                )
+                Spacer(Modifier.height(8.dp))
             }
-
-            Spacer(Modifier.height(28.dp))
-
-            // Warn threshold slider
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp),
             ) {
                 Text(
-                    text = "Warning threshold",
+                    text = "How much you want to spend this month. Carry-over from " +
+                        "prior months gets added automatically.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onMuted,
+                )
+
+                Spacer(Modifier.height(28.dp))
+
+                // Mono input
+                Text(
+                    text = "Monthly limit (INR)",
                     style = YutoriTextStyles.Caps,
                     color = colors.onFaint,
                 )
-                Text(
-                    text = "${warnPct.toInt()}%",
-                    style = YutoriTextStyles.Mono.copy(fontWeight = FontWeight.Medium),
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-            Spacer(Modifier.height(4.dp))
-            Slider(
-                value = warnPct,
-                onValueChange = { warnPct = it },
-                valueRange = 60f..95f,
-                steps = 6,    // 60, 65, 70, 75, 80, 85, 90, 95
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                    inactiveTrackColor = colors.surfaceElevated2,
-                    activeTickColor = colors.divider,
-                    inactiveTickColor = colors.divider,
-                ),
-            )
-            Text(
-                text = "Alerts fire at 50%, ${warnPct.toInt()}%, and 100% " +
-                    "(plus every +10% over).",
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.onMuted,
-            )
-
-            Spacer(Modifier.height(32.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SecondaryButton(
-                    text = "Cancel",
-                    onClick = onCancel,
-                    modifier = Modifier.weight(1f),
-                )
-                PrimaryActionButton(
-                    text = "Save",
-                    enabled = saveEnabled,
-                    onClick = {
-                        val limit = parsedLimit ?: return@PrimaryActionButton
-                        onSave(
-                            Budget(
-                                monthKey = monthKey,
-                                limitInr = limit,
-                                warnThresholdPct = warnPct.toInt(),
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = limitText,
+                    onValueChange = { new ->
+                        if (new.isEmpty() || new.matches(Regex("""\d+(\.\d*)?"""))) {
+                            limitText = new
+                        }
+                    },
+                    placeholder = {
+                        Text(
+                            "45000",
+                            style = YutoriTextStyles.Mono.copy(
+                                fontSize = 28.sp, lineHeight = 32.sp,
+                                color = colors.onFaint,
                             ),
                         )
                     },
-                    modifier = Modifier.weight(1f),
+                    prefix = {
+                        Text(
+                            "₹ ",
+                            style = YutoriTextStyles.Mono.copy(
+                                fontSize = 28.sp, lineHeight = 32.sp,
+                                color = colors.onMuted,
+                            ),
+                        )
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    textStyle = YutoriTextStyles.Mono.copy(
+                        fontSize = 28.sp, lineHeight = 32.sp,
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = colors.divider,
+                        focusedContainerColor = colors.surfaceElevated,
+                        unfocusedContainerColor = colors.surfaceElevated,
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 )
+                if (parsedLimit != null && parsedLimit < 0.0) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = "Limit must be ≥ 0.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.negative,
+                    )
+                }
+
+                Spacer(Modifier.height(28.dp))
+
+                // Warn threshold slider
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Warning threshold",
+                        style = YutoriTextStyles.Caps,
+                        color = colors.onFaint,
+                    )
+                    Text(
+                        text = "${warnPct.toInt()}%",
+                        style = YutoriTextStyles.Mono.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                Slider(
+                    value = warnPct,
+                    onValueChange = { warnPct = it },
+                    valueRange = 60f..95f,
+                    steps = 6,    // 60, 65, 70, 75, 80, 85, 90, 95
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = colors.surfaceElevated2,
+                        activeTickColor = colors.divider,
+                        inactiveTickColor = colors.divider,
+                    ),
+                )
+                Text(
+                    text = "Alerts fire at 50%, ${warnPct.toInt()}%, and 100% " +
+                        "(plus every +10% over).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onMuted,
+                )
+
+                Spacer(Modifier.height(32.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SecondaryButton(
+                        text = "Cancel",
+                        onClick = onCancel,
+                        modifier = Modifier.weight(1f),
+                    )
+                    PrimaryActionButton(
+                        text = "Save",
+                        enabled = saveEnabled,
+                        onClick = {
+                            val limit = parsedLimit ?: return@PrimaryActionButton
+                            onSave(
+                                Budget(
+                                    monthKey = monthKey,
+                                    limitInr = limit,
+                                    warnThresholdPct = warnPct.toInt(),
+                                ),
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Spacer(Modifier.height(24.dp))
             }
-            Spacer(Modifier.height(24.dp))
         }
     }
 }

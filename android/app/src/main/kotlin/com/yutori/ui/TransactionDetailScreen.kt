@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -101,22 +102,31 @@ private fun LoadingView(onBack: () -> Unit) {
 
 @Composable
 private fun ReadyView(details: Details, onBack: () -> Unit) {
-    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(top = statusInset.calculateTopPadding() + 8.dp)
-            .padding(horizontal = 24.dp),
-    ) {
-        BackRow(label = "Back", onBack = onBack)
-        Hero(details.tx)
-        Spacer(Modifier.height(24.dp))
-        MetaSection(details.tx)
-        Spacer(Modifier.height(24.dp))
-        if (details.sources.isNotEmpty()) {
-            SourcesSection(details.sources)
-            Spacer(Modifier.height(32.dp))
+    Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(top = 8.dp)
+                .padding(horizontal = 24.dp),
+        ) {
+            BackRow(label = "Back", onBack = onBack)
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp),
+        ) {
+            Hero(details.tx)
+            Spacer(Modifier.height(24.dp))
+            MetaSection(details.tx)
+            Spacer(Modifier.height(24.dp))
+            if (details.sources.isNotEmpty()) {
+                SourcesSection(details.sources)
+                Spacer(Modifier.height(32.dp))
+            }
         }
     }
 }

@@ -3,17 +3,16 @@ package com.yutori.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -55,19 +54,19 @@ fun SettingsScreen(
     onOpenUpdateDialog: () -> Unit = {},
 ) {
     val backup = rememberBackupActions()
-    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(top = statusInset.calculateTopPadding() + 8.dp),
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(top = 8.dp)
+                    .padding(horizontal = 24.dp),
+            ) {
                 BackRow(label = "Dashboard", onBack = onBack)
                 Spacer(Modifier.height(16.dp))
                 Text(
@@ -77,81 +76,88 @@ fun SettingsScreen(
                 Spacer(Modifier.height(20.dp))
             }
 
-            SettingsSection(title = "Data & accounts") {
-                SettingsItem(
-                    title = "My accounts",
-                    subtitle = if (accountSuggestionCount > 0) {
-                        pluralStringResource(
-                            R.plurals.suggestions_from_sms,
-                            accountSuggestionCount,
-                            accountSuggestionCount,
-                        )
-                    } else {
-                        "Banks and cards — register UPI handles so self-" +
-                            "transfers don't count as spend."
-                    },
-                    onClick = onAccounts,
-                    badge = accountSuggestionCount.takeIf { it > 0 },
-                )
-                SettingsItem(
-                    title = "Recipient rules",
-                    subtitle = "Reclassification rules for CC bill payments " +
-                        "and self-transfers.",
-                    onClick = onRecipientRules,
-                )
-            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                SettingsSection(title = "Data & accounts") {
+                    SettingsItem(
+                        title = "My accounts",
+                        subtitle = if (accountSuggestionCount > 0) {
+                            pluralStringResource(
+                                R.plurals.suggestions_from_sms,
+                                accountSuggestionCount,
+                                accountSuggestionCount,
+                            )
+                        } else {
+                            "Banks and cards — register UPI handles so self-" +
+                                "transfers don't count as spend."
+                        },
+                        onClick = onAccounts,
+                        badge = accountSuggestionCount.takeIf { it > 0 },
+                    )
+                    SettingsItem(
+                        title = "Recipient rules",
+                        subtitle = "Reclassification rules for CC bill payments " +
+                            "and self-transfers.",
+                        onClick = onRecipientRules,
+                    )
+                }
 
-            SettingsSection(title = "Alerts") {
-                SettingsItem(
-                    title = "Alert thresholds",
-                    subtitle = "Tune the per-transaction \"impact\" push and " +
-                        "the cumulative budget alerts.",
-                    onClick = onAlertSettings,
-                )
-            }
+                SettingsSection(title = "Alerts") {
+                    SettingsItem(
+                        title = "Alert thresholds",
+                        subtitle = "Tune the per-transaction \"impact\" push and " +
+                            "the cumulative budget alerts.",
+                        onClick = onAlertSettings,
+                    )
+                }
 
-            SettingsSection(title = "Import / export") {
-                SettingsItem(
-                    title = "Export settings",
-                    subtitle = "Save accounts and recipient rules to a " +
-                        "JSON file. Transactions aren't included.",
-                    onClick = backup.onExportClick,
-                )
-                SettingsItem(
-                    title = "Import settings",
-                    subtitle = "Restore accounts and recipient rules from a " +
-                        "previously-exported file. Duplicates are skipped.",
-                    onClick = backup.onImportClick,
-                )
-            }
+                SettingsSection(title = "Import / export") {
+                    SettingsItem(
+                        title = "Export settings",
+                        subtitle = "Save accounts and recipient rules to a " +
+                            "JSON file. Transactions aren't included.",
+                        onClick = backup.onExportClick,
+                    )
+                    SettingsItem(
+                        title = "Import settings",
+                        subtitle = "Restore accounts and recipient rules from a " +
+                            "previously-exported file. Duplicates are skipped.",
+                        onClick = backup.onImportClick,
+                    )
+                }
 
-            if (updateState != null) {
-                AppUpdatesSection(
-                    state = updateState,
-                    onToggleCheckOnOpen = onToggleCheckOnOpen,
-                    onCheckNow = onCheckForUpdates,
-                    onOpenDialog = onOpenUpdateDialog,
-                )
-            }
+                if (updateState != null) {
+                    AppUpdatesSection(
+                        state = updateState,
+                        onToggleCheckOnOpen = onToggleCheckOnOpen,
+                        onCheckNow = onCheckForUpdates,
+                        onOpenDialog = onOpenUpdateDialog,
+                    )
+                }
 
-            SettingsSection(title = "Feedback") {
-                SettingsItem(
-                    title = "Send feedback",
-                    subtitle = "Report a bug or suggest an improvement — " +
-                        "filed as a GitHub issue on yutori.",
-                    onClick = onSendFeedback,
-                )
-            }
+                SettingsSection(title = "Feedback") {
+                    SettingsItem(
+                        title = "Send feedback",
+                        subtitle = "Report a bug or suggest an improvement — " +
+                            "filed as a GitHub issue on yutori.",
+                        onClick = onSendFeedback,
+                    )
+                }
 
-            SettingsSection(title = "About") {
-                SettingsItem(
-                    title = "About Yutori",
-                    subtitle = "Version, philosophy, open-source licenses.",
-                    onClick = onAbout,
-                )
-            }
+                SettingsSection(title = "About") {
+                    SettingsItem(
+                        title = "About Yutori",
+                        subtitle = "Version, philosophy, open-source licenses.",
+                        onClick = onAbout,
+                    )
+                }
 
-            Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(32.dp))
+            }
         }
         // Dialog is rendered at AppContent level — it overlays this
         // screen and the dashboard alike so cold-start auto-surface and

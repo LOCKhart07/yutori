@@ -12,17 +12,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -112,81 +111,89 @@ fun PermissionScreen(onGranted: () -> Unit) {
 
 @Composable
 private fun InitialGate(onGrant: () -> Unit) {
-    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
     val colors = YutoriTheme.colors
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(top = statusInset.calculateTopPadding() + 24.dp)
-                .padding(horizontal = 32.dp),
-        ) {
-            Text(
-                text = "STEP 1 OF 1",
-                style = YutoriTextStyles.Caps,
-                color = colors.onFaint,
-            )
-            Spacer(Modifier.height(16.dp))
-            Text(
-                text = "Let Yutori\nread your SMSes.",
-                style = MaterialTheme.typography.headlineLarge,
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = "Everything stays on this device. Yutori never sends " +
-                    "your messages anywhere — bank SMSes are parsed locally " +
-                    "to build your spending record.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.onMuted,
-            )
-
-            Spacer(Modifier.height(32.dp))
-
-            PermCard(
-                icon = Icons.Default.Email,
-                title = "Receive SMS",
-                detail = "Catch new bank messages as they arrive.",
-            )
-            Spacer(Modifier.height(12.dp))
-            PermCard(
-                icon = Icons.AutoMirrored.Filled.List,
-                title = "Read SMS inbox",
-                detail = "Import past transactions from your phone's SMS history.",
-            )
-            Spacer(Modifier.height(12.dp))
-            PermCard(
-                icon = Icons.Default.Notifications,
-                title = "Post notifications",
-                detail = "Alert you at 50%, 80%, and 100% of your budget.",
-            )
-
-            Spacer(Modifier.height(40.dp))
-
-            Surface(
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(onClick = onGrant),
-                color = MaterialTheme.colorScheme.primary,
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(top = 24.dp)
+                    .padding(horizontal = 32.dp),
             ) {
                 Text(
-                    text = "Grant permissions",
+                    text = "STEP 1 OF 1",
+                    style = YutoriTextStyles.Caps,
+                    color = colors.onFaint,
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "Let Yutori\nread your SMSes.",
+                    style = MaterialTheme.typography.headlineLarge,
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "Everything stays on this device. Yutori never sends " +
+                        "your messages anywhere — bank SMSes are parsed locally " +
+                        "to build your spending record.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onMuted,
+                )
+
+                Spacer(Modifier.height(32.dp))
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 32.dp),
+            ) {
+                PermCard(
+                    icon = Icons.Default.Email,
+                    title = "Receive SMS",
+                    detail = "Catch new bank messages as they arrive.",
+                )
+                Spacer(Modifier.height(12.dp))
+                PermCard(
+                    icon = Icons.AutoMirrored.Filled.List,
+                    title = "Read SMS inbox",
+                    detail = "Import past transactions from your phone's SMS history.",
+                )
+                Spacer(Modifier.height(12.dp))
+                PermCard(
+                    icon = Icons.Default.Notifications,
+                    title = "Post notifications",
+                    detail = "Alert you at 50%, 80%, and 100% of your budget.",
+                )
+
+                Spacer(Modifier.height(40.dp))
+
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 14.dp),
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    textAlign = TextAlign.Center,
-                )
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(onClick = onGrant),
+                    color = MaterialTheme.colorScheme.primary,
+                ) {
+                    Text(
+                        text = "Grant permissions",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 14.dp),
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                Spacer(Modifier.height(24.dp))
             }
-            Spacer(Modifier.height(24.dp))
         }
     }
 }
@@ -237,7 +244,6 @@ private fun RestrictedSettingsGuidance(
     onOpenAppInfo: () -> Unit,
     onRetry: () -> Unit,
 ) {
-    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
     val colors = YutoriTheme.colors
     val sideloadNote = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         "Android 13+ restricts sideloaded apps from requesting some " +
@@ -251,117 +257,126 @@ private fun RestrictedSettingsGuidance(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(top = statusInset.calculateTopPadding() + 24.dp)
-                .padding(horizontal = 32.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(colors.info.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "i",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    color = colors.info,
-                )
-            }
-            Spacer(Modifier.height(18.dp))
-
-            Text(
-                text = "ONE MORE STEP",
-                style = YutoriTextStyles.Caps,
-                color = colors.onFaint,
-            )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = "Android's blocking\nthis by default.",
-                style = MaterialTheme.typography.headlineLarge,
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = "Because Yutori was installed outside the Play Store, " +
-                    "Android won't let it ask for SMS access yet. You need to " +
-                    "flip one toggle in App info, then come back.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.onMuted,
-            )
-
-            Spacer(Modifier.height(24.dp))
-
-            StepsCard()
-
-            Spacer(Modifier.height(32.dp))
-
-            Surface(
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(onClick = onOpenAppInfo),
-                color = MaterialTheme.colorScheme.primary,
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(top = 24.dp)
+                    .padding(horizontal = 32.dp),
             ) {
-                Text(
-                    text = "Open app info",
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 14.dp),
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    textAlign = TextAlign.Center,
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(colors.info.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "i",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = colors.info,
+                    )
+                }
+                Spacer(Modifier.height(18.dp))
+
+                Text(
+                    text = "ONE MORE STEP",
+                    style = YutoriTextStyles.Caps,
+                    color = colors.onFaint,
                 )
-            }
-            Spacer(Modifier.height(10.dp))
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(onClick = onRetry),
-                color = colors.surfaceElevated,
-                border = androidx.compose.foundation.BorderStroke(
-                    width = 1.dp,
-                    color = colors.divider,
-                ),
-            ) {
+                Spacer(Modifier.height(10.dp))
                 Text(
-                    text = "Try again",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 14.dp),
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                    ),
+                    text = "Android's blocking\nthis by default.",
+                    style = MaterialTheme.typography.headlineLarge,
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "Because Yutori was installed outside the Play Store, " +
+                        "Android won't let it ask for SMS access yet. You need to " +
+                        "flip one toggle in App info, then come back.",
+                    style = MaterialTheme.typography.bodyMedium,
                     color = colors.onMuted,
-                    textAlign = TextAlign.Center,
                 )
-            }
 
-            Spacer(Modifier.height(20.dp))
-            Text(
-                text = sideloadNote,
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.onFaint,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = "Once Yutori is installed, future updates arrive as an in-app prompt " +
-                    "and install without another Play Protect warning.",
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.onFaint,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(24.dp))
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 32.dp),
+            ) {
+                StepsCard()
+
+                Spacer(Modifier.height(32.dp))
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(onClick = onOpenAppInfo),
+                    color = MaterialTheme.colorScheme.primary,
+                ) {
+                    Text(
+                        text = "Open app info",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 14.dp),
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(onClick = onRetry),
+                    color = colors.surfaceElevated,
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = 1.dp,
+                        color = colors.divider,
+                    ),
+                ) {
+                    Text(
+                        text = "Try again",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 14.dp),
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Medium,
+                        ),
+                        color = colors.onMuted,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    text = sideloadNote,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onFaint,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = "Once Yutori is installed, future updates arrive as an in-app prompt " +
+                        "and install without another Play Protect warning.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onFaint,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(24.dp))
+            }
         }
     }
 }

@@ -6,17 +6,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -86,233 +85,242 @@ fun AccountEditScreen(
     val hasIdentifier = !last4Blank || upiHandles.isNotEmpty()
     val saveEnabled = last4Ok && issuerOk && hasIdentifier
 
-    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
     val colors = YutoriTheme.colors
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(top = statusInset.calculateTopPadding() + 8.dp)
-                .padding(horizontal = 24.dp),
-        ) {
-            BackRow(label = "Cancel", onBack = onCancel)
-            Spacer(Modifier.height(16.dp))
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(top = 8.dp)
+                    .padding(horizontal = 24.dp),
+            ) {
+                BackRow(label = "Cancel", onBack = onCancel)
+                Spacer(Modifier.height(16.dp))
 
-            Text(
-                text = (if (initial == null) "NEW ACCOUNT" else "EDIT ACCOUNT"),
-                style = YutoriTextStyles.Caps,
-                color = colors.onMuted,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = if (initial == null) "Add an account" else "Edit account",
-                style = MaterialTheme.typography.headlineLarge,
-            )
+                Text(
+                    text = (if (initial == null) "NEW ACCOUNT" else "EDIT ACCOUNT"),
+                    style = YutoriTextStyles.Caps,
+                    color = colors.onMuted,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = if (initial == null) "Add an account" else "Edit account",
+                    style = MaterialTheme.typography.headlineLarge,
+                )
 
-            Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(24.dp))
+            }
 
-            // Type chips
-            SectionLabel("Type")
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AccountKind.entries.forEach { k ->
-                    TypeChip(
-                        label = prettyKindLabel(k),
-                        selected = k == kind,
-                        onClick = { kind = k },
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp),
+            ) {
+                // Type chips
+                SectionLabel("Type")
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AccountKind.entries.forEach { k ->
+                        TypeChip(
+                            label = prettyKindLabel(k),
+                            selected = k == kind,
+                            onClick = { kind = k },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                SectionLabel("Issuer")
+                Spacer(Modifier.height(8.dp))
+                ThemedTextField(
+                    value = issuer,
+                    onValueChange = { issuer = it },
+                    placeholder = "Kotak, Axis, ICICI…",
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                SectionLabel("Last 4–6 digits (optional)")
+                Spacer(Modifier.height(8.dp))
+                ThemedTextField(
+                    value = last4,
+                    onValueChange = { new ->
+                        if (new.length <= 6 && new.matches(Regex("""[A-Za-z0-9]*"""))) {
+                            last4 = new
+                        }
+                    },
+                    placeholder = "0000 or XX0000 (blank for UPI-only)",
+                    mono = true,
+                    error = last4.isNotEmpty() && !last4Ok,
+                )
+                if (last4.isNotEmpty() && !last4Ok) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "4–6 alphanumeric characters, or leave blank.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.negative,
+                    )
+                } else if (last4Blank && upiHandles.isEmpty()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Add a last-4 or at least one UPI handle so we can " +
+                            "route transactions to this account.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.onMuted,
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                SectionLabel("Display name (optional)")
+                Spacer(Modifier.height(8.dp))
+                ThemedTextField(
+                    value = displayName,
+                    onValueChange = { displayName = it },
+                    placeholder = "e.g. Kotak Savings",
+                )
+
+                Spacer(Modifier.height(20.dp))
+
+                // Default-spend switch
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = colors.surfaceElevated,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, colors.divider),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Default spend account",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                "Used when an SMS doesn't name a specific account.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.onMuted,
+                            )
+                        }
+                        Switch(
+                            checked = isDefault,
+                            onCheckedChange = { isDefault = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                uncheckedThumbColor = colors.onMuted,
+                                uncheckedTrackColor = colors.surfaceElevated2,
+                                uncheckedBorderColor = colors.divider,
+                            ),
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // UPI handles
+                SectionLabel("UPI handles")
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Any UPI VPA that sends to this account (e.g. " +
+                        "examplename-4@oksbi). Transfers here will be " +
+                        "marked as self-transfers.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onMuted,
+                )
+                Spacer(Modifier.height(10.dp))
+
+                upiHandles.forEach { handle ->
+                    HandleRow(
+                        handle = handle,
+                        onRemove = { upiHandles.remove(handle) },
+                    )
+                }
+
+                Spacer(Modifier.height(4.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ThemedTextField(
+                        value = newHandle,
+                        onValueChange = { newHandle = it },
+                        placeholder = "Add UPI handle",
+                        mono = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    val addEnabled = newHandle.trim().isNotEmpty()
+                    SecondaryButton(
+                        text = "Add",
+                        onClick = {
+                            val h = newHandle.trim()
+                            if (h.isNotEmpty() && h !in upiHandles) upiHandles.add(h)
+                            newHandle = ""
+                        },
+                        modifier = Modifier.size(width = 96.dp, height = 54.dp),
+                    )
+                    // Note: SecondaryButton doesn't take enabled arg — v1.1 nicety.
+                    if (!addEnabled) { /* keeps compile clean */ }
+                }
+
+                Spacer(Modifier.height(28.dp))
+
+                // Footer actions
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    PrimaryActionButton(
+                        text = "Save",
+                        enabled = saveEnabled,
+                        onClick = {
+                            onSave(
+                                AccountDraft(
+                                    id = initial?.id ?: 0,
+                                    kind = kind,
+                                    issuer = issuer.trim(),
+                                    last4 = last4.trim().ifBlank { null },
+                                    displayName = displayName.trim().ifBlank { null },
+                                    isDefaultSpend = isDefault,
+                                    upiHandles = upiHandles.toList(),
+                                ),
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                    SecondaryButton(
+                        text = "Cancel",
+                        onClick = onCancel,
                         modifier = Modifier.weight(1f),
                     )
                 }
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            SectionLabel("Issuer")
-            Spacer(Modifier.height(8.dp))
-            ThemedTextField(
-                value = issuer,
-                onValueChange = { issuer = it },
-                placeholder = "Kotak, Axis, ICICI…",
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            SectionLabel("Last 4–6 digits (optional)")
-            Spacer(Modifier.height(8.dp))
-            ThemedTextField(
-                value = last4,
-                onValueChange = { new ->
-                    if (new.length <= 6 && new.matches(Regex("""[A-Za-z0-9]*"""))) {
-                        last4 = new
-                    }
-                },
-                placeholder = "0000 or XX0000 (blank for UPI-only)",
-                mono = true,
-                error = last4.isNotEmpty() && !last4Ok,
-            )
-            if (last4.isNotEmpty() && !last4Ok) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "4–6 alphanumeric characters, or leave blank.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.negative,
-                )
-            } else if (last4Blank && upiHandles.isEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Add a last-4 or at least one UPI handle so we can " +
-                        "route transactions to this account.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.onMuted,
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            SectionLabel("Display name (optional)")
-            Spacer(Modifier.height(8.dp))
-            ThemedTextField(
-                value = displayName,
-                onValueChange = { displayName = it },
-                placeholder = "e.g. Kotak Savings",
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            // Default-spend switch
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                color = colors.surfaceElevated,
-                border = androidx.compose.foundation.BorderStroke(1.dp, colors.divider),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "Default spend account",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Medium,
-                            ),
-                        )
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            "Used when an SMS doesn't name a specific account.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = colors.onMuted,
-                        )
-                    }
-                    Switch(
-                        checked = isDefault,
-                        onCheckedChange = { isDefault = it },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                            checkedTrackColor = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor = colors.onMuted,
-                            uncheckedTrackColor = colors.surfaceElevated2,
-                            uncheckedBorderColor = colors.divider,
-                        ),
+                if (onDelete != null) {
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        text = "Delete account",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = colors.negative,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onDelete)
+                            .padding(vertical = 12.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
                 }
+                Spacer(Modifier.height(32.dp))
             }
-
-            Spacer(Modifier.height(24.dp))
-
-            // UPI handles
-            SectionLabel("UPI handles")
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Any UPI VPA that sends to this account (e.g. " +
-                    "examplename-4@oksbi). Transfers here will be " +
-                    "marked as self-transfers.",
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.onMuted,
-            )
-            Spacer(Modifier.height(10.dp))
-
-            upiHandles.forEach { handle ->
-                HandleRow(
-                    handle = handle,
-                    onRemove = { upiHandles.remove(handle) },
-                )
-            }
-
-            Spacer(Modifier.height(4.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                ThemedTextField(
-                    value = newHandle,
-                    onValueChange = { newHandle = it },
-                    placeholder = "Add UPI handle",
-                    mono = true,
-                    modifier = Modifier.weight(1f),
-                )
-                val addEnabled = newHandle.trim().isNotEmpty()
-                SecondaryButton(
-                    text = "Add",
-                    onClick = {
-                        val h = newHandle.trim()
-                        if (h.isNotEmpty() && h !in upiHandles) upiHandles.add(h)
-                        newHandle = ""
-                    },
-                    modifier = Modifier.size(width = 96.dp, height = 54.dp),
-                )
-                // Note: SecondaryButton doesn't take enabled arg — v1.1 nicety.
-                if (!addEnabled) { /* keeps compile clean */ }
-            }
-
-            Spacer(Modifier.height(28.dp))
-
-            // Footer actions
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PrimaryActionButton(
-                    text = "Save",
-                    enabled = saveEnabled,
-                    onClick = {
-                        onSave(
-                            AccountDraft(
-                                id = initial?.id ?: 0,
-                                kind = kind,
-                                issuer = issuer.trim(),
-                                last4 = last4.trim().ifBlank { null },
-                                displayName = displayName.trim().ifBlank { null },
-                                isDefaultSpend = isDefault,
-                                upiHandles = upiHandles.toList(),
-                            ),
-                        )
-                    },
-                    modifier = Modifier.weight(1f),
-                )
-                SecondaryButton(
-                    text = "Cancel",
-                    onClick = onCancel,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            if (onDelete != null) {
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = "Delete account",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = colors.negative,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onDelete)
-                        .padding(vertical = 12.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                )
-            }
-            Spacer(Modifier.height(32.dp))
         }
     }
 }

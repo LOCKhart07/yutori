@@ -5,17 +5,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -69,57 +68,64 @@ fun AboutScreen(
     onOpenLicenses: () -> Unit,
     onOpenRepo: () -> Unit,
 ) {
-    val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
-
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(top = statusInset.calculateTopPadding() + 8.dp)
-                .padding(horizontal = 24.dp),
-        ) {
-            BackRow(label = "Settings", onBack = onBack)
-            Spacer(Modifier.height(16.dp))
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(top = 8.dp)
+                    .padding(horizontal = 24.dp),
+            ) {
+                BackRow(label = "Settings", onBack = onBack)
+                Spacer(Modifier.height(16.dp))
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp),
+            ) {
+                Hero()
 
-            Hero()
+                Spacer(Modifier.height(28.dp))
+                SectionHead("Why \"Yutori\"")
+                WhyYutoriCard()
 
-            Spacer(Modifier.height(28.dp))
-            SectionHead("Why \"Yutori\"")
-            WhyYutoriCard()
+                Spacer(Modifier.height(20.dp))
+                SectionHead("Principles")
+                PrinciplesList()
 
-            Spacer(Modifier.height(20.dp))
-            SectionHead("Principles")
-            PrinciplesList()
+                Spacer(Modifier.height(20.dp))
+                SectionHead("Build")
+                BuildCard(
+                    versionName = versionName,
+                    commitSha = commitSha,
+                    onCheckForUpdates = onCheckForUpdates,
+                )
 
-            Spacer(Modifier.height(20.dp))
-            SectionHead("Build")
-            BuildCard(
-                versionName = versionName,
-                commitSha = commitSha,
-                onCheckForUpdates = onCheckForUpdates,
-            )
+                Spacer(Modifier.height(20.dp))
+                SectionHead("More")
+                LinkRow(
+                    leadingIcon = Icons.AutoMirrored.Filled.List,
+                    label = "Open-source licenses",
+                    subtitle = "Libraries this app depends on.",
+                    onClick = onOpenLicenses,
+                )
+                Spacer(Modifier.height(8.dp))
+                LinkRow(
+                    leadingIcon = Icons.AutoMirrored.Filled.ExitToApp,
+                    label = "View on GitHub",
+                    subtitle = "github.com/LOCKhart07/yutori",
+                    onClick = onOpenRepo,
+                )
 
-            Spacer(Modifier.height(20.dp))
-            SectionHead("More")
-            LinkRow(
-                leadingIcon = Icons.AutoMirrored.Filled.List,
-                label = "Open-source licenses",
-                subtitle = "Libraries this app depends on.",
-                onClick = onOpenLicenses,
-            )
-            Spacer(Modifier.height(8.dp))
-            LinkRow(
-                leadingIcon = Icons.AutoMirrored.Filled.ExitToApp,
-                label = "View on GitHub",
-                subtitle = "github.com/LOCKhart07/yutori",
-                onClick = onOpenRepo,
-            )
-
-            Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(32.dp))
+            }
         }
     }
 }
