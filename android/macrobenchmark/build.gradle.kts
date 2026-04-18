@@ -3,18 +3,17 @@
 // invoke explicitly with `:macrobenchmark:connectedBenchmarkAndroidTest`.
 plugins {
     alias(libs.plugins.android.test)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "com.yutori.macrobenchmark"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         // Macrobenchmark itself requires API 23+. App minSdk is 28,
         // so 28 keeps the two aligned and avoids accidental forks.
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

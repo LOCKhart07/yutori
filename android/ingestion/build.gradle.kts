@@ -1,11 +1,10 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "com.yutori.ingestion"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 28

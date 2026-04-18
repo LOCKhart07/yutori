@@ -5,7 +5,7 @@
 # the catalog was extracted.
 
 # --- Toolchain ---
-agp = "8.4.0"
+agp = "9.1.1"
 kotlin = "2.3.20"
 # KSP became version-agnostic from 2.3.0 — one KSP build now works
 # with any Kotlin 2.3.x. No more Kotlin-version suffix.
@@ -120,7 +120,6 @@ androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiaut
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 android-test = { id = "com.android.test", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 # Drives the Compose compiler automatically now that Kotlin 2.x
 # ships it as a first-class plugin — replaces the old manual
 # composeOptions { kotlinCompilerExtensionVersion = ... } pin.

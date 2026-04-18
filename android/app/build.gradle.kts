@@ -2,7 +2,6 @@ import java.time.Instant
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -60,12 +59,12 @@ val versionNameOverride: String? =
 
 android {
     namespace = "com.yutori"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.yutori"
         minSdk = 28          // decision 2026-04-15: API 28 floor
-        targetSdk = 34
+        targetSdk = 36
         versionCode = versionCodeOverride ?: commitCount
         versionName = versionNameOverride ?: derivedVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

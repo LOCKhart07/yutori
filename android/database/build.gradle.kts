@@ -1,12 +1,11 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.yutori.database"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 28
