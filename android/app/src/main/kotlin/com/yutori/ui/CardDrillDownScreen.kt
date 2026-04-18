@@ -41,7 +41,7 @@ fun CardDrillDownScreen(
     onBack: () -> Unit,
     onTransactionClick: (Long) -> Unit,
 ) {
-    val inr = remember { NumberFormat.getCurrencyInstance(Locale("en", "IN")) }
+    val inr = remember { NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build()) }
     val transactions by transactionsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
     val colors = YutoriTheme.colors

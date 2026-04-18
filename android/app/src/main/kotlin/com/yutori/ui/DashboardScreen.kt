@@ -350,7 +350,7 @@ private fun ReadyView(
     pageMonthKey: String,
     onJumpToMonth: (String) -> Unit,
 ) {
-    val inr = remember { NumberFormat.getCurrencyInstance(Locale("en", "IN")) }
+    val inr = remember { NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build()) }
     val snap = state.snapshot
     val derived = state.derived
     val hasBudget = snap.effectiveBudgetInr > 0.0
@@ -362,7 +362,6 @@ private fun ReadyView(
         Spacer(Modifier.height(24.dp))
 
         // Hero — wrapped in a pace-tinted card.
-        val overBudget = snap.percentUsed >= 100.0
         PaceTintedHeroCard(pace = derived.pace) {
             HeroAmount(
                 primaryText = inr.formatAmount(snap.netSpendInr, compact = true),

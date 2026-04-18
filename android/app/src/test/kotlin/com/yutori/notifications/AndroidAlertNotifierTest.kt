@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test
  */
 class AndroidAlertNotifierTest {
 
-    private val inr: NumberFormat = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+    private val inr: NumberFormat = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build())
 
     private fun snap(net: Double, effective: Double): MonthSnapshot = MonthSnapshot(
         monthKey = "2026-04",

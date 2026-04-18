@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.util.Log
+import androidx.core.content.IntentCompat
 
 // Passive observer for PackageInstaller session outcomes. Logging only;
 // the system's own install/confirmation UI is what the user sees.
@@ -19,7 +20,7 @@ class UpdateInstallResultReceiver : BroadcastReceiver() {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 // System needs the user to confirm via its install UI.
                 // The Intent to launch is stashed in EXTRA_INTENT.
-                val confirm = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
+                val confirm = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_INTENT, Intent::class.java)
                 Log.i(TAG, "pending user action — launching confirm=${confirm?.component}")
                 if (confirm == null) {
                     Log.e(TAG, "no EXTRA_INTENT on pending_user_action — treating as failure")

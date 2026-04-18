@@ -2,7 +2,6 @@ package com.yutori.database
 
 import androidx.room.Room
 import androidx.room.testing.MigrationTestHelper
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
@@ -29,8 +28,7 @@ class MigrationTest {
     @get:Rule
     val helper = MigrationTestHelper(
         androidx.test.platform.app.InstrumentationRegistry.getInstrumentation(),
-        YutoriDatabase::class.java.canonicalName!!,
-        FrameworkSQLiteOpenHelperFactory(),
+        YutoriDatabase::class.java,
     )
 
     @Test

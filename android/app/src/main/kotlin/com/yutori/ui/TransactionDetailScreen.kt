@@ -190,7 +190,7 @@ private fun ReadyView(
 
 @Composable
 private fun Hero(tx: TransactionEntity) {
-    val inr = remember { NumberFormat.getCurrencyInstance(Locale("en", "IN")) }
+    val inr = remember { NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build()) }
     val timeFmt = remember {
         SimpleDateFormat("d MMM yyyy · HH:mm", Locale.getDefault())
     }

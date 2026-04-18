@@ -34,7 +34,7 @@ class TransactionListItemRenderTest {
 
     @Test
     fun rendersAllBudgetEffectsWithoutCrashing() = runComposeUiTest {
-        val inr = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+        val inr = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build())
         val effects = listOf("SPEND", "REFUND", "INCOME", "DROP", "UNKNOWN")
 
         setContent {

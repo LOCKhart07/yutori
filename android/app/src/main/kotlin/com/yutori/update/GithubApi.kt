@@ -16,15 +16,15 @@ interface GithubApi {
 }
 
 data class LatestReleaseDto(
-    @Json(name = "tag_name") val tagName: String,
-    @Json(name = "name") val name: String?,
-    @Json(name = "body") val body: String?,
-    @Json(name = "assets") val assets: List<AssetDto> = emptyList(),
+    @param:Json(name = "tag_name") val tagName: String,
+    @param:Json(name = "name") val name: String?,
+    @param:Json(name = "body") val body: String?,
+    @param:Json(name = "assets") val assets: List<AssetDto> = emptyList(),
 ) {
     data class AssetDto(
-        @Json(name = "url") val url: String,
-        @Json(name = "name") val name: String,
-        @Json(name = "size") val sizeBytes: Long,
+        @param:Json(name = "url") val url: String,
+        @param:Json(name = "name") val name: String,
+        @param:Json(name = "size") val sizeBytes: Long,
     )
 }
 

@@ -42,7 +42,7 @@ class AndroidAlertNotifier(private val context: Context) : AlertNotifier {
     override fun notify(thresholdPct: Int, evaluation: AlertEvaluation) {
         if (!hasPostNotificationsPermission()) return
 
-        val inr = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+        val inr = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build())
         val snap = evaluation.snapshot
         val paceDays = computePaceDeltaDays(
             monthKey = snap.monthKey,
@@ -101,7 +101,7 @@ class AndroidAlertNotifier(private val context: Context) : AlertNotifier {
 
     override fun notifyImpact(impact: ImpactNotification) {
         if (!hasPostNotificationsPermission()) return
-        val inr = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+        val inr = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build())
 
         val merchantBit = impact.merchantLabel
             ?.takeIf { it.isNotBlank() }

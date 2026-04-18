@@ -179,7 +179,7 @@ private fun AppContent() {
             // Re-check the runtime POST_NOTIFICATIONS grant on every
             // recomposition tick that follows a lifecycle event so we
             // pick up grant/revoke from the OS settings flow.
-            val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+            val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
             var notificationGranted by remember {
                 mutableStateOf(Permissions.hasNotificationPermission(app))
             }

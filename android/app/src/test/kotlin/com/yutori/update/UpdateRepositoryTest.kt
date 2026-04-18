@@ -62,9 +62,9 @@ class UpdateRepositoryTest {
         release.name shouldBe "Yutori 0.3.0"
         release.body shouldBe "- new thing\n- another thing"
         release.asset.shouldNotBeNull()
-        release.asset!!.name shouldBe "yutori-0.3.0.apk"
-        release.asset!!.sizeBytes shouldBe 12345L
-        release.asset!!.url shouldBe "https://api.github.com/repos/X/Y/releases/assets/1"
+        release.asset.name shouldBe "yutori-0.3.0.apk"
+        release.asset.sizeBytes shouldBe 12345L
+        release.asset.url shouldBe "https://api.github.com/repos/X/Y/releases/assets/1"
     }
 
     @Test

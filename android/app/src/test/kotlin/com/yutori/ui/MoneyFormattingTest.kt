@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
  */
 class MoneyFormattingTest {
 
-    private val inr: NumberFormat = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+    private val inr: NumberFormat = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build())
 
     @Test
     fun `compact strips decimals on whole-rupee values`() {
