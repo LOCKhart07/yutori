@@ -70,6 +70,7 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #103 — Currency-agnostic display *(needs clarification — UI symbol swap vs. full display-currency conversion)*
 - #106 — Autoupdater dialog polish — readability, skipped-versions, dismiss semantics *(follow-up to #71)*
 - #107 — Notification small-icon: replace system warning triangle with Yutori mark *(follow-up to #65)*
+- #116 — Feedback sheet optional category picker to auto-label filed issues *(follow-up to #113)*
 
 ## Tier 5 — deferred / low urgency
 
