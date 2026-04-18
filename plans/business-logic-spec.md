@@ -141,12 +141,13 @@ semantic fact; the effect is a consequence of plan policy.
 1. **Parser-assigned category**, if present. Currently only
    `UPI_PAYMENT` (Kotak) and `REFUND` (Blinkit) get a default category
    from the parser. Respect it.
-2. **User-defined merchant mapping.** A future `merchant_categories`
-   table (reserved in schema.md forward-compat but not created in v1
-   MVP — see §3.4). Until then: no user overrides.
-3. **Keyword matching on `merchantKey`** per plan §5. A static map in
+2. **Per-transaction category override**, if set on the transaction row.
+   This wins over parser/rule/keyword-derived values.
+3. **Recipient-rule assigned category**, if present and the final
+   classification is category-carrying (SPEND/REFUND).
+4. **Keyword matching on `merchantKey`** per plan §5. A static map in
    code, seeded with the merchants observed in the feasibility dataset.
-4. **Fallback:** `UNCATEGORIZED` if merchant is a known cross-cutting
+5. **Fallback:** `UNCATEGORIZED` if merchant is a known cross-cutting
    platform (Amazon, Flipkart, Blinkit, Zepto, Swiggy Instamart,
    BigBasket, DMart); `OTHER` otherwise; `null` if no merchant extracted.
 
@@ -197,21 +198,16 @@ If the raw classification is a bill-payment or admin-like thing
 category is `null` for DROP-effect rows. Category only applies to
 money-moving events (SPEND, REFUND, INCOME).
 
-### 3.4 User override (v1.1 scope, not v1 MVP)
+### 3.4 User override (current behavior)
 
-v1 MVP omits the "change category" UX entirely. Categories shown in the
-dashboard are parser/classifier output, period. If the user disagrees,
-they live with it or wait for v1.1.
+Users can now override category at two levels:
+- Rule-level (`recipient_rules.assigned_category`) for future matching
+  transactions.
+- Per-transaction (`transactions.category_override`) from transaction
+  detail; this takes precedence over rule/parser/keyword assignment.
 
-Justification: building "edit transaction" requires thinking about audit
-trails, multi-row edit, category-color assignment, and re-aggregation
-of the month's totals. All real work that distracts from getting the
-core loop right. Ship without it, see how painful it actually is, add
-in v1.1.
-
-**Forward-compat reserved in schema:** `transactions.manually_adjusted`,
-`transactions.classification_original`. These exist in v1 but are only
-written by the future-v1.1 override UX.
+Override changes are forward-looking unless a reparse run is invoked for
+historical rows.
 
 ## 4. Transaction creation (§12.3 merge flow)
 

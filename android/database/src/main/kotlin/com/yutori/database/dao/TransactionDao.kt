@@ -167,10 +167,11 @@ interface TransactionDao {
 
     /**
      * Rule-suggestion miner source (suggestions-spec §3.2). Groups recent
-     * mis-/un-classified transactions plus repeat category-gap merchants
-     * (SPEND/REFUND rows currently in OTHER/UNCATEGORIZED) by [merchant_key]
-     * and returns only groups whose count meets [threshold]. Already-covered
-     * filtering happens in Kotlin against the enabled-rule list.
+     * mis-/un-classified transactions plus repeat category-gap UPI merchants
+     * (SPEND/REFUND rows currently in OTHER/UNCATEGORIZED with no manual
+     * category override) by [merchant_key] and returns only groups whose count
+     * meets [threshold]. Already-covered filtering happens in Kotlin against
+     * the enabled-rule list.
      */
     @Query(
         """
@@ -179,14 +180,17 @@ interface TransactionDao {
                COALESCE(SUM(inr_amount), 0.0) AS total_inr
           FROM transactions
          WHERE occurred_at_ms >= :cutoffMs
-           AND merchant_key IS NOT NULL
-           AND (
-             classification IN ('UNMATCHED', 'UPI_PAYMENT')
-             OR (
-               budget_effect IN ('SPEND', 'REFUND')
-               AND category IN ('OTHER', 'UNCATEGORIZED')
-             )
-           )
+            AND merchant_key IS NOT NULL
+            AND (
+              classification IN ('UNMATCHED', 'UPI_PAYMENT')
+              OR (
+                classification = 'UPI_PAYMENT'
+                AND
+                budget_effect IN ('SPEND', 'REFUND')
+                AND category IN ('OTHER', 'UNCATEGORIZED')
+                AND category_override = 0
+              )
+            )
          GROUP BY merchant_key
         HAVING COUNT(*) >= :threshold
          ORDER BY total_inr DESC, match_count DESC

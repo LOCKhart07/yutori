@@ -690,7 +690,12 @@ private fun EditCategorySheet(
     val saveEnabled = if (selected == null) {
         initiallyOverridden
     } else {
-        selected != initialCategory || !initiallyOverridden
+        selected != initialCategory
+    }
+    val currentModeLabel = if (initiallyOverridden) {
+        "Currently: overridden"
+    } else {
+        "Currently: automatic"
     }
 
     ModalBottomSheet(
@@ -719,6 +724,12 @@ private fun EditCategorySheet(
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
                 ),
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = currentModeLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.onFaint,
             )
             Spacer(Modifier.height(10.dp))
 

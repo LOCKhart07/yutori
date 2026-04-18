@@ -72,6 +72,13 @@ private val RECLASSIFY_OPTIONS = listOf(
 private const val TEST_MERCHANT_LIMIT = 100
 private const val TEST_MAX_SHOWN = 20
 private val CATEGORY_OPTIONS: List<Category?> = listOf(null) + Category.entries
+private val CATEGORY_ASSIGNABLE_CLASSIFICATIONS: Set<Classification> = setOf(
+    Classification.CC_TRANSACTION,
+    Classification.UPI_PAYMENT,
+    Classification.DEBIT_CARD,
+    Classification.ATM_WITHDRAWAL,
+    Classification.REFUND,
+)
 
 @Composable
 fun AddEditRecipientRuleScreen(
@@ -150,6 +157,7 @@ fun AddEditRecipientRuleScreen(
     val regexError = (draftEval as? RecipientRuleMatching.DraftEval.Invalid)?.error
 
     val needsAccount = reclassifyAs == Classification.SELF_TRANSFER
+    val canAssignCategory = reclassifyAs in CATEGORY_ASSIGNABLE_CLASSIFICATIONS
     val canSave = patternTrimmed.isNotEmpty() &&
         reclassifyAs != null &&
         regexError == null &&
@@ -231,21 +239,44 @@ fun AddEditRecipientRuleScreen(
                 onPick = {
                     reclassifyAs = it
                     if (it != Classification.SELF_TRANSFER) linkedAccountId = null
+                    if (it !in CATEGORY_ASSIGNABLE_CLASSIFICATIONS) assignedCategory = null
                 },
                 enabled = !isReadOnly,
             )
 
             Spacer(Modifier.height(14.dp))
             FieldLabel("Assigned category (optional)")
-            EnumDropdown(
-                value = assignedCategory?.let { prettyCategory(it.name) } ?: "None",
-                placeholder = assignedCategory == null,
-                options = CATEGORY_OPTIONS,
-                optionLabel = ::categoryOptionLabel,
-                onPick = { assignedCategory = it },
-                enabled = !isReadOnly,
-            )
-            InlineHelp("Sets dashboard category for matching transactions.")
+            if (canAssignCategory) {
+                EnumDropdown(
+                    value = assignedCategory?.let { prettyCategory(it.name) } ?: "None",
+                    placeholder = assignedCategory == null,
+                    options = CATEGORY_OPTIONS,
+                    optionLabel = ::categoryOptionLabel,
+                    onPick = { assignedCategory = it },
+                    enabled = !isReadOnly,
+                )
+                InlineHelp(
+                    "Applies to future matching transactions. Existing history stays unchanged " +
+                        "until a reparse run.",
+                )
+            } else {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    color = colors.surfaceElevated,
+                    border = BorderStroke(1.dp, colors.divider),
+                ) {
+                    Text(
+                        text = "Unavailable for ${reclassifyAs?.let(::classificationLabel) ?: "this target"}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.onFaint,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                    )
+                }
+                InlineHelp(
+                    "This classification doesn't carry categories in dashboard totals.",
+                )
+            }
 
             if (needsAccount) {
                 Spacer(Modifier.height(14.dp))
@@ -305,7 +336,7 @@ fun AddEditRecipientRuleScreen(
                             pattern = patternTrimmed,
                             patternKind = patternKind.name,
                             reclassifyAs = target.name,
-                            assignedCategory = assignedCategory?.name,
+                            assignedCategory = assignedCategory?.takeIf { canAssignCategory }?.name,
                             accountId = linkedAccountId?.takeIf { needsAccount },
                             source = existingRule?.source
                                 ?: if (prefillSuggestion != null) "LEARNED" else "USER",

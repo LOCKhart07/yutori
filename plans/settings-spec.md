@@ -173,8 +173,18 @@ Fields:
     from `transactions.merchant` where classification = UPI_PAYMENT).
 - Reclassify as (dropdown: CC_BILL_PAYMENT, SELF_TRANSFER, REFUND,
   INCOMING_CREDIT, NON_FINANCIAL).
+- Assigned category (optional dropdown: None + all `Category` enum
+  values). Enabled only when the selected reclassify target can carry a
+  category in dashboard math (today: REFUND from this form). For
+  DROP/INCOME targets this control is shown disabled with explanatory
+  text.
 - Linked account (optional; only if reclassify_as = SELF_TRANSFER).
 - Note (optional text).
+
+Behavior note:
+- Rule-level category assignment affects future matching transactions.
+  It does not retroactively recategorize history until the reparse
+  pipeline runs.
 
 Validation:
 - Pattern non-empty.
