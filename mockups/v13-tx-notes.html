@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v13 mockup: per-tx notes edit flow (#27 part 1)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --divider-strong:rgba(237,238,240,0.14);
+    --accent:        #C6E3A3;
+    --negative:      #E27A7A;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 96px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 52px 0 10px; font-size: 17px; color: #C9CACD; }
+  h3 { font-weight: 500; margin: 24px 0 10px; font-size: 12px; color: var(--on-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 18px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: #8A8E96; font-size: 12px; max-width: 560px; margin: 12px 0 0; line-height: 1.55; }
+  .note strong { color: #C9CACD; }
+
+  /* Phone frame — mimics TransactionDetailScreen body. */
+  .phone {
+    width: 380px;
+    background: var(--surface);
+    border-radius: 28px;
+    padding: 20px 24px 26px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .phones { display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start; }
+
+  .back {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--on-muted); font-size: 13px; margin: 2px 0 18px;
+  }
+  .back svg { width: 18px; height: 18px; }
+
+  /* Hero */
+  .hero { margin-bottom: 14px; }
+  .hero .amt {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 34px; font-weight: 600; color: var(--on);
+    letter-spacing: -0.01em;
+  }
+  .hero .merchant { margin-top: 6px; font-size: 15px; color: var(--on); font-weight: 500; }
+  .hero .when { margin-top: 2px; font-size: 12px; color: var(--on-muted); }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 12px;
+    padding: 4px 10px; border-radius: 999px;
+    background: rgba(226, 122, 122, 0.12);
+    color: #E8B8B8; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--negative); }
+
+  /* Meta rows */
+  .meta { padding-top: 10px; }
+  .meta .row-line {
+    display: flex; justify-content: space-between; padding: 10px 0;
+    font-size: 14px;
+  }
+  .meta .row-line .k { color: var(--on-muted); }
+  .meta .row-line .v { color: var(--on); }
+  .meta .row-line .v.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 500; }
+  .meta .divider { height: 1px; background: var(--divider); }
+
+  /* NEW: notes card — full-width, replaces the cramped MetaRow rendering. */
+  .notes-card {
+    margin-top: 14px;
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    padding: 12px 14px 10px;
+    position: relative;
+  }
+  .notes-card .label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 600;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .notes-card .label .edit {
+    color: var(--accent); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.02em; text-transform: none; cursor: pointer;
+  }
+  .notes-card .body {
+    margin-top: 8px; font-size: 14px; color: var(--on); line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .notes-card.empty .body { color: var(--on-faint); font-style: italic; }
+
+  /* NEW: action row — forward-looking triad. v1 ships Edit note only. */
+  .actions {
+    display: flex; gap: 8px; margin-top: 16px;
+    padding-top: 14px; border-top: 1px solid var(--divider);
+  }
+  .action-btn {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 8px;
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    color: var(--on); font-size: 12px; font-weight: 500;
+    cursor: pointer;
+  }
+  .action-btn.ghost { color: var(--on-faint); background: transparent; border-style: dashed; }
+  .action-btn svg { width: 14px; height: 14px; }
+
+  /* Sources block (skeleton — just for context) */
+  .sources-caption {
+    margin-top: 24px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 600;
+  }
+  .source-block {
+    margin-top: 10px; padding: 12px 14px;
+    background: var(--surface-el); border-radius: 12px;
+    color: var(--on-muted); font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12px; line-height: 1.45;
+    max-height: 80px; overflow: hidden;
+    mask-image: linear-gradient(180deg, #000 60%, transparent);
+  }
+
+  /* Bottom sheet overlay */
+  .sheet-host {
+    width: 380px; height: 620px; border-radius: 28px; overflow: hidden;
+    background: var(--surface); position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  .sheet-host .scrim {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.55);
+  }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--surface-el);
+    border-top-left-radius: 24px; border-top-right-radius: 24px;
+    padding: 18px 20px 28px;
+    box-shadow: 0 -1px 0 rgba(255,255,255,0.06);
+  }
+  .sheet-handle {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: var(--divider-strong);
+    margin: 0 auto 14px;
+  }
+  .sheet-title {
+    font-size: 15px; font-weight: 600; color: var(--on); margin-bottom: 12px;
+  }
+  .field {
+    border: 1px solid var(--divider-strong);
+    border-radius: 12px; padding: 12px 14px;
+    min-height: 100px; background: transparent;
+    color: var(--on); font-size: 14px; line-height: 1.5;
+    font-family: 'Inter', system-ui, sans-serif;
+    white-space: pre-wrap;
+    outline: none;
+  }
+  .field.focused { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .field-caret::after {
+    content: '|'; color: var(--accent); animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .counter {
+    margin-top: 6px; font-size: 11px; color: var(--on-faint); text-align: right;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  .counter.warn { color: var(--negative); }
+  .sheet-actions {
+    display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;
+  }
+  .btn {
+    padding: 10px 18px; border-radius: 10px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .btn.primary { background: var(--accent); color: #0B1206; }
+  .btn.primary[disabled] { opacity: 0.4; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--on-muted); border-color: var(--divider-strong); }
+
+  .callout {
+    margin-top: 24px;
+    padding: 12px 14px;
+    border-left: 2px solid var(--accent);
+    background: rgba(198, 227, 163, 0.05);
+    color: var(--on-muted); font-size: 12px; line-height: 1.55;
+    border-radius: 0 8px 8px 0;
+  }
+  .callout strong { color: var(--on); }
+  .callout code { background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<h1>v13 — per-tx notes edit flow</h1>
+<p class="blurb">
+  Issue <code>#27</code> part 1. The <code>notes</code> column already exists on <code>TransactionEntity</code>
+  and renders read-only at <code>TransactionDetailScreen.kt:296</code> as a cramped right-aligned
+  <code>MetaRow</code>. This mockup proposes (a) promoting notes to a <strong>full-width note card</strong>
+  so wrapped multi-line text reads cleanly, and (b) adding an <strong>action row</strong> below the
+  meta section as the forward-looking home for <em>Edit note</em> (v1), <em>Ignore</em> (#27 part 2),
+  and <em>Add rule</em> (#29). Only <em>Edit note</em> is wired up in v1 — the greyed slots are
+  reserved layout, not dead buttons.
+</p>
+
+<h2>State A — existing note, tap to edit</h2>
+<p class="blurb">
+  Hero, classification pill, and meta rows stay as-is. The notes block is pulled out of
+  <code>MetaSection</code> into its own card so longer text (like the example below) isn't crushed
+  against the right gutter. <em>Edit</em> is an affordance in the card header as well as the action row.
+</p>
+
+<div class="phones">
+  <div class="phone">
+    <div class="back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      Back
+    </div>
+    <div class="hero">
+      <div class="amt">₹2,450.00</div>
+      <div class="merchant">zaid@okhdfcbank</div>
+      <div class="when">Apr 14, 9:42 PM</div>
+      <span class="pill"><span class="dot"></span>UPI PAYMENT</span>
+    </div>
+    <div class="meta">
+      <div class="divider"></div>
+      <div class="row-line"><span class="k">Account</span><span class="v mono">Kotak ••4321</span></div>
+      <div class="row-line"><span class="k">Category</span><span class="v">Food &amp; dining</span></div>
+      <div class="row-line"><span class="k">Month</span><span class="v">April 2026</span></div>
+    </div>
+
+    <div class="notes-card">
+      <div class="label">
+        <span>NOTE</span>
+        <span class="edit">Edit</span>
+      </div>
+      <div class="body">Dentist appointment — follow-up for filling. Partial reimbursement coming from insurance.</div>
+    </div>
+
+    <div class="actions">
+      <button class="action-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+        Edit note
+      </button>
+      <button class="action-btn ghost" title="Ships with #27 part 2">Ignore</button>
+      <button class="action-btn ghost" title="Ships with #29">Add rule</button>
+    </div>
+  </div>
+
+  <div class="phone">
+    <h3 style="margin:0 0 10px;">What the current app shows today</h3>
+    <div class="meta">
+      <div class="divider"></div>
+      <div class="row-line"><span class="k">Account</span><span class="v mono">Kotak ••4321</span></div>
+      <div class="row-line"><span class="k">Category</span><span class="v">Food &amp; dining</span></div>
+      <div class="row-line"><span class="k">Month</span><span class="v">April 2026</span></div>
+      <div class="row-line"><span class="k">Notes</span><span class="v" style="max-width:55%; text-align:right;">Dentist appointment — follow-up for filling. Partial reimbursement coming from insurance.</span></div>
+    </div>
+    <p class="note">
+      <strong>Problem:</strong> long notes overflow / wrap awkwardly into a right-aligned column,
+      and there's no way to edit them. No mutation path exists.
+    </p>
+  </div>
+</div>
+
+<h2>State B — no note yet</h2>
+<p class="blurb">
+  When <code>tx.notes</code> is null, the card is hidden and the action-row button becomes the sole
+  discovery point. Label shifts from <em>Edit note</em> → <em>Add note</em>.
+</p>
+
+<div class="phones">
+  <div class="phone">
+    <div class="back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      Back
+    </div>
+    <div class="hero">
+      <div class="amt">₹890.00</div>
+      <div class="merchant">paytmqr2810050501011a1b@paytm</div>
+      <div class="when">Apr 12, 2:18 PM</div>
+      <span class="pill"><span class="dot"></span>UPI PAYMENT</span>
+    </div>
+    <div class="meta">
+      <div class="divider"></div>
+      <div class="row-line"><span class="k">Account</span><span class="v mono">Kotak ••4321</span></div>
+      <div class="row-line"><span class="k">Category</span><span class="v">Uncategorised</span></div>
+      <div class="row-line"><span class="k">Month</span><span class="v">April 2026</span></div>
+    </div>
+
+    <div class="actions">
+      <button class="action-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add note
+      </button>
+      <button class="action-btn ghost" title="Ships with #27 part 2">Ignore</button>
+      <button class="action-btn ghost" title="Ships with #29">Add rule</button>
+    </div>
+  </div>
+</div>
+
+<h2>State C — edit sheet open</h2>
+<p class="blurb">
+  Modal bottom sheet with a multi-line <code>OutlinedTextField</code>. 500-char cap — counter turns
+  red past the limit and Save disables. Save calls
+  <code>TransactionDao.updateNote(id, note?.ifBlank { null })</code>; Cancel discards. Empty-string
+  save is treated as clearing the note.
+</p>
+
+<div class="phones">
+  <div class="sheet-host">
+    <div class="scrim"></div>
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Edit note</div>
+      <div class="field focused"><span>Dentist appointment — follow-up for filling. Partial reimbursement coming from insurance.</span><span class="field-caret"></span></div>
+      <div class="counter">94 / 500</div>
+      <div class="sheet-actions">
+        <button class="btn ghost">Cancel</button>
+        <button class="btn primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet-host">
+    <div class="scrim"></div>
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Add note</div>
+      <div class="field focused" style="color: var(--on-faint); font-style: italic;"><span>e.g. "dentist", "birthday gift for N"</span><span class="field-caret"></span></div>
+      <div class="counter">0 / 500</div>
+      <div class="sheet-actions">
+        <button class="btn ghost">Cancel</button>
+        <button class="btn primary" disabled>Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>Design decisions baked in — flag any you'd flip:</strong><br>
+  <br>
+  1. <strong>Notes promoted out of <code>MetaRow</code></strong> into a full-width card. Fixes the
+     pre-existing readability issue with multi-line notes. Means <code>MetaSection</code> at
+     <code>TransactionDetailScreen.kt:298</code> loses its <code>tx.notes?.let { ... }</code> row.<br>
+  2. <strong>Action row as forward scaffold</strong>. Shows 3 slots even though only 1 is wired — so
+     when #27-part-2 (Ignore) and #29 (Add rule) land, no re-layout. Ghost buttons in v1 are
+     deliberately disabled, not hidden — signals the roadmap without shipping half a feature.
+     Could alternatively hide them entirely until wired; say the word.<br>
+  3. <strong>Bottom sheet, not inline</strong>. Multi-line editor on a scroll-heavy screen is easier
+     in a sheet than inline. Matches existing editor patterns in the app (BudgetSetup, AccountEdit).<br>
+  4. <strong>500-char cap</strong>. Plucked from the triage comment. Long enough for "dentist
+     appointment — follow-up for filling, partial reimbursement coming from insurance" with room
+     to spare. Could tighten to 280 if we want a harder nudge.<br>
+  5. <strong>No keyword-reclassify offer in v1</strong>. The triage comment suggests an
+     "Sounds like Groceries — reclassify?" prompt on save. Holding that for the <em>auto-rule
+     thingy</em> pass (#29), since we'd rather ship the cleanest version of that flow once than a
+     half-featured shadow of it now.
+</div>
+
+<p class="note" style="margin-top: 32px;">
+  <strong>Open the mockup:</strong> <code>mockups/v13-tx-notes.html</code> — feedback welcome, I
+  haven't committed it yet (per workflow). When you say "ship it" I'll stage + commit in a
+  separate <code>docs:</code> commit, then start on the Kotlin.
+</p>
+
+</body>
+</html>
