@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -67,48 +68,56 @@ fun UpdateDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
-        Column(
+        Surface(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .fillMaxHeight(0.85f)
-                .clip(RoundedCornerShape(18.dp))
-                .background(YutoriTheme.colors.surfaceElevated)
-                .padding(horizontal = 22.dp, vertical = 18.dp),
+                .clip(RoundedCornerShape(18.dp)),
+            color = YutoriTheme.colors.surfaceElevated,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            shape = RoundedCornerShape(18.dp),
         ) {
-            DialogHeader(
-                title = if (phase is UpdateScreenState.Phase.Downloading) {
-                    "Downloading $targetVersion"
-                } else {
-                    release.name.ifBlank { "Yutori $targetVersion" }
-                },
-                subtitle = when (phase) {
-                    is UpdateScreenState.Phase.Downloading ->
-                        "${humanBytes(phase.bytes)} of ${humanBytes(phase.total)}"
-                    else -> "Current ${state.currentVersion}  →  New $targetVersion"
-                },
-            )
-            Spacer(Modifier.height(12.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .padding(horizontal = 22.dp, vertical = 18.dp),
+            ) {
+                DialogHeader(
+                    title = if (phase is UpdateScreenState.Phase.Downloading) {
+                        "Downloading $targetVersion"
+                    } else {
+                        release.name.ifBlank { "Yutori $targetVersion" }
+                    },
+                    subtitle = when (phase) {
+                        is UpdateScreenState.Phase.Downloading ->
+                            "${humanBytes(phase.bytes)} of ${humanBytes(phase.total)}"
+                        else -> "Current ${state.currentVersion}  →  New $targetVersion"
+                    },
+                )
+                Spacer(Modifier.height(12.dp))
 
-            Box(modifier = Modifier.weight(1f)) {
-                when (phase) {
-                    is UpdateScreenState.Phase.Available -> ReleaseNotes(body = release.body)
-                    is UpdateScreenState.Phase.Downloading -> DownloadingBody(phase = phase)
-                    is UpdateScreenState.Phase.DownloadFailed -> DownloadErrorBody()
-                    is UpdateScreenState.Phase.InstallFailed -> InstallErrorBody(phase = phase)
-                    else -> Unit
+                Box(modifier = Modifier.weight(1f)) {
+                    when (phase) {
+                        is UpdateScreenState.Phase.Available -> ReleaseNotes(body = release.body)
+                        is UpdateScreenState.Phase.Downloading -> DownloadingBody(phase = phase)
+                        is UpdateScreenState.Phase.DownloadFailed -> DownloadErrorBody()
+                        is UpdateScreenState.Phase.InstallFailed -> InstallErrorBody(phase = phase)
+                        else -> Unit
+                    }
                 }
+
+                Spacer(Modifier.height(10.dp))
+                HorizontalDivider(color = YutoriTheme.colors.divider)
+                Spacer(Modifier.height(10.dp))
+
+                PinnedActions(
+                    phase = phase,
+                    onDismiss = onDismiss,
+                    onStartDownload = onStartDownload,
+                    onCancelDownload = onCancelDownload,
+                )
             }
-
-            Spacer(Modifier.height(10.dp))
-            HorizontalDivider(color = YutoriTheme.colors.divider)
-            Spacer(Modifier.height(10.dp))
-
-            PinnedActions(
-                phase = phase,
-                onDismiss = onDismiss,
-                onStartDownload = onStartDownload,
-                onCancelDownload = onCancelDownload,
-            )
         }
     }
 }
