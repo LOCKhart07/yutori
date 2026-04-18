@@ -28,13 +28,18 @@ jobs:
 
       - name: Set up Gradle (with cache)
         uses: gradle/actions/setup-gradle@v3
+        with:
+          # Default is read-only on non-default branches; this workflow
+          # only runs on tag pushes, so without this override nothing is
+          # ever written and every run pulls deps cold.
+          cache-read-only: false
 
       - name: Run unit tests
         run: >-
           ./gradlew
           :parser:test :classifier:test :budget:test :transactions:test
           :ingestion:test :database:test :app:testDebugUnitTest
-          --no-daemon --stacktrace
+          --parallel --build-cache --stacktrace
 
   build-release:
     name: Build & publish release APK
@@ -61,6 +66,8 @@ jobs:
 
       - name: Set up Gradle (with cache)
         uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: false
 
       - name: Determine signing mode
         id: signing
@@ -104,7 +111,7 @@ jobs:
           # with BuildConfig.
           GITHUB_RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
           GITHUB_ISSUES_TOKEN: ${{ secrets.ISSUES_TOKEN }}
-        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+        run: ./gradlew :app:assembleRelease --parallel --build-cache --stacktrace
 
       - name: Stage APK with release name
         id: stage
