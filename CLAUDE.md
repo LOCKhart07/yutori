@@ -13,7 +13,7 @@ Yutori (was **SpendWise** until 2026-04-17 — fully renamed, including `com.yut
 
 ## Build and test
 
-All Gradle commands run from `android/`. Kotlin 1.9.23, JDK 17, AGP 8.4.0, Compose compiler 1.5.11, `compileSdk=34`, `minSdk=28`.
+All Gradle commands run from `android/`. Kotlin 2.3.20, JDK 17, AGP 9.1.1, Gradle 9.4.1, `compileSdk=36`, `minSdk=28`. Library / plugin versions live in `android/gradle/libs.versions.toml` (added #96 stage 0). The Compose compiler is no longer a manual pin — `org.jetbrains.kotlin.plugin.compose` tracks it against the Kotlin version automatically.
 
 ```bash
 cd android
