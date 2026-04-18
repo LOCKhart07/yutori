@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v12 mockup: Settings → About (#66)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --surface-el3:   #242428;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --accent:        #F5B547;
+    --info:          #7BA9D1;
+    --positive:      #7FB77E;
+    --primary:       #8FB8DD;
+    --brand-teal:    #3F6B6B;   /* from drawable/ic_launcher_background.xml */
+    --brand-cream:   #FAF1EC;   /* from drawable/ic_launcher_foreground.xml */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 48px 32px 80px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 8px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 48px 0 6px; font-size: 16px; color: #C9CACD; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 24px; font-size: 13px; line-height: 1.55; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+
+  /* phone frames — same shell language as v10 / v11 mockups */
+  .row-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 52px 32px;
+    max-width: 1400px;
+    padding-top: 12px;
+  }
+  .frame {
+    width: 320px;
+    border-radius: 28px;
+    background: var(--surface);
+    color: var(--on);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 24px 48px -16px rgba(0,0,0,0.6);
+  }
+  .frame .label {
+    position: absolute;
+    top: -22px;
+    left: 4px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8A8E96;
+    font-weight: 500;
+  }
+  .statusbar {
+    height: 26px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 18px 4px;
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+  .statusbar .right { display: inline-flex; gap: 4px; }
+
+  .topbar {
+    padding: 6px 12px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .topbar .material-icons {
+    font-size: 26px;
+    color: var(--on-muted);
+  }
+  .topbar .title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--on);
+  }
+
+  .scroll {
+    padding: 0 24px 32px;
+    overflow-y: auto;
+  }
+
+  /* Hero: logo + wordmark + tagline */
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0 28px;
+  }
+  .hero .logo {
+    width: 88px;
+    height: 88px;
+    border-radius: 999px;
+    background: var(--brand-teal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 4px 14px -4px rgba(0,0,0,0.6);
+  }
+  .hero .logo img {
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    border-radius: 999px;
+  }
+  /* CSS fallback rendering for reviewers who open this without the
+     repo — approximates the brush-stroke ゆ on teal. */
+  .hero .logo .fallback-glyph {
+    font-family: 'Noto Serif JP', 'Yu Mincho', serif;
+    font-size: 54px;
+    color: var(--brand-cream);
+    line-height: 1;
+    display: block;
+    transform: translateY(-2px);
+  }
+  .hero .wordmark {
+    margin-top: 16px;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--on);
+  }
+  .hero .tagline {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--on-muted);
+    text-align: center;
+    line-height: 1.45;
+    max-width: 240px;
+  }
+
+  .section-head {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--on-faint);
+    font-weight: 500;
+    margin: 20px 0 8px;
+    padding: 0 4px;
+  }
+
+  /* Principle cards — slab style, heading + supporting copy */
+  .principle {
+    background: var(--surface-el);
+    border-radius: 14px;
+    padding: 14px 16px 16px;
+    margin-bottom: 10px;
+  }
+  .principle .h {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--on);
+    margin-bottom: 4px;
+  }
+  .principle .h .num {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--on-faint);
+    background: var(--surface-el2);
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+  .principle .body {
+    font-size: 12.5px;
+    color: var(--on-muted);
+    line-height: 1.55;
+  }
+  .principle .body em {
+    color: #C9CACD;
+    font-style: normal;
+    font-weight: 500;
+  }
+
+  /* Build info block — reuses the Settings card style */
+  .build-card {
+    background: var(--surface-el);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .build-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .build-row:last-child { border-bottom: 0; }
+  .build-row .label { flex: 1; color: var(--on); }
+  .build-row .value { color: var(--on-muted); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .build-row.actionable {
+    cursor: pointer;
+    color: var(--info);
+  }
+  .build-row.actionable .label { color: var(--info); font-weight: 500; }
+  .build-row.actionable .material-icons { color: var(--on-faint); font-size: 20px; }
+
+  /* Link rows — Open-source licenses, View on GitHub */
+  .link-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--surface-el);
+    border-radius: 14px;
+    margin-top: 10px;
+    cursor: pointer;
+  }
+  .link-row .material-icons.lead { font-size: 20px; color: var(--on-muted); margin-right: 12px; }
+  .link-row .material-icons.trail { font-size: 20px; color: var(--on-faint); }
+  .link-row .label { flex: 1; font-size: 13.5px; color: var(--on); font-weight: 500; }
+  .link-row .sub { font-size: 11.5px; color: var(--on-muted); margin-top: 2px; }
+  .link-row .col { display: flex; flex-direction: column; flex: 1; }
+
+  /* Licenses sub-screen */
+  .license-item {
+    padding: 12px 16px;
+    background: var(--surface-el);
+    border-radius: 10px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .license-item .name { font-size: 13px; color: var(--on); }
+  .license-item .meta { font-size: 11px; color: var(--on-muted); font-family: 'JetBrains Mono', monospace; }
+
+  /* right-side caption column */
+  .side { max-width: 340px; font-size: 12.5px; color: var(--on-muted); line-height: 1.55; padding-top: 14px; }
+  .side h3 { font-size: 12px; font-weight: 600; color: #C9CACD; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 8px; }
+  .side p { margin: 0 0 12px; }
+
+  hr { border: 0; border-top: 1px solid var(--divider); margin: 44px 0; }
+
+  .pair { display: grid; grid-template-columns: 320px 1fr; gap: 40px; align-items: start; }
+</style>
+</head>
+<body>
+
+<h1>v12 — Settings → About (#66, ship-blocker for going public)</h1>
+<p class="blurb">
+  Two frames: the <strong>About screen</strong> itself, and the <strong>Open-source licenses</strong> sub-screen it links to.
+  Copy has been validated with the user (see chat thread). Logo is the current <code>ic_launcher_round</code> rendered directly from the repo asset — if the image doesn't load in your browser (relative-path resolution), a <code>ゆ</code> fallback is drawn on the teal background with the same colors (<code>#3F6B6B</code> / <code>#FAF1EC</code>).
+</p>
+
+<hr>
+
+<!-- ============ FRAME 1: About (main) ============ -->
+<h2>Frame 1 — About (Settings → About)</h2>
+
+<div class="pair">
+  <div class="frame">
+    <div class="label">About screen</div>
+    <div class="statusbar"><span>9:41</span><span class="right">●●● 5G 82%</span></div>
+    <div class="topbar">
+      <span class="material-icons">arrow_back</span>
+      <span class="title">About</span>
+    </div>
+
+    <div class="scroll">
+      <!-- Hero -->
+      <div class="hero">
+        <div class="logo">
+          <!-- primary: the PNG from res/mipmap-xxxhdpi/. Falls back to CSS ゆ if relative path fails. -->
+          <img src="../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png" alt="Yutori logo" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+          <span class="fallback-glyph" style="display:none">ゆ</span>
+        </div>
+        <div class="wordmark">Yutori</div>
+        <div class="tagline">
+          You don't want to spend less.<br>
+          You want to spend confidently.
+        </div>
+      </div>
+
+      <!-- Name + logo meaning -->
+      <div class="section-head">Why "Yutori"</div>
+      <div style="background: var(--surface-el); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px;">
+        <p style="font-size: 12.5px; color: var(--on-muted); line-height: 1.6; margin: 0;">
+          <strong style="color: var(--on); font-weight: 600;">Yutori</strong> (余裕) is Japanese for "breathing room": financial margin, mental ease, room to spend without friction. The logo is the hiragana <strong style="color: var(--on); font-weight: 600;">ゆ</strong> ("yu") rendered as negative space; the space itself is the design.
+        </p>
+      </div>
+
+      <!-- Philosophy -->
+      <div class="section-head">Principles</div>
+
+      <div class="principle">
+        <div class="h"><span class="num">1</span><span>SMS-first, human-assist second</span></div>
+        <div class="body">Bank SMS is the source of truth. Manual entry stays light.</div>
+      </div>
+
+      <div class="principle">
+        <div class="h"><span class="num">2</span><span>Margin, not micromanagement</span></div>
+        <div class="body">Answers "how much room do I have?" without moralising spend.</div>
+      </div>
+
+      <div class="principle">
+        <div class="h"><span class="num">3</span><span>On-device by default</span></div>
+        <div class="body">You own your data.</div>
+      </div>
+
+      <div class="principle">
+        <div class="h"><span class="num">4</span><span>Opinionated about scope</span></div>
+        <div class="body">Personal monthly spend from SMS. Nothing more.</div>
+      </div>
+
+      <div class="principle">
+        <div class="h"><span class="num">5</span><span>Side-loaded, open source</span></div>
+        <div class="body">GitHub releases, in-app updates. Code is public, audit it.</div>
+      </div>
+
+      <!-- Build info -->
+      <div class="section-head">Build</div>
+      <div class="build-card">
+        <div class="build-row">
+          <span class="label">Version</span>
+          <span class="value">0.6.2</span>
+        </div>
+        <div class="build-row">
+          <span class="label">Commit</span>
+          <span class="value">12f4a73</span>
+        </div>
+        <div class="build-row actionable">
+          <span class="label">Check for updates</span>
+          <span class="material-icons">keyboard_arrow_right</span>
+        </div>
+      </div>
+
+      <!-- Links -->
+      <div class="section-head">More</div>
+      <div class="link-row">
+        <span class="material-icons lead">description</span>
+        <div class="col">
+          <span class="label">Open-source licenses</span>
+          <span class="sub">Libraries this app depends on.</span>
+        </div>
+        <span class="material-icons trail">keyboard_arrow_right</span>
+      </div>
+      <div class="link-row">
+        <span class="material-icons lead">code</span>
+        <div class="col">
+          <span class="label">View on GitHub</span>
+          <span class="sub">github.com/LOCKhart07/yutori</span>
+        </div>
+        <span class="material-icons trail">open_in_new</span>
+      </div>
+    </div>
+  </div>
+
+  <aside class="side">
+    <h3>Notes on this frame</h3>
+    <p><strong>Logo</strong> is the existing <code>ic_launcher_round.png</code> — rendering directly from the repo asset so the design decisions (brush-stroke ゆ, muted teal, cream cutout, no gradients) are preserved exactly in-app. Same asset the launcher uses, so the visual identity between home-screen icon and About is immediate.</p>
+    <p><strong>Wordmark</strong> is Inter 28sp semibold — not a separate brand asset; leans on the system font so the About surface doesn't require shipping a custom webfont.</p>
+    <p><strong>Tagline</strong> wraps naturally on two lines at 240px; on very narrow devices it'll wrap differently but the rhetorical beat ("Not less. But with confidence.") survives.</p>
+    <p><strong>Principle cards</strong> are numbered so they read as a list; each one's heading is the principle name, body is the supporting copy with emphasis on the load-bearing phrases (<code>em</code> class is on-brand muted-white, not italic, to avoid visual noise).</p>
+    <p><strong>"Build" block</strong> reuses the Settings card style from <code>AppUpdatesSection</code> — same elevated-surface bg, same row heights, same divider. "Check for updates" is actionable and triggers the same flow as Settings → App updates → Check now (share the ViewModel).</p>
+    <p><strong>Licenses link</strong> goes to Frame 2 (sub-screen). GitHub link fires <code>Intent.ACTION_VIEW</code> on <code>https://github.com/LOCKhart07/yutori</code>.</p>
+  </aside>
+</div>
+
+<hr>
+
+<!-- ============ FRAME 2: Licenses sub-screen ============ -->
+<h2>Frame 2 — Open-source licenses (sub-screen)</h2>
+
+<div class="pair">
+  <div class="frame">
+    <div class="label">Licenses sub-screen</div>
+    <div class="statusbar"><span>9:41</span><span class="right">●●● 5G 82%</span></div>
+    <div class="topbar">
+      <span class="material-icons">arrow_back</span>
+      <span class="title">Open-source licenses</span>
+    </div>
+
+    <div class="scroll">
+      <p style="color:var(--on-muted); font-size:12px; line-height:1.55; margin: 12px 4px 16px;">
+        Yutori is built on these open-source projects. Tap any entry to read the full license text.
+      </p>
+
+      <div class="license-item"><span class="name">Jetpack Compose</span><span class="meta">Apache 2.0</span></div>
+      <div class="license-item"><span class="name">Material 3</span><span class="meta">Apache 2.0</span></div>
+      <div class="license-item"><span class="name">AndroidX Core / Activity / Lifecycle</span><span class="meta">Apache 2.0</span></div>
+      <div class="license-item"><span class="name">Room</span><span class="meta">Apache 2.0</span></div>
+      <div class="license-item"><span class="name">WorkManager</span><span class="meta">Apache 2.0</span></div>
+      <div class="license-item"><span class="name">Profile Installer</span><span class="meta">Apache 2.0</span></div>
+      <div class="license-item"><span class="name">Kotlin Coroutines</span><span class="meta">Apache 2.0</span></div>
+      <div class="license-item"><span class="name">OkHttp</span><span class="meta">Apache 2.0</span></div>
+      <div class="license-item"><span class="name">Retrofit</span><span class="meta">Apache 2.0</span></div>
+      <div class="license-item"><span class="name">Moshi</span><span class="meta">Apache 2.0</span></div>
+
+      <p style="color:var(--on-faint); font-size:11px; line-height:1.5; margin: 20px 4px 0;">
+        This list reflects the <code style="font-family:'JetBrains Mono',monospace; font-size:11px;">:app</code> module's runtime dependencies. Library versions and full license texts are generated at build time from the Gradle dependency graph.
+      </p>
+    </div>
+  </div>
+
+  <aside class="side">
+    <h3>Notes on this frame</h3>
+    <p>Android-standard pattern — a plain list of library names + license type, each row tap-able to open a third-screen with the full license text (not drawn here; same layout as any long-form Text surface).</p>
+    <p><strong>Not using</strong> <code>com.google.android.gms:play-services-oss-licenses</code> — that's Play Services, tied to Play Store distribution and pulls in a large transitive dep. Yutori's no-Play-Store stance means we generate the list at build time from Gradle ourselves. The <code>com.jaredsburrows.license</code> or <code>com.github.jk1.dependency-license-report</code> plugins are the two mainstream picks; either emits a JSON asset the Compose screen reads at runtime.</p>
+    <p>The "generated at build time" footer is an honest declaration — if we go auto-generated, the list stays fresh across dependency bumps without someone remembering to edit this list.</p>
+    <p><strong>Scope for this PR</strong>: the <em>screen</em> lands here; the auto-generation plugin decision can be a separate follow-up. Ship with a hand-curated list for v0.7.0, swap to generated output later.</p>
+  </aside>
+</div>
+
+<hr>
+
+<!-- ============ README companion block ============ -->
+<h2>README companion — new <code>## Philosophy</code> section</h2>
+<p class="blurb">
+  Sits in <code>README.md</code> between the existing "Status" block and "Build" block. Same 5 principles, slightly tightened for the public-repo audience. GitHub's README rendering strips most styling so this is plain Markdown.
+</p>
+
+<div style="background: #14161A; border-radius: 10px; padding: 24px 28px; max-width: 820px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12.5px; line-height: 1.7; color: #D0D2D5; white-space: pre-wrap;">## Why "Yutori"
+
+**Yutori** (余裕) is Japanese for "breathing room": financial margin, mental ease, room to spend without friction. The logo is the hiragana **ゆ** ("yu") rendered as negative space; the space itself is the design.
+
+## Principles
+
+Yutori is an opinionated app. A few load-bearing principles decide what ships and what doesn't.
+
+**1. SMS-first, human-assist second.** Bank SMS is the source of truth. ATM withdrawals count as spend at withdrawal time. Manual entry stays light. No OCR, no email scraping.
+
+**2. Margin, not micromanagement.** The central question is *"how much room do I have right now?"* Yutori doesn't moralise about spend. It surfaces impact: threshold crossings and single-transaction alerts. Awareness, not judgment.
+
+**3. On-device by default.** You own your data. Yutori has no backend, no accounts, no analytics, no data collection.
+
+**4. Opinionated about scope.** One question, answered well: personal monthly spend visibility from bank SMS. Features that don't serve "how much room do I have" are out.
+
+**5. Side-loaded, open source.** Distributed via GitHub releases. No Play Store (fees don't fit a no-cost app). Updates land in-app via the built-in autoupdater. Code is public: audit it, fork it.
+
+&gt; **You don't want to spend less. You want to spend confidently.**
+</div>
+
+<p class="blurb" style="margin-top: 18px;">
+  The blockquote at the bottom is the tagline — set apart so it reads as the closing line, not just another sentence.
+</p>
+
+</body>
+</html>

@@ -14,6 +14,11 @@ import androidx.compose.ui.graphics.Color
  */
 object YutoriColors {
 
+    // ─── Brand — the teal behind the launcher-icon ゆ glyph. Same on
+    // both themes; it's an identity color, not a UI-state color.
+    // Kept in sync with res/drawable/ic_launcher_background.xml. ───
+    val BrandTeal          = Color(0xFF3F6B6B)
+
     // ─── Dark ────────────────────────────────────────────────────
     val DarkSurface        = Color(0xFF0F0F10)  // near-black, not true #000
     val DarkSurfaceEl      = Color(0xFF17171A)  // cards, banners

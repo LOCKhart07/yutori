@@ -4,6 +4,26 @@
 
 Android-only personal spending tracker that reads SMS from Indian banks and UPI apps, classifies each message, and derives a monthly budget view. All data stays on-device (Room). Side-loaded APK; no Play Store.
 
+> **You don't want to spend less. You want to spend confidently.**
+
+## Why "Yutori"
+
+**Yutori** (余裕) is Japanese for "breathing room": financial margin, mental ease, room to spend without friction. The logo is the hiragana **ゆ** ("yu") rendered as negative space; the space itself is the design.
+
+## Principles
+
+Yutori is an opinionated app. A few load-bearing principles decide what ships and what doesn't.
+
+**1. SMS-first, human-assist second.** Bank SMS is the source of truth. ATM withdrawals count as spend at withdrawal time. Manual entry stays light. No OCR, no email scraping.
+
+**2. Margin, not micromanagement.** The central question is *"how much room do I have right now?"* Yutori doesn't moralise about spend. It surfaces impact: threshold crossings and single-transaction alerts. Awareness, not judgment.
+
+**3. On-device by default.** You own your data. Yutori has no backend, no accounts, no analytics, no data collection.
+
+**4. Opinionated about scope.** One question, answered well: personal monthly spend visibility from bank SMS. Features that don't serve "how much room do I have" are out.
+
+**5. Side-loaded, open source.** Distributed via GitHub releases. No Play Store (fees don't fit a no-cost app). Updates land in-app via the built-in autoupdater. Code is public: audit it, fork it.
+
 ## Status
 
 Personal project, single user. Active development. The `plans/` directory captures intent; work-in-progress is tracked in [GitHub issues](../../issues) — `plans/backlog.md` is a thin tiered index.
@@ -48,3 +68,7 @@ Subject line is short and imperative; body (optional) explains *why*. See `cliff
 ## Privacy
 
 The repo is sanitised — no real SMS bodies, account numbers, names, employer or UPI handles. Test fixtures use synthetic placeholders. Real data lives only in the on-device Room database.
+
+## License
+
+Released under the [GNU General Public License v3.0](LICENSE). You're free to use, modify, and redistribute — any fork or derivative must also be released under GPL-3.0. Commercial use is allowed under the same terms; a separate commercial licence can be negotiated with the author if those terms don't fit your use case.

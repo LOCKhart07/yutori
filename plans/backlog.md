@@ -81,7 +81,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 - #62 — Move historical-import from dashboard dialog to Settings
 - #63 — Carry-over genesis month setting
 - #64 — AI-assisted rule creation
-- #66 — About screen
 - #67 — Alert thresholds screen
 - #68 — CSV export screen
 - #69 — Purge non-financial screen

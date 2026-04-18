@@ -27,6 +27,8 @@ data class YutoriColorExtras(
     val surfaceElevated: Color,  // cards, banners
     val surfaceElevated2: Color, // progress track
     val divider: Color,
+    val brandTeal: Color,        // launcher-icon background; identity, not state
+
     // Category tints — keyed by enum name (e.g. "FOOD_DINING").
     val categoryFood: Color,
     val categoryGroceries: Color,
@@ -66,6 +68,7 @@ private val DarkExtras = YutoriColorExtras(
     surfaceElevated       = YutoriColors.DarkSurfaceEl,
     surfaceElevated2      = YutoriColors.DarkSurfaceEl2,
     divider               = YutoriColors.DarkDivider,
+    brandTeal             = YutoriColors.BrandTeal,
     categoryFood          = YutoriColors.DarkCatFood,
     categoryGroceries     = YutoriColors.DarkCatGroceries,
     categoryTravel        = YutoriColors.DarkCatTravel,
@@ -87,6 +90,7 @@ private val LightExtras = YutoriColorExtras(
     surfaceElevated       = YutoriColors.LightSurfaceEl,
     surfaceElevated2      = YutoriColors.LightSurfaceEl2,
     divider               = YutoriColors.LightDivider,
+    brandTeal             = YutoriColors.BrandTeal,
     categoryFood          = YutoriColors.LightCatFood,
     categoryGroceries     = YutoriColors.LightCatGroceries,
     categoryTravel        = YutoriColors.LightCatTravel,

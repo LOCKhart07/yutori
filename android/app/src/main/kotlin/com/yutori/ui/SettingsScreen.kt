@@ -47,6 +47,7 @@ fun SettingsScreen(
     onRecipientRules: () -> Unit,
     onAlertSettings: () -> Unit = {},
     onSendFeedback: () -> Unit = {},
+    onAbout: () -> Unit = {},
     accountSuggestionCount: Int = 0,
     updateState: UpdateScreenState? = null,
     onCheckForUpdates: () -> Unit = {},
@@ -139,6 +140,14 @@ fun SettingsScreen(
                     subtitle = "Report a bug or suggest an improvement — " +
                         "filed as a GitHub issue on yutori.",
                     onClick = onSendFeedback,
+                )
+            }
+
+            SettingsSection(title = "About") {
+                SettingsItem(
+                    title = "About Yutori",
+                    subtitle = "Version, philosophy, open-source licenses.",
+                    onClick = onAbout,
                 )
             }
 

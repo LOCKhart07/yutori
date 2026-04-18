@@ -93,6 +93,8 @@ private sealed interface Screen {
     data object RecipientRules : Screen
     data object AlertSettings : Screen
     data object SendFeedback : Screen
+    data object About : Screen
+    data object OpenSourceLicenses : Screen
 }
 
 @Composable
@@ -344,6 +346,7 @@ private fun AppContent() {
                 onRecipientRules = { goTo(Screen.RecipientRules) },
                 onAlertSettings = { goTo(Screen.AlertSettings) },
                 onSendFeedback = { goTo(Screen.SendFeedback) },
+                onAbout = { goTo(Screen.About) },
                 accountSuggestionCount = suggestedCount,
                 updateState = updateState,
                 onCheckForUpdates = { app.updateViewModel.onCheckNow() },
@@ -492,6 +495,28 @@ private fun AppContent() {
                 onBack = { goBack() },
                 warnThresholdPct = warnPct,
             )
+        }
+
+        is Screen.About -> {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            com.yutori.ui.about.AboutScreen(
+                versionName = com.yutori.BuildConfig.VERSION_NAME,
+                commitSha = com.yutori.BuildConfig.COMMIT_SHA,
+                onBack = { goBack() },
+                onCheckForUpdates = { app.updateViewModel.onCheckNow() },
+                onOpenLicenses = { goTo(Screen.OpenSourceLicenses) },
+                onOpenRepo = {
+                    val intent = android.content.Intent(
+                        android.content.Intent.ACTION_VIEW,
+                        android.net.Uri.parse("https://github.com/LOCKhart07/yutori"),
+                    ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    runCatching { context.startActivity(intent) }
+                },
+            )
+        }
+
+        is Screen.OpenSourceLicenses -> {
+            com.yutori.ui.about.OpenSourceLicensesScreen(onBack = { goBack() })
         }
     }
 
