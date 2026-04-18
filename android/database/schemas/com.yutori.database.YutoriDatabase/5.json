@@ -777,7 +777,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b8358f25ab45c0cadfa917945098a277')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '801be148836c7f9656ad2f546f9971e0')"
     ]
   }
 }

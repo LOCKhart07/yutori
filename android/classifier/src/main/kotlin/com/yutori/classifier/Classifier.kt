@@ -111,7 +111,11 @@ object Classifier {
             parserAssignedCategory = parserAssignedCategory,
             merchantKey = merchantKey,
         )
-        return if (computed != null && matchedRule?.assignedCategory != null) {
+        val canCarryCategory = BudgetEffectMapper.effectFor(classification) in setOf(
+            BudgetEffect.SPEND,
+            BudgetEffect.REFUND,
+        )
+        return if (canCarryCategory && matchedRule?.assignedCategory != null) {
             matchedRule.assignedCategory
         } else {
             computed
