@@ -1,5 +1,6 @@
 package com.yutori.ui.update
 
+import com.yutori.update.UpdateCheckError
 import com.yutori.update.model.LatestRelease
 
 data class UpdateScreenState(
@@ -24,6 +25,6 @@ data class UpdateScreenState(
             val status: Int,
             val message: String?,
         ) : Phase
-        data object ErrorChecking : Phase
+        data class ErrorChecking(val reason: UpdateCheckError) : Phase
     }
 }

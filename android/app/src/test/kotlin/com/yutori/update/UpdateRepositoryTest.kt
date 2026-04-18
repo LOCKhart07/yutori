@@ -3,6 +3,7 @@ package com.yutori.update
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -103,33 +104,46 @@ class UpdateRepositoryTest {
     }
 
     @Test
-    fun `404 without token yields failure`() = runTest {
+    fun `404 without token yields Http 404 failure`() = runTest {
         // Private-repo-era safeguard: an anonymous 404 on a private repo
-        // must surface as an error ("Updater offline") rather than a
-        // silent "up to date". Removal target at #71(a).
+        // must surface as an error (so the UI prompts "Couldn't check
+        // (404)") rather than a silent "up to date". Removal target at
+        // #71(a).
         server.enqueue(MockResponse().setResponseCode(404).setBody("""{"message":"Not Found"}"""))
 
         val result = repo(token = "").latestRelease()
 
-        result.isFailure shouldBe true
+        result.exceptionOrNull() shouldBe UpdateCheckError.Http(404)
     }
 
     @Test
-    fun `401 yields failure`() = runTest {
+    fun `401 yields Http 401 failure`() = runTest {
         server.enqueue(MockResponse().setResponseCode(401).setBody("""{"message":"Bad credentials"}"""))
 
         val result = repo().latestRelease()
 
-        result.isFailure shouldBe true
+        result.exceptionOrNull() shouldBe UpdateCheckError.Http(401)
     }
 
     @Test
-    fun `malformed json yields failure`() = runTest {
+    fun `5xx yields Http failure carrying the code`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(503))
+
+        val result = repo().latestRelease()
+
+        result.exceptionOrNull() shouldBe UpdateCheckError.Http(503)
+    }
+
+    @Test
+    fun `malformed json folds into Offline`() = runTest {
+        // Moshi parse failure is indistinguishable to the user from a
+        // dropped connection — keep the UI copy simple by folding both
+        // into Offline.
         server.enqueue(MockResponse().setResponseCode(200).setBody("{not-json"))
 
         val result = repo().latestRelease()
 
-        result.isFailure shouldBe true
+        result.exceptionOrNull().shouldBeInstanceOf<UpdateCheckError.Offline>()
     }
 
     @Test

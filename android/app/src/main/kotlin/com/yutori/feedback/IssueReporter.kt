@@ -22,12 +22,14 @@ import java.io.IOException
  */
 class IssueReporter(
     private val client: OkHttpClient,
-    private val token: String,
+    token: String,
     private val owner: String = "LOCKhart07",
     private val repo: String = "yutori",
     private val baseUrl: String = "https://api.github.com",
     private val moshi: Moshi = DefaultMoshi,
 ) {
+    // Trim at construction — same reasoning as GithubAuthInterceptor.
+    private val token: String = token.trim()
 
     /** Callable from a coroutine on an IO dispatcher. Blocking under the hood. */
     fun submit(title: String, body: String): SubmitResult {

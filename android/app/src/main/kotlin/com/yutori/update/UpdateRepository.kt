@@ -5,6 +5,17 @@ import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonEncodingException
 import java.io.IOException
 
+// Typed failure for the updater. Carried through Result.failure so the
+// UI can distinguish "server said no" (code in hand — surface it so
+// future-me can diagnose from the screenshot alone) from "we never
+// got an answer" (network, DNS, or malformed body — all indistinguishable
+// to the user). See docs/RELEASING.md "Updater status codes" for what
+// each code means.
+sealed class UpdateCheckError(message: String) : Throwable(message) {
+    data class Http(val code: Int) : UpdateCheckError("HTTP $code")
+    data object Offline : UpdateCheckError("offline")
+}
+
 class UpdateRepository(
     private val api: GithubApi,
     // Distinguishes "public repo + anonymous request + no releases yet"
@@ -25,20 +36,19 @@ class UpdateRepository(
                     Result.success(null)
                 } else {
                     // Unauthed 404 on a private repo is how GitHub hides
-                    // existence from anonymous callers. Surface as error
-                    // so the user sees "Updater offline" instead of a
-                    // silent false "Up to date."
-                    Result.failure(IOException("HTTP 404 (no token configured)"))
+                    // existence from anonymous callers. Surface the 404
+                    // so the UI can prompt rotating the PAT.
+                    Result.failure(UpdateCheckError.Http(404))
                 }
             }
             response.isSuccessful -> Result.success(response.body()?.toDomain())
-            else -> Result.failure(IOException("HTTP ${response.code()}"))
+            else -> Result.failure(UpdateCheckError.Http(response.code()))
         }
     } catch (e: IOException) {
-        Result.failure(e)
+        Result.failure(UpdateCheckError.Offline)
     } catch (e: JsonDataException) {
-        Result.failure(e)
+        Result.failure(UpdateCheckError.Offline)
     } catch (e: JsonEncodingException) {
-        Result.failure(e)
+        Result.failure(UpdateCheckError.Offline)
     }
 }

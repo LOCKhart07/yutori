@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.yutori.ui.theme.YutoriTextStyles
 import com.yutori.ui.theme.YutoriTheme
+import com.yutori.update.UpdateCheckError
 
 /**
  * Settings card + dedicated "Check now" button.
@@ -154,8 +155,16 @@ private fun StatusLine(phase: UpdateScreenState.Phase) {
             Text("Download failed", style = mono, color = YutoriTheme.colors.negative)
         is UpdateScreenState.Phase.InstallFailed ->
             Text("Install failed", style = mono, color = YutoriTheme.colors.negative)
-        is UpdateScreenState.Phase.ErrorChecking ->
-            Text("Updater offline", style = mono, color = YutoriTheme.colors.negative)
+        is UpdateScreenState.Phase.ErrorChecking -> {
+            // Generic phrasing + the concrete tag so future-me can
+            // diagnose from a screenshot. Status codes are mapped to
+            // causes in docs/RELEASING.md "Updater status codes".
+            val tag = when (val r = phase.reason) {
+                is UpdateCheckError.Http -> r.code.toString()
+                UpdateCheckError.Offline -> "offline"
+            }
+            Text("Couldn't check ($tag)", style = mono, color = YutoriTheme.colors.negative)
+        }
     }
 }
 

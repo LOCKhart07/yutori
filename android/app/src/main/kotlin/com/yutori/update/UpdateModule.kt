@@ -29,7 +29,7 @@ object UpdateModule {
         // `#71(a)` cleanup: drop this default (and parameter) when the
         // repo goes public — every build will behave as if a token is
         // present because 404s will all be legitimate.
-        tokenPresent: Boolean = BuildConfig.GITHUB_RELEASES_TOKEN.isNotEmpty(),
+        tokenPresent: Boolean = BuildConfig.GITHUB_RELEASES_TOKEN.isNotBlank(),
     ): UpdateRepository {
         val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
         val api = Retrofit.Builder()

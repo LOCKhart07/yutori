@@ -3,6 +3,7 @@ package com.yutori.ui.update
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.yutori.update.UpdateCheckError
 import com.yutori.update.UpdateDownloader
 import com.yutori.update.UpdateInstallEvents
 import com.yutori.update.UpdateInstaller
@@ -89,8 +90,9 @@ class UpdateViewModel(
                 } else {
                     _state.update { it.copy(phase = UpdateScreenState.Phase.UpToDate) }
                 }
-            }.onFailure {
-                _state.update { it.copy(phase = UpdateScreenState.Phase.ErrorChecking) }
+            }.onFailure { cause ->
+                val reason = cause as? UpdateCheckError ?: UpdateCheckError.Offline
+                _state.update { it.copy(phase = UpdateScreenState.Phase.ErrorChecking(reason)) }
             }
         }
     }

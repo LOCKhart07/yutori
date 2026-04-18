@@ -122,13 +122,41 @@ Token setup (per token):
 2. Resource owner: `LOCKhart07`. Repository access: only
    `LOCKhart07/yutori`. Repository permissions as per the table above.
    Expiry: 1 year.
-3. Copy the token, add as the matching repo secret.
+3. Copy the token, add as the matching repo secret. When uploading via
+   `gh`, pipe the token to stdin **with no `--body` flag** — `gh` reads
+   stdin automatically when it isn't a TTY. Writing `gh secret set NAME
+   --body -` does not mean "read stdin"; it stores the literal one-char
+   string `-`, and the piped token is silently discarded. That mistake
+   once shipped in v0.5.1 + v0.6.0 and produced the 401 symptoms in the
+   "Updater status codes" table below.
+   ```bash
+   printf '%s' "$TOKEN" | gh secret set RELEASES_TOKEN --repo LOCKhart07/yutori
+   # or: gh secret set RELEASES_TOKEN --repo LOCKhart07/yutori < token.txt
+   ```
 
 When a token expires, the corresponding feature breaks quietly —
-the autoupdater flips back to "Updater offline", Send feedback fails
-with an error snackbar. Rotate by creating a new PAT and overwriting
-the secret; the next release embeds the fresh one. APKs already on
-users' phones keep the old token until they're replaced.
+the autoupdater flips to "Couldn't check (401)", Send feedback fails
+with an error snackbar showing the same code. Rotate by creating a new
+PAT and overwriting the secret; the next release embeds the fresh one.
+APKs already on users' phones keep the old token until they're replaced.
+
+### Updater status codes
+
+The Settings → App updates section surfaces errors as
+`Couldn't check (<tag>)`. The tag is either the HTTP status from the
+GitHub API or the literal word `offline`. Map:
+
+| Tag | What it means | What to do |
+| --- | --- | --- |
+| `401` | Embedded PAT is invalid, expired, or was stored as a placeholder (e.g. the literal `-`). | Rotate `RELEASES_TOKEN` with a fresh fine-grained PAT — see "Token setup" above — then cut a new release. |
+| `403` | PAT is authenticated but lacks `Contents: Read` on the repo, or has hit GitHub's secondary rate limit. | Re-generate with the permission in the table above. If the PAT is fine, back off and retry. |
+| `404` | Either the PAT can't see the repo (wrong `Resource owner` / repo access), or the repo was renamed/moved. | Re-check PAT scope; confirm `LOCKhart07/yutori` still exists. |
+| `5xx` | GitHub server-side. | Try again later. Not actionable on the client. |
+| `offline` | Network, DNS, or a malformed response from GitHub. | Retry when connectivity is back. |
+
+Send feedback (the Issues API) shows the HTTP code inline in its
+error snackbar — e.g. "GitHub rejected the request (401)." — so the
+same mapping applies.
 
 Remove this section (and the corresponding `buildConfigField` entries
 in `android/app/build.gradle.kts`) when the repo goes public — see

@@ -46,4 +46,31 @@ class GithubAuthInterceptorTest {
 
         server.takeRequest().getHeader("Authorization") shouldBe "Bearer pat-xyz"
     }
+
+    @Test
+    fun `whitespace around token is trimmed before building the header`() {
+        // Regression for #115 — a secret pasted with a trailing newline
+        // must not propagate into the Authorization header (would cause
+        // a silent 401).
+        val client = OkHttpClient.Builder()
+            .addInterceptor(GithubAuthInterceptor(token = " pat-xyz\n"))
+            .build()
+        server.enqueue(MockResponse().setResponseCode(200))
+
+        client.newCall(Request.Builder().url(server.url("/")).build()).execute().close()
+
+        server.takeRequest().getHeader("Authorization") shouldBe "Bearer pat-xyz"
+    }
+
+    @Test
+    fun `whitespace-only token is treated as empty`() {
+        val client = OkHttpClient.Builder()
+            .addInterceptor(GithubAuthInterceptor(token = "   \n"))
+            .build()
+        server.enqueue(MockResponse().setResponseCode(200))
+
+        client.newCall(Request.Builder().url(server.url("/")).build()).execute().close()
+
+        server.takeRequest().getHeader("Authorization").shouldBeNull()
+    }
 }

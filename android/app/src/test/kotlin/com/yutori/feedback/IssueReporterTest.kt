@@ -95,6 +95,38 @@ class IssueReporterTest {
     }
 
     @Test
+    fun `whitespace around token is trimmed before building the header`() {
+        // Regression for #115 — mirrors the autoupdater interceptor test.
+        val trimmingReporter = IssueReporter(
+            client = OkHttpClient.Builder()
+                .connectTimeout(1, TimeUnit.SECONDS)
+                .readTimeout(1, TimeUnit.SECONDS)
+                .build(),
+            token = " pat_xyz\n",
+            baseUrl = server.url("").toString().trimEnd('/'),
+        )
+        server.enqueue(MockResponse().setResponseCode(201).setBody("""{"number":1,"html_url":"u"}"""))
+
+        trimmingReporter.submit("t", "b")
+
+        server.takeRequest().getHeader("Authorization") shouldBe "Bearer pat_xyz"
+    }
+
+    @Test
+    fun `whitespace-only token short-circuits without making a request`() {
+        val noTokenReporter = IssueReporter(
+            client = OkHttpClient(),
+            token = "   \n",
+            baseUrl = server.url("").toString().trimEnd('/'),
+        )
+
+        val result = noTokenReporter.submit("t", "b")
+
+        result shouldBe SubmitResult.NoToken
+        server.requestCount shouldBe 0
+    }
+
+    @Test
     fun `empty token short-circuits without making a request`() {
         val noTokenReporter = IssueReporter(
             client = OkHttpClient(),

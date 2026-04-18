@@ -2,6 +2,7 @@ package com.yutori.ui.update
 
 import androidx.test.core.app.ApplicationProvider
 import com.yutori.ui.TestApp
+import com.yutori.update.UpdateCheckError
 import com.yutori.update.UpdateInstallEvents
 import com.yutori.update.UpdatePrefs
 import com.yutori.update.model.DownloadState
@@ -104,11 +105,36 @@ class UpdateViewModelTest {
     }
 
     @Test
-    fun `failed fetch transitions to ErrorChecking`() = runTest(dispatcher) {
+    fun `http failure transitions to ErrorChecking with the code`() = runTest(dispatcher) {
+        val vm = buildVm(fetchLatest = { Result.failure(UpdateCheckError.Http(401)) })
+        vm.onCheckNow()
+        advanceUntilIdle()
+        val phase = vm.state.value.phase
+        assertTrue(phase is UpdateScreenState.Phase.ErrorChecking)
+        assertEquals(UpdateCheckError.Http(401), (phase as UpdateScreenState.Phase.ErrorChecking).reason)
+    }
+
+    @Test
+    fun `offline failure transitions to ErrorChecking with Offline reason`() = runTest(dispatcher) {
+        val vm = buildVm(fetchLatest = { Result.failure(UpdateCheckError.Offline) })
+        vm.onCheckNow()
+        advanceUntilIdle()
+        val phase = vm.state.value.phase
+        assertTrue(phase is UpdateScreenState.Phase.ErrorChecking)
+        assertEquals(UpdateCheckError.Offline, (phase as UpdateScreenState.Phase.ErrorChecking).reason)
+    }
+
+    @Test
+    fun `unexpected Throwable falls back to Offline reason`() = runTest(dispatcher) {
+        // Defence-in-depth: if anyone ever returns a raw exception via
+        // Result.failure, we still render a reasonable UI instead of
+        // crashing on the when-exhaustive assumption.
         val vm = buildVm(fetchLatest = { Result.failure(RuntimeException("boom")) })
         vm.onCheckNow()
         advanceUntilIdle()
-        assertTrue(vm.state.value.phase is UpdateScreenState.Phase.ErrorChecking)
+        val phase = vm.state.value.phase
+        assertTrue(phase is UpdateScreenState.Phase.ErrorChecking)
+        assertEquals(UpdateCheckError.Offline, (phase as UpdateScreenState.Phase.ErrorChecking).reason)
     }
 
     @Test

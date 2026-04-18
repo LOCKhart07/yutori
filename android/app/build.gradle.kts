@@ -79,9 +79,14 @@ android {
         // default — unauthenticated builds still compile and the
         // interceptor no-ops. See plans/autoupdater-spec.md §6 and
         // docs/RELEASING.md. Remove at #71(a) when the repo goes public.
+        // .trim() is defence-in-depth: a secret pasted with trailing
+        // whitespace (or a shell mishap that stores the literal "-",
+        // see docs/RELEASING.md "Updater status codes") would otherwise
+        // mint an "Authorization: Bearer <mangled>" header that 401s on
+        // every call and looks identical to an expired PAT in the UI.
         val releasesToken: String = providers.gradleProperty("GITHUB_RELEASES_TOKEN")
             .orElse(providers.environmentVariable("GITHUB_RELEASES_TOKEN"))
-            .orNull.orEmpty()
+            .orNull.orEmpty().trim()
         buildConfigField("String", "GITHUB_RELEASES_TOKEN", "\"$releasesToken\"")
 
         // Fine-grained PAT for the in-app "Send feedback" flow — POSTs
@@ -92,7 +97,7 @@ android {
         // See #113, docs/RELEASING.md.
         val issuesToken: String = providers.gradleProperty("GITHUB_ISSUES_TOKEN")
             .orElse(providers.environmentVariable("GITHUB_ISSUES_TOKEN"))
-            .orNull.orEmpty()
+            .orNull.orEmpty().trim()
         buildConfigField("String", "GITHUB_ISSUES_TOKEN", "\"$issuesToken\"")
     }
 
