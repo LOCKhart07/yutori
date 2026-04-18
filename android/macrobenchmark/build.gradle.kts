@@ -2,8 +2,8 @@
 // :app `benchmark` variant. Not part of the regular unit-test run;
 // invoke explicitly with `:macrobenchmark:connectedBenchmarkAndroidTest`.
 plugins {
-    id("com.android.test")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.test)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -42,13 +42,13 @@ android {
 }
 
 dependencies {
-    implementation("androidx.test.ext:junit:1.2.1")
-    implementation("androidx.test.espresso:espresso-core:3.6.1")
-    implementation("androidx.test.uiautomator:uiautomator:2.3.0")
+    implementation(libs.androidx.test.ext.junit.app)
+    implementation(libs.androidx.test.espresso.core)
+    implementation(libs.androidx.test.uiautomator)
     // MacrobenchmarkRule tried to grant WRITE_EXTERNAL_STORAGE unconditionally
     // in 1.2.x–1.3.x, which fails on Android 14+ where the permission is no
     // longer a runtime permission. 1.4.x skips the grant on new SDKs.
-    implementation("androidx.benchmark:benchmark-macro-junit4:1.4.1")
+    implementation(libs.androidx.benchmark.macro.junit4)
 }
 
 androidComponents {
