@@ -73,6 +73,12 @@ Package layout in each module is `com.yutori.<module>`; `:app` uses `com.yutori.
 
 ## Workflow with the user
 
+- **New issues are auto-triaged.** `.github/workflows/triage-issue.yml`
+  runs Copilot CLI on every opened issue and posts a structured
+  comment + labels (`kind/`, `module/`, `tier/`, `blocker/…`). Spec:
+  `docs/issue-triage.md`. When picking up an issue, *read the existing
+  triage comment + labels first* — don't redo the classification by
+  hand. Disagreeing is fine; just note it.
 - **UI changes need a mockup first.** Any visible-to-user UI change — new screen, new banner, new layout, restyle of an existing surface — should be presented as a mockup (HTML in `mockups/`, screenshot, or annotated description) and approved by the user *before* code is written. This applies to the dashboard, drill-downs, settings, and any new screens. Pure-logic changes (DAO, classifier rules, ViewModel internals) don't need mockup approval.
 - **Bugs take priority over features.** When the user asks "what's next," surface real bugs (broken behavior, data loss, wrong totals) ahead of features.
 - **Verify audit / hypothesis claims before coding.** Two of the audit subagent's "missing" findings (alerts wired, FX banner) turned out to already exist. Always grep / read the alleged code path before claiming it's a gap.

@@ -1,0 +1,286 @@
+name: Triage issue
+run-name: "Triage #${{ github.event.issue.number }}"
+
+# Spec: docs/issue-triage.md. Prompt: .github/triage-prompt.md.
+# Labels must exist before this runs — scripts/bootstrap-triage-labels.sh.
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues:   write
+
+concurrency:
+  group: triage-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    name: Auto-triage
+    runs-on: ubuntu-latest
+    # Skip bot-opened issues. A human can re-trigger manually.
+    if: ${{ github.event.issue.user.type != 'Bot' }}
+
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      MARKER: "<!-- yutori-triage:v1 -->"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO:     ${{ github.repository }}
+
+    steps:
+      - name: Checkout repo (for triage-prompt.md)
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Preflight — verify COPILOT_GITHUB_TOKEN is set
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: |
+          if [ -z "${COPILOT_GITHUB_TOKEN:-}" ]; then
+            echo "::error::COPILOT_GITHUB_TOKEN secret is not configured."
+            echo "::error::See docs/issue-triage.md → Permissions & secrets."
+            exit 1
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: "20"
+
+      - name: Install Copilot CLI (pinned)
+        run: npm install -g "@github/copilot@1.0.32"
+
+      - name: Stage issue data (truncate body to 8 KB)
+        env:
+          ISSUE_TITLE:  ${{ github.event.issue.title }}
+          ISSUE_BODY:   ${{ github.event.issue.body }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/triage"
+          cd "$RUNNER_TEMP/triage"
+          # --arg keeps raw text as one argument — no shell interpolation
+          # touches the untrusted body.
+          jq -n \
+            --argjson number "$ISSUE_NUMBER" \
+            --arg     title   "$ISSUE_TITLE" \
+            --arg     body    "${ISSUE_BODY:0:8192}" \
+            --arg     author  "$ISSUE_AUTHOR" \
+            '{number: $number, title: $title, body: $body, author: $author}' \
+            > issue.json
+
+      - name: Stage open-issue context (for duplicate detection)
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/triage"
+          gh issue list \
+            --repo "$REPO" \
+            --state open \
+            --limit 100 \
+            --json number,title \
+            > open-issues.json
+
+      - name: Assemble prompt
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/triage"
+          {
+            cat "$GITHUB_WORKSPACE/.github/triage-prompt.md"
+            printf '\n\n---ISSUE DATA---\n'
+            printf 'number: %s\n' "$(jq -r '.number' issue.json)"
+            printf 'author: %s\n' "$(jq -r '.author' issue.json)"
+            printf 'title:  %s\n' "$(jq -r '.title'  issue.json)"
+            printf 'body: |\n'
+            # Indent by 2 spaces so the body is unambiguous as a block.
+            jq -r '.body' issue.json | sed 's/^/  /'
+            printf '\n---OPEN ISSUES---\n'
+            jq -r '.[] | "- #\(.number): \(.title)"' open-issues.json
+            printf '\n---END---\n'
+            printf 'Write the JSON object to ./triage.json now.\n'
+          } > prompt.txt
+
+      - name: Run Copilot CLI
+        env:
+          # Explicitly set Copilot's own token — else the CLI falls back
+          # to GH_TOKEN (the built-in GITHUB_TOKEN), which has no
+          # Copilot scope and fails with an auth error.
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/triage"
+          rm -f triage.json
+          copilot \
+            -p "$(cat prompt.txt)" \
+            --allow-tool='write' \
+            --no-ask-user
+          if [ ! -f triage.json ]; then
+            echo "::error::Copilot did not produce triage.json"
+            exit 1
+          fi
+
+      - name: Validate triage.json
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/triage"
+
+          # Strict schema filter: unknown enum values become null, out-of-range
+          # fields are clamped, unknown keys are dropped. jq exits non-zero if
+          # the input is not valid JSON — bubbles up to the fallback step.
+          jq '
+            def enum(ok): if (ok | index(.)) then . else null end;
+            def str(n):   if type == "string" then .[0:n] else null end;
+            def sanitise: . // "" | tostring | .[0:280] | gsub("[`<>]"; "");
+
+            {
+              valid:          (.valid          // false | if type == "boolean" then . else false end),
+              invalid_reason: ((.invalid_reason // null) | str(280)),
+              kind:           ((.kind          // null) | if . == null then null else enum(["bug","feature","question","docs","tech-debt","meta"]) end),
+              modules:        ((.modules       // [])   | map(select(type == "string") | enum(["parser","classifier","budget","transactions","ingestion","database","app-ui","build"])) | map(select(. != null)) | .[0:2]),
+              spec_refs:      ((.spec_refs     // [])   | map(select(type == "string") | .[0:80]) | .[0:5]),
+              tier:           ((.tier          // null) | if . == null then null else enum(["P0","P1","P2"]) end),
+              blocker:        ((.blocker       // "ready") | enum(["ready","needs-repro","needs-mockup","needs-decision","duplicate","invalid"]) // "ready"),
+              duplicate_of:   (.duplicate_of   | if type == "number" then . else null end),
+              summary:        (.summary        | sanitise),
+              next_step:      (.next_step      | sanitise)
+            }
+          ' triage.json > validated.json
+
+          # If duplicate_of points at a non-existent issue, null it out.
+          dup=$(jq -r '.duplicate_of // empty' validated.json)
+          if [ -n "$dup" ]; then
+            if ! gh issue view "$dup" --repo "$REPO" --json number >/dev/null 2>&1; then
+              jq '.duplicate_of = null
+                  | if .blocker == "duplicate" then .blocker = "ready" else . end' \
+                validated.json > validated.json.tmp
+              mv validated.json.tmp validated.json
+            fi
+          fi
+
+          echo "Validated:"
+          jq . validated.json
+
+      - name: Apply labels + post comment
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/triage"
+
+          valid=$(jq    -r '.valid'              validated.json)
+          kind=$(jq     -r '.kind          // ""' validated.json)
+          tier=$(jq     -r '.tier          // ""' validated.json)
+          blocker=$(jq  -r '.blocker       // ""' validated.json)
+          summary=$(jq  -r '.summary       // ""' validated.json)
+          nextstep=$(jq -r '.next_step     // ""' validated.json)
+          dup=$(jq      -r '.duplicate_of  // ""' validated.json)
+          reason=$(jq   -r '.invalid_reason // ""' validated.json)
+
+          # Build desired label set.
+          labels=()
+          if [ "$valid" = "false" ]; then
+            labels+=("triage/invalid")
+          else
+            [ -n "$kind" ] && labels+=("kind/$kind")
+            mapfile -t mods < <(jq -r '.modules[]?' validated.json)
+            for m in "${mods[@]}"; do
+              [ -n "$m" ] && labels+=("module/$m")
+            done
+            if { [ "$kind" = "bug" ] || [ "$kind" = "feature" ]; } && [ -n "$tier" ]; then
+              labels+=("tier/$tier")
+            fi
+            if [ "$blocker" = "ready" ]; then
+              labels+=("status/ready")
+            elif [ -n "$blocker" ]; then
+              labels+=("blocker/$blocker")
+            fi
+          fi
+
+          # Remove any prior triage-applied labels (idempotent re-run).
+          mapfile -t prior < <(gh api "/repos/$REPO/issues/$ISSUE_NUMBER/labels" --jq '.[].name' \
+                               | grep -E '^(triage/|kind/|module/|tier/|blocker/|status/ready$)' || true)
+          for p in "${prior[@]}"; do
+            [ -n "$p" ] && gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --remove-label "$p" || true
+          done
+
+          # Filter to labels that actually exist in the repo.
+          mapfile -t existing < <(gh label list --repo "$REPO" --limit 200 --json name --jq '.[].name')
+          to_apply=()
+          for l in "${labels[@]}"; do
+            if printf '%s\n' "${existing[@]}" | grep -Fxq "$l"; then
+              to_apply+=("$l")
+            else
+              echo "::warning::Label '$l' does not exist — run scripts/bootstrap-triage-labels.sh"
+            fi
+          done
+
+          if [ ${#to_apply[@]} -gt 0 ]; then
+            joined=$(IFS=,; echo "${to_apply[*]}")
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label "$joined"
+          fi
+
+          # Delete prior triage comments (idempotent re-run).
+          gh api "/repos/$REPO/issues/$ISSUE_NUMBER/comments" --paginate > comments.json
+          mapfile -t old_ids < <(jq -r --arg m "$MARKER" '.[] | select(.body | contains($m)) | .id' comments.json)
+          for id in "${old_ids[@]}"; do
+            [ -n "$id" ] && gh api -X DELETE "/repos/$REPO/issues/comments/$id" --silent || true
+          done
+
+          # Build comment body.
+          {
+            echo "$MARKER"
+            echo "## Automated triage"
+            echo
+            if [ "$valid" = "false" ]; then
+              echo "**Flagged as invalid.** ${reason:-No reason given.}"
+              echo
+              echo "_Not auto-closed — a human reviews every invalid flag._"
+            else
+              echo "**Summary:** $summary"
+              echo
+              echo "**Next step:** $nextstep"
+              if [ -n "$dup" ]; then
+                echo
+                echo "**Possible duplicate of:** #$dup"
+              fi
+              if [ ${#to_apply[@]} -gt 0 ]; then
+                echo
+                printf '**Labels applied:** '
+                printf '`%s` ' "${to_apply[@]}"
+                echo
+              fi
+              specs=$(jq -r '.spec_refs[]?' validated.json)
+              if [ -n "$specs" ]; then
+                echo
+                echo "**Relevant specs:**"
+                echo "$specs" | sed 's/^/- `/;s/$/`/'
+              fi
+            fi
+            echo
+            echo "_<sub>Generated by \`.github/workflows/triage-issue.yml\` — re-run to refresh.</sub>_"
+          } > comment.md
+
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body-file comment.md
+
+      - name: Fallback — post "triage failed" comment
+        if: failure()
+        run: |
+          set -u
+          cd "$RUNNER_TEMP" || cd /tmp
+
+          # Best-effort: remove any prior triage comment so the failure
+          # notice replaces it rather than stacking.
+          gh api "/repos/$REPO/issues/$ISSUE_NUMBER/comments" --paginate > comments.json 2>/dev/null || echo '[]' > comments.json
+          mapfile -t old_ids < <(jq -r --arg m "$MARKER" '.[] | select(.body | contains($m)) | .id' comments.json 2>/dev/null || true)
+          for id in "${old_ids[@]}"; do
+            [ -n "$id" ] && gh api -X DELETE "/repos/$REPO/issues/comments/$id" --silent 2>/dev/null || true
+          done
+
+          {
+            echo "$MARKER"
+            echo "## Automated triage failed"
+            echo
+            echo "The triage workflow didn't complete for this issue."
+            echo "Run: [${GITHUB_RUN_ID}](https://github.com/$REPO/actions/runs/$GITHUB_RUN_ID)"
+            echo
+            echo "A human will look at this shortly."
+          } > fallback.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body-file fallback.md || true

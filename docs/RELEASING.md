@@ -165,6 +165,36 @@ calls become anonymous and the Send feedback flow can either stay
 authenticated (better rate-limit headroom) or switch to an
 `Intent.ACTION_VIEW` on `https://github.com/.../issues/new?...`.
 
+## CI tokens
+
+Separate from the embedded PATs above — these never ship inside the
+APK, they only unlock automation on the Actions runner. Same yearly
+rotation discipline applies, so rotate them on the same calendar.
+
+| Secret | Permission | Used by |
+| --- | --- | --- |
+| `COPILOT_GITHUB_TOKEN` | Fine-grained PAT on `LOCKhart07`'s account with **Copilot Requests** enabled (Repository access: *Public repositories* — this is UI gating, not a functional limit; see `docs/issue-triage.md` → *Permissions & secrets*) | `.github/workflows/triage-issue.yml` — authenticates Copilot CLI when auto-triaging newly opened issues. |
+
+Unlike the embedded PATs, this one **stays required after the repo
+flips public** — Copilot CLI still needs to authenticate to its
+backend on the user's behalf. Rotate on the same annual cadence as
+`RELEASES_TOKEN` / `ISSUES_TOKEN` so all three share an expiry
+calendar and a single rotation session covers everything.
+
+When it expires, auto-triage fails silently: the workflow posts a
+"Automated triage failed" comment on every new issue until the
+secret is rotated. That fallback comment is defined in
+`.github/workflows/triage-issue.yml`. To rotate, generate a fresh
+PAT (same permissions as the table above) and re-run:
+
+```bash
+printf '%s' "$TOKEN" | gh secret set COPILOT_GITHUB_TOKEN --repo LOCKhart07/yutori
+```
+
+Same *"do not use `--body -`"* caveat as every other token here —
+`gh` reads stdin automatically when it isn't a TTY; the `-` flag
+stores a literal hyphen and the piped token is silently dropped.
+
 ## Generating a keystore
 
 One-time setup on your local machine (not in the repo — the keystore
