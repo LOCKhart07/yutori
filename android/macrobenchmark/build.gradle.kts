@@ -37,7 +37,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.test.ext.junit.app)
+    implementation(libs.androidx.test.ext.junit)
     implementation(libs.androidx.test.espresso.core)
     implementation(libs.androidx.test.uiautomator)
     // MacrobenchmarkRule tried to grant WRITE_EXTERNAL_STORAGE unconditionally

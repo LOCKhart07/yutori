@@ -239,6 +239,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.core)
 
     // In-app autoupdater networking. Retrofit for the single GitHub
     // Releases endpoint; Moshi with reflection-based Kotlin adapter for
@@ -275,8 +276,8 @@ dependencies {
     testDebugImplementation(libs.robolectric)
     testDebugImplementation(libs.androidx.compose.ui.test.junit4)
     testDebugImplementation(libs.androidx.compose.ui.test.manifest)
-    testDebugImplementation(libs.androidx.test.runner.app)
-    testDebugImplementation(libs.androidx.test.ext.junit.app)
+    testDebugImplementation(libs.androidx.test.runner)
+    testDebugImplementation(libs.androidx.test.ext.junit)
     testDebugImplementation(libs.junit4)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
