@@ -42,9 +42,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
 import com.yutori.database.dao.SmsLogDao
 import com.yutori.database.dao.TransactionDao
 import com.yutori.database.dao.TransactionSourceDao
@@ -431,11 +433,17 @@ private fun NotesCard(note: String, onEdit: () -> Unit) {
 
 /**
  * Forward-looking action row. v1 wires only the note button.
- * The Ignore and Add-rule slots are rendered disabled so the layout
- * doesn't shift when #27-part-2 and #29 land.
+ * Ignore and Add-rule slots render in ghost style so users read them
+ * as "coming" rather than "broken"; tapping one fires a short Toast
+ * instead of doing nothing. The slots stay in place so the row
+ * doesn't re-layout when #27-part-2 and #29 land.
  */
 @Composable
 private fun ActionRow(hasNote: Boolean, onEditNote: () -> Unit) {
+    val context = LocalContext.current
+    val showSoonToast: () -> Unit = {
+        Toast.makeText(context, "Soon\u2122", Toast.LENGTH_SHORT).show()
+    }
     Column {
         HorizontalDivider(color = YutoriTheme.colors.divider)
         Spacer(Modifier.height(14.dp))
@@ -443,19 +451,18 @@ private fun ActionRow(hasNote: Boolean, onEditNote: () -> Unit) {
             ActionButton(
                 label = if (hasNote) "Edit note" else "Add note",
                 onClick = onEditNote,
-                enabled = true,
                 modifier = Modifier.weight(1f),
             )
             ActionButton(
                 label = "Ignore",
-                onClick = { },
-                enabled = false,
+                onClick = showSoonToast,
+                ghost = true,
                 modifier = Modifier.weight(1f),
             )
             ActionButton(
                 label = "Add rule",
-                onClick = { },
-                enabled = false,
+                onClick = showSoonToast,
+                ghost = true,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -466,16 +473,16 @@ private fun ActionRow(hasNote: Boolean, onEditNote: () -> Unit) {
 private fun ActionButton(
     label: String,
     onClick: () -> Unit,
-    enabled: Boolean,
     modifier: Modifier = Modifier,
+    ghost: Boolean = false,
 ) {
     val colors = YutoriTheme.colors
-    val bg = if (enabled) colors.surfaceElevated else Color.Transparent
-    val fg = if (enabled) MaterialTheme.colorScheme.onSurface else colors.onFaint
+    val bg = if (ghost) Color.Transparent else colors.surfaceElevated
+    val fg = if (ghost) colors.onFaint else MaterialTheme.colorScheme.onSurface
     Surface(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
-            .clickable(enabled = enabled, onClick = onClick),
+            .clickable(onClick = onClick),
         color = bg,
         border = androidx.compose.foundation.BorderStroke(1.dp, colors.divider),
     ) {
