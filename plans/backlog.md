@@ -18,7 +18,6 @@ Regenerate or re-order freely — don't trust ordinal numbers in old git revisio
 
 - #26 — Hard-stop over-budget state (opt-in)
 - #27 — Per-tx notes + ignore-a-transaction
-- #28 — Manual recipient-rule add/edit form
 - #29 — "Add a rule from this transaction" entry point
 - #30 — Reparse pipeline
 - #31 — "Offer" reclassify confirm dialog after saving account UPI handle

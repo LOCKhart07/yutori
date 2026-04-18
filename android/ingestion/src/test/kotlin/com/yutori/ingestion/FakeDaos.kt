@@ -160,6 +160,13 @@ class FakeTransactionDao : TransactionDao {
     override suspend fun findByMerchantKey(merchantKey: String): List<TransactionEntity> =
         all.filter { it.merchantKey == merchantKey }
 
+    override suspend fun findRecentUpiMerchants(limit: Int): List<String> =
+        all.filter { it.classification == "UPI_PAYMENT" && it.merchant != null }
+            .sortedByDescending { it.occurredAtMs }
+            .mapNotNull { it.merchant }
+            .distinct()
+            .take(limit)
+
     private fun <T> flowOf(value: T): Flow<T> = MutableStateFlow(value).asStateFlow()
 }
 

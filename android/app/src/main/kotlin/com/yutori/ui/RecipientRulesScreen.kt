@@ -80,6 +80,8 @@ fun RecipientRulesScreen(
     onDismissSuggestion: (Long) -> Unit,
     onRescan: () -> Unit,
     loadMatches: suspend (String) -> List<TxMatchRow>,
+    onAddNewRule: () -> Unit,
+    onEditRule: (RecipientRuleEntity) -> Unit,
 ) {
     val rules by rulesFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val suggestions by suggestionsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -162,6 +164,9 @@ fun RecipientRulesScreen(
                         if (user.isEmpty()) "YOUR RULES" else "YOUR RULES (${user.size})",
                     )
                 }
+                item(key = "add-new-rule") {
+                    AddRuleEntry(onClick = onAddNewRule)
+                }
                 if (user.isEmpty()) {
                     item(key = "user-empty") {
                         Text(
@@ -181,6 +186,7 @@ fun RecipientRulesScreen(
                             onDelete = if (rule.source == "USER" || rule.source == "LEARNED") {
                                 { onDeleteUserRule(rule) }
                             } else null,
+                            onClick = { onEditRule(rule) },
                         )
                     }
                 }
@@ -314,7 +320,6 @@ private fun SuggestionCard(
                     onClick = onAccept,
                     primary = true,
                     modifier = Modifier.weight(1f),
-                    enabled = confident,
                 )
                 SuggestionActionButton(
                     label = "Review",
@@ -455,7 +460,6 @@ private fun SuggestionReviewSheet(
                     onClick = onAccept,
                     primary = true,
                     modifier = Modifier.weight(1f),
-                    enabled = suggestion.inferredClassification != null,
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -570,16 +574,50 @@ private fun CapsHeader(text: String) {
 }
 
 @Composable
+private fun AddRuleEntry(onClick: () -> Unit) {
+    val colors = YutoriTheme.colors
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceElevated,
+        border = BorderStroke(1.dp, colors.divider),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = "+",
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.padding(horizontal = 4.dp))
+            Text(
+                text = "Add a new rule",
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onMuted,
+            )
+        }
+    }
+}
+
+@Composable
 private fun RuleCard(
     rule: RecipientRuleEntity,
     onToggle: (RecipientRuleEntity, Boolean) -> Unit,
     onDelete: (() -> Unit)?,
+    onClick: (() -> Unit)? = null,
 ) {
     val colors = YutoriTheme.colors
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         shape = RoundedCornerShape(12.dp),
         color = colors.surfaceElevated,
         border = BorderStroke(1.dp, colors.divider),

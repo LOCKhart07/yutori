@@ -44,6 +44,7 @@ import com.yutori.ui.ImportDialog
 import com.yutori.ui.ImportStatus
 import com.yutori.ui.PermissionScreen
 import com.yutori.ui.Permissions
+import com.yutori.ui.AddEditRecipientRuleScreen
 import com.yutori.ui.RecipientRulesScreen
 import com.yutori.ui.SettingsScreen
 import com.yutori.ui.TransactionDetailScreen
@@ -91,6 +92,10 @@ private sealed interface Screen {
     data object Accounts : Screen
     data class AccountEdit(val accountId: Long?) : Screen       // null = new
     data object RecipientRules : Screen
+    data class RecipientRuleEdit(
+        val ruleId: Long? = null,
+        val prefillSuggestionId: Long? = null,
+    ) : Screen
     data object AlertSettings : Screen
     data object SendFeedback : Screen
     data object About : Screen
@@ -478,7 +483,11 @@ private fun AppContent() {
                     scope.launch { ruleDao.delete(rule) }
                 },
                 onAcceptSuggestion = { sg ->
-                    scope.launch { controller?.accept(sg) }
+                    if (sg.inferredClassification != null) {
+                        scope.launch { controller?.accept(sg) }
+                    } else {
+                        goTo(Screen.RecipientRuleEdit(prefillSuggestionId = sg.id))
+                    }
                 },
                 onDismissSuggestion = { id ->
                     scope.launch { controller?.dismiss(id) }
@@ -489,6 +498,23 @@ private fun AppContent() {
                 loadMatches = { key ->
                     controller?.loadMatches(key) ?: emptyList()
                 },
+                onAddNewRule = { goTo(Screen.RecipientRuleEdit()) },
+                onEditRule = { rule ->
+                    goTo(Screen.RecipientRuleEdit(ruleId = rule.id))
+                },
+            )
+        }
+
+        is Screen.RecipientRuleEdit -> {
+            AddEditRecipientRuleScreen(
+                ruleId = s.ruleId,
+                prefillSuggestionId = s.prefillSuggestionId,
+                recipientRuleDao = database.recipientRuleDao(),
+                ruleSuggestionDao = database.ruleSuggestionDao(),
+                transactionDao = database.transactionDao(),
+                accountDao = database.accountDao(),
+                onBack = { goBack() },
+                onSaved = { goBack() },
             )
         }
 

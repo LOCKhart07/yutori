@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v15 mockup: manual recipient-rule add/edit form (#28)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --divider-strong:rgba(237,238,240,0.14);
+    --accent:        #C6E3A3;
+    --accent-soft:   rgba(198,227,163,0.10);
+    --negative:      #E27A7A;
+    --negative-soft: rgba(226,122,122,0.10);
+    --info:          #9EC3E6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 96px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 52px 0 10px; font-size: 17px; color: #C9CACD; }
+  h3 { font-weight: 500; margin: 24px 0 10px; font-size: 12px; color: var(--on-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 18px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: #8A8E96; font-size: 12px; max-width: 620px; margin: 12px 0 0; line-height: 1.55; }
+  .note strong { color: #C9CACD; }
+  .note code { background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  .phone {
+    width: 380px;
+    background: var(--surface);
+    border-radius: 28px;
+    padding: 20px 24px 26px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .phones { display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start; }
+
+  .back {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--on-muted); font-size: 13px; margin: 2px 0 18px;
+  }
+  .back svg { width: 18px; height: 18px; }
+  .screen-title { font-size: 20px; font-weight: 600; color: var(--on); margin: 0 0 16px; }
+
+  /* Form fields */
+  .field-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 600;
+    margin: 14px 0 6px;
+  }
+  .field {
+    width: 100%;
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--on);
+    font-size: 14px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  .field.plain { font-family: 'Inter', sans-serif; }
+  .field.focused { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .field.error   { border-color: var(--negative); box-shadow: 0 0 0 1px var(--negative); }
+  .field.placeholder { color: var(--on-faint); font-style: normal; }
+  .field-caret::after {
+    content: '|'; color: var(--accent); animation: blink 1s steps(1) infinite;
+    margin-left: 1px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .inline-error {
+    margin-top: 5px; font-size: 11px; color: var(--negative);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .inline-help { margin-top: 5px; font-size: 11px; color: var(--on-faint); }
+
+  .dropdown {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .dropdown .v { color: var(--on); }
+  .dropdown .v.placeholder { color: var(--on-faint); }
+  .dropdown .chev { color: var(--on-faint); font-size: 11px; }
+
+  /* Dropdown open menu */
+  .menu {
+    margin-top: 4px;
+    background: var(--surface-el);
+    border: 1px solid var(--divider-strong);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .menu .opt {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--on);
+    border-bottom: 1px solid var(--divider);
+  }
+  .menu .opt:last-child { border-bottom: none; }
+  .menu .opt.selected {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .menu .opt .desc {
+    display: block; font-size: 11px; color: var(--on-muted); margin-top: 2px;
+    font-weight: 400;
+  }
+
+  /* Test panel */
+  .test-panel {
+    margin-top: 12px;
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .test-panel .hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 600;
+  }
+  .test-panel .hdr .count { color: var(--accent); font-size: 11px; letter-spacing: 0; text-transform: none; font-weight: 500; }
+  .test-panel .hdr .count.zero { color: var(--negative); }
+  .test-panel .list {
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.75;
+    color: var(--on);
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  .test-panel .list .row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .test-panel .list .hit { color: var(--on); }
+  .test-panel .list .miss { color: var(--on-faint); opacity: 0.5; }
+  .test-panel .list .match-mark { color: var(--accent); }
+
+  /* Footer CTA row */
+  .footer {
+    margin-top: 22px;
+    padding-top: 14px; border-top: 1px solid var(--divider);
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+  .btn {
+    padding: 10px 18px; border-radius: 10px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .btn.primary { background: var(--accent); color: #0B1206; }
+  .btn.primary[disabled] { opacity: 0.4; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--on-muted); border-color: var(--divider-strong); }
+  .btn.danger { background: var(--negative-soft); color: var(--negative); border-color: transparent; }
+
+  /* Entry-point surface */
+  .entry-new-btn {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    background: var(--surface-el);
+    border: 1px dashed var(--divider-strong);
+    border-radius: 10px;
+    color: var(--on-muted);
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .entry-new-btn .plus {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+
+  .caps {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 600;
+    margin: 16px 0 8px;
+  }
+
+  .enabled-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    margin-bottom: 6px;
+  }
+  .enabled-toggle .lbl { font-size: 13px; color: var(--on); }
+  .enabled-toggle .hint { font-size: 11px; color: var(--on-faint); margin-top: 2px; }
+  .switch {
+    width: 42px; height: 24px; border-radius: 12px;
+    background: var(--accent); position: relative;
+    flex-shrink: 0;
+  }
+  .switch::after {
+    content: ''; position: absolute;
+    top: 3px; right: 3px; width: 18px; height: 18px;
+    border-radius: 50%; background: #0B1206;
+  }
+  .switch.off { background: var(--surface-el2); border: 1px solid var(--divider); }
+  .switch.off::after {
+    top: 2px; left: 2px; right: auto;
+    background: var(--on-muted);
+  }
+
+  .prefill-banner {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-left: 2px solid var(--info);
+    background: rgba(158,195,230,0.06);
+    border-radius: 0 8px 8px 0;
+    font-size: 12px;
+    color: var(--on-muted);
+  }
+  .prefill-banner strong { color: var(--info); }
+
+  .callout {
+    margin-top: 28px;
+    padding: 12px 14px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--on-muted); font-size: 12px; line-height: 1.55;
+    border-radius: 0 8px 8px 0;
+    max-width: 820px;
+  }
+  .callout strong { color: var(--on); }
+  .callout code { background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<h1>v15 — Manual recipient-rule add/edit form</h1>
+<p class="blurb">
+  Issue <code>#28</code>. Today the Recipient rules screen only toggles or deletes — there's no way
+  to add a rule manually. This is the missing form specified in
+  <code>plans/settings-spec.md §3.5</code> (fields + validation) and <code>§3.6</code> (Test match
+  preview). It's also the screen the v14 suggestion surface routes to for the <em>Pick type…</em> /
+  <em>Edit…</em> flows, so getting the prefill shape right here unblocks a dead button in the
+  Suggested section.
+</p>
+
+<h2>State A — Entry point on the Recipient rules screen</h2>
+<p class="blurb">
+  A dashed "+ New rule" row at the top of the <strong>YOUR RULES</strong> section. Less visually
+  loud than a FAB, consistent with the add-an-account surface already in Settings → Accounts.
+  Tapping it opens the new-rule form with all fields blank.
+</p>
+
+<div class="phones">
+  <div class="phone">
+    <div class="back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      Settings
+    </div>
+    <div class="screen-title">Recipient rules</div>
+
+    <div class="caps">SUGGESTED · 0 <span style="float: right; color: var(--on-muted); text-transform: none; letter-spacing: 0;">Rescan</span></div>
+    <div style="font-size: 12px; color: var(--on-muted); margin-bottom: 14px;">
+      No repeat merchants crossed the threshold yet.
+    </div>
+
+    <div class="caps">BUILT-IN · 4</div>
+    <div style="background: var(--surface-el); border: 1px solid var(--divider); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">cred\.club[@¡]axisb</div>
+      <div style="font-size: 11px; color: var(--on-muted); margin-top: 2px;">REGEX · → CC_BILL_PAYMENT</div>
+    </div>
+    <div style="background: var(--surface-el); border: 1px solid var(--divider); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; opacity: 0.6;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">…3 more shipped rules</div>
+    </div>
+
+    <div class="caps" style="margin-top: 18px;">YOUR RULES · 1</div>
+    <div class="entry-new-btn">
+      <span class="plus">+</span>
+      Add a new rule
+    </div>
+    <div style="background: var(--surface-el); border: 1px solid var(--divider); border-radius: 10px; padding: 10px 12px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">owner.alias-*@oksbi</div>
+      <div style="font-size: 11px; color: var(--on-muted); margin-top: 2px;">PREFIX · → SELF_TRANSFER · Axis ••2222</div>
+    </div>
+  </div>
+</div>
+
+<h2>State B — New rule, empty form</h2>
+<p class="blurb">
+  All five fields from <code>settings-spec §3.5</code>. <strong>Linked account</strong> is hidden
+  unless <em>Reclassify as</em> = SELF_TRANSFER (State C below shows it appearing). The Save button
+  stays disabled until pattern is non-empty + reclassify-as is chosen.
+</p>
+
+<div class="phones">
+  <div class="phone">
+    <div class="back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      Recipient rules
+    </div>
+    <div class="screen-title">Add rule</div>
+
+    <div class="field-label">Pattern</div>
+    <div class="field placeholder"><span class="field-caret"></span>e.g. <code style="background: transparent; color: var(--on-faint); font-family: inherit; font-style: italic;">cheq@axisbank</code></div>
+    <div class="inline-help">Match against the recipient VPA or merchant name that appears in the SMS.</div>
+
+    <div class="field-label">Pattern kind</div>
+    <div class="dropdown">
+      <span class="v">Literal</span>
+      <span class="chev">▾</span>
+    </div>
+    <div class="inline-help">Exact string match. Switch to Prefix for <code style="background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">startsWith</code>, or Regex for more control.</div>
+
+    <div class="field-label">Reclassify as</div>
+    <div class="dropdown">
+      <span class="v placeholder">Pick a classification</span>
+      <span class="chev">▾</span>
+    </div>
+
+    <div class="field-label">Note <span style="text-transform: none; letter-spacing: 0; color: var(--on-faint); font-weight: 400;">(optional)</span></div>
+    <div class="field plain placeholder">A short label for yourself</div>
+
+    <div class="footer">
+      <button class="btn ghost">Cancel</button>
+      <button class="btn primary" disabled>Save</button>
+    </div>
+  </div>
+</div>
+
+<h2>State C — Self-transfer + Linked account revealed</h2>
+<p class="blurb">
+  Picking <strong>Self-transfer</strong> as the reclassify target reveals the Linked account
+  dropdown (§3.5 last bullet). Options are pulled from the current Accounts table; empty → the field
+  shows a helper "No accounts registered — add one in My accounts" with a tap-through. Pattern kind
+  dropdown is shown opened to illustrate all three options.
+</p>
+
+<div class="phones">
+  <div class="phone">
+    <div class="back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      Recipient rules
+    </div>
+    <div class="screen-title">Add rule</div>
+
+    <div class="field-label">Pattern</div>
+    <div class="field focused">jenslee@ybl<span class="field-caret"></span></div>
+
+    <div class="field-label">Pattern kind</div>
+    <div class="dropdown">
+      <span class="v">Literal</span>
+      <span class="chev">▴</span>
+    </div>
+    <div class="menu">
+      <div class="opt selected">
+        Literal
+        <span class="desc">Exact string match</span>
+      </div>
+      <div class="opt">
+        Prefix
+        <span class="desc"><code style="background: transparent; font-family: inherit; color: inherit;">startsWith</code> — good for merchant-name families</span>
+      </div>
+      <div class="opt">
+        Regex
+        <span class="desc">Java Pattern syntax. Test preview shows live matches.</span>
+      </div>
+    </div>
+
+    <div class="field-label">Reclassify as</div>
+    <div class="dropdown">
+      <span class="v">Self-transfer</span>
+      <span class="chev">▾</span>
+    </div>
+
+    <div class="field-label">Linked account</div>
+    <div class="dropdown">
+      <span class="v">Kotak ••0000 · Primary</span>
+      <span class="chev">▾</span>
+    </div>
+    <div class="inline-help">Both legs of a self-transfer drop from budget. Only your own accounts are eligible.</div>
+
+    <div class="field-label">Note <span style="text-transform: none; letter-spacing: 0; color: var(--on-faint); font-weight: 400;">(optional)</span></div>
+    <div class="field plain placeholder">A short label for yourself</div>
+
+    <div class="footer">
+      <button class="btn ghost">Cancel</button>
+      <button class="btn primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<h2>State D — Regex kind + Test preview</h2>
+<p class="blurb">
+  Switching to <strong>Regex</strong> enables the Test preview panel (<code>§3.6</code>). As the
+  user types, the panel runs the pattern against the most recent 100 UPI recipients (taken from
+  <code>transactions.merchant</code> where classification = <code>UPI_PAYMENT</code>) and renders up
+  to 20 hits. Invalid regex shows an inline error and greys the panel. Hitting zero matches in a
+  corpus that has candidates is a yellow flag shown in the count.
+</p>
+
+<div class="phones">
+  <!-- D1: valid regex with hits -->
+  <div class="phone">
+    <div class="back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      Recipient rules
+    </div>
+    <div class="screen-title">Add rule</div>
+
+    <div class="field-label">Pattern</div>
+    <div class="field focused">.*@paytm.*cc<span class="field-caret"></span></div>
+
+    <div class="field-label">Pattern kind</div>
+    <div class="dropdown">
+      <span class="v">Regex</span>
+      <span class="chev">▾</span>
+    </div>
+    <div class="inline-help">Java <code style="background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">Pattern</code> syntax. Rule matches anywhere in the string — anchor with <code style="background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">^</code>/<code style="background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">$</code> yourself.</div>
+
+    <div class="test-panel">
+      <div class="hdr">
+        <span>TEST · RECENT UPI MERCHANTS</span>
+        <span class="count">3 matches / 100</span>
+      </div>
+      <div class="list">
+        <div class="row"><span class="hit">cheqpaytmcc@axisbank</span><span class="match-mark">✓</span></div>
+        <div class="row"><span class="hit">billpay.paytmccbill@axisbank</span><span class="match-mark">✓</span></div>
+        <div class="row"><span class="hit">paytmccbill@axisb</span><span class="match-mark">✓</span></div>
+        <div class="row"><span class="miss">swiggy@paytm</span></div>
+        <div class="row"><span class="miss">jenslee@oksbi</span></div>
+        <div class="row"><span class="miss">amazon.india@apl</span></div>
+      </div>
+    </div>
+
+    <div class="field-label">Reclassify as</div>
+    <div class="dropdown">
+      <span class="v">CC bill payment</span>
+      <span class="chev">▾</span>
+    </div>
+
+    <div class="footer">
+      <button class="btn ghost">Cancel</button>
+      <button class="btn primary">Save</button>
+    </div>
+  </div>
+
+  <!-- D2: invalid regex -->
+  <div class="phone">
+    <div class="back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      Recipient rules
+    </div>
+    <div class="screen-title">Add rule</div>
+
+    <div class="field-label">Pattern</div>
+    <div class="field error">.*@paytm[unclosed<span class="field-caret"></span></div>
+    <div class="inline-error">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Regex won't compile: unclosed character class at index 10.
+    </div>
+
+    <div class="field-label">Pattern kind</div>
+    <div class="dropdown">
+      <span class="v">Regex</span>
+      <span class="chev">▾</span>
+    </div>
+
+    <div class="test-panel" style="opacity: 0.4;">
+      <div class="hdr">
+        <span>TEST · RECENT UPI MERCHANTS</span>
+        <span class="count zero">— invalid regex —</span>
+      </div>
+      <div class="list"><div class="row"><span class="miss">Fix the pattern to see matches.</span></div></div>
+    </div>
+
+    <div class="field-label">Reclassify as</div>
+    <div class="dropdown">
+      <span class="v">CC bill payment</span>
+      <span class="chev">▾</span>
+    </div>
+
+    <div class="footer">
+      <button class="btn ghost">Cancel</button>
+      <button class="btn primary" disabled>Save</button>
+    </div>
+  </div>
+</div>
+
+<h2>State E — Edit existing user rule (with Delete)</h2>
+<p class="blurb">
+  Tapping an existing row under <strong>YOUR RULES</strong> opens the same form in edit mode: all
+  fields prefilled, Delete available (seed rules can't be deleted, only disabled — per
+  <code>§3.7</code>; for a seed rule, the form opens read-only with just the enable toggle and no
+  Delete).
+</p>
+
+<div class="phones">
+  <div class="phone">
+    <div class="back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      Recipient rules
+    </div>
+    <div class="screen-title">Edit rule</div>
+
+    <div class="enabled-toggle">
+      <div>
+        <div class="lbl">Enabled</div>
+        <div class="hint">Off means the rule stays on disk but stops firing on new SMS.</div>
+      </div>
+      <div class="switch"></div>
+    </div>
+
+    <div class="field-label">Pattern</div>
+    <div class="field">owner.alias-*@oksbi</div>
+
+    <div class="field-label">Pattern kind</div>
+    <div class="dropdown">
+      <span class="v">Prefix</span>
+      <span class="chev">▾</span>
+    </div>
+
+    <div class="field-label">Reclassify as</div>
+    <div class="dropdown">
+      <span class="v">Self-transfer</span>
+      <span class="chev">▾</span>
+    </div>
+
+    <div class="field-label">Linked account</div>
+    <div class="dropdown">
+      <span class="v">Axis ••2222 · Axis savings</span>
+      <span class="chev">▾</span>
+    </div>
+
+    <div class="field-label">Note <span style="text-transform: none; letter-spacing: 0; color: var(--on-faint); font-weight: 400;">(optional)</span></div>
+    <div class="field plain">Second salary account</div>
+
+    <div class="footer" style="justify-content: space-between;">
+      <button class="btn danger">Delete rule</button>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn ghost">Cancel</button>
+        <button class="btn primary">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>State F — Prefilled from a suggestion (coming via suggestion "Pick type…")</h2>
+<p class="blurb">
+  Tapping <em>Pick type…</em> on an unsure suggestion card (v14) opens this form with Pattern pre-
+  filled from the merchant, Pattern kind defaulted to Literal, and Reclassify-as left empty for the
+  user to choose. A small banner at the top explains where the prefill came from. Same shape when
+  <em>Edit…</em> is tapped on a <em>confident</em> suggestion's Review sheet — except Reclassify-as
+  is also prefilled.
+</p>
+
+<div class="phones">
+  <div class="phone">
+    <div class="back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      Recipient rules
+    </div>
+    <div class="screen-title">Add rule</div>
+
+    <div class="prefill-banner">
+      <strong>Prefilled from suggestion.</strong> We saw <em>swiggy@paytm</em> 3 times in your last
+      60 days but couldn't guess what it is. Pick a type to save.
+    </div>
+
+    <div class="field-label">Pattern</div>
+    <div class="field">swiggy@paytm</div>
+
+    <div class="field-label">Pattern kind</div>
+    <div class="dropdown">
+      <span class="v">Literal</span>
+      <span class="chev">▾</span>
+    </div>
+
+    <div class="field-label">Reclassify as</div>
+    <div class="dropdown" style="border-color: var(--info); box-shadow: 0 0 0 1px var(--info);">
+      <span class="v placeholder">Pick a classification</span>
+      <span class="chev">▾</span>
+    </div>
+
+    <div class="footer">
+      <button class="btn ghost">Cancel</button>
+      <button class="btn primary" disabled>Save</button>
+    </div>
+  </div>
+</div>
+
+<h2>State G — After Save, rule lands in YOUR RULES</h2>
+<p class="blurb">
+  Round-trip: Save inserts into <code>recipient_rules</code> (<code>source = USER</code>), the form
+  closes, and the rule renders in the <strong>YOUR RULES</strong> section with the normal list-row
+  shape — Switch to disable, Delete to remove. No visual affordance distinguishes freshly-added
+  rules from older ones; the only carried-over hint is that <code>LEARNED</code>-source rules (from
+  accepting a suggestion) get a subtle <em>learned</em> tag after the reclassify target, while
+  <code>USER</code> rules don't.
+</p>
+
+<div class="phones">
+  <div class="phone">
+    <div class="back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      Settings
+    </div>
+    <div class="screen-title">Recipient rules</div>
+
+    <div class="caps">YOUR RULES · 3</div>
+
+    <div class="entry-new-btn">
+      <span class="plus">+</span>
+      Add a new rule
+    </div>
+
+    <!-- Newly added rule (pretend we just came back from Save) -->
+    <div style="background: var(--surface-el); border: 1px solid var(--divider); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">cheq@axisbank</div>
+        <div class="switch" style="width: 36px; height: 20px;"></div>
+      </div>
+      <div style="font-size: 11px; color: var(--on-muted); margin-top: 4px;">LITERAL · → CC_BILL_PAYMENT</div>
+      <div style="font-size: 11px; color: var(--negative); margin-top: 6px; cursor: pointer;">Delete</div>
+    </div>
+
+    <!-- Older rule -->
+    <div style="background: var(--surface-el); border: 1px solid var(--divider); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">owner.alias-*@oksbi</div>
+        <div class="switch" style="width: 36px; height: 20px;"></div>
+      </div>
+      <div style="font-size: 11px; color: var(--on-muted); margin-top: 4px;">PREFIX · → SELF_TRANSFER · Axis ••2222</div>
+      <div style="font-size: 11px; color: var(--negative); margin-top: 6px; cursor: pointer;">Delete</div>
+    </div>
+
+    <!-- A LEARNED-sourced rule (from an earlier accepted suggestion) -->
+    <div style="background: var(--surface-el); border: 1px solid var(--divider); border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">jenslee@ybl</div>
+        <div class="switch off" style="width: 36px; height: 20px;"></div>
+      </div>
+      <div style="font-size: 11px; color: var(--on-muted); margin-top: 4px;">LITERAL · → SELF_TRANSFER · Kotak ••0000 · <span style="color: var(--accent);">learned</span></div>
+      <div style="font-size: 11px; color: var(--negative); margin-top: 6px; cursor: pointer;">Delete</div>
+    </div>
+  </div>
+</div>
+
+<p class="note">
+  Third card is shown <strong>disabled</strong> (off Switch) to demonstrate the toggle state. No
+  retroactive effect — past transactions classified while the rule was enabled stay as they were;
+  the rule simply stops firing on new SMS until re-enabled.
+</p>
+
+<h2>Behaviours &amp; validation (summary)</h2>
+<ul style="color: var(--on-muted); font-size: 13px; line-height: 1.7; max-width: 820px;">
+  <li><strong>Pattern.</strong> Non-empty; trimmed on save. Monospace input.</li>
+  <li><strong>Pattern kind.</strong> Literal default. Regex triggers the Test panel + inline
+    compile-check. Prefix = <code style="background:#1a1a1d; padding:1px 5px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:11px;">String.startsWith</code>, case-sensitive.</li>
+  <li><strong>Reclassify as.</strong> Required. Options: CC_BILL_PAYMENT, SELF_TRANSFER, REFUND,
+    INCOMING_CREDIT, NON_FINANCIAL (plan §5 classifications that are rule-addressable).</li>
+  <li><strong>Linked account.</strong> Only shown when Reclassify-as = SELF_TRANSFER. Required for
+    that target. Empty accounts list → helper nudge to register one.</li>
+  <li><strong>Duplicates.</strong> (pattern, pattern_kind) is the DB unique index — save shows an
+    inline "A rule with this pattern already exists" and points to the existing row.</li>
+  <li><strong>Test panel source.</strong> <code style="background:#1a1a1d; padding:1px 5px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:11px;">SELECT merchant FROM transactions WHERE classification = 'UPI_PAYMENT' AND merchant IS NOT NULL ORDER BY occurred_at_ms DESC LIMIT 100</code>. First 20 hits render.</li>
+  <li><strong>Save.</strong> Insert (or update) <code style="background:#1a1a1d; padding:1px 5px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:11px;">recipient_rules</code> with <code style="background:#1a1a1d; padding:1px 5px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:11px;">source = USER</code>; when prefill came from a suggestion, delete the matching <code style="background:#1a1a1d; padding:1px 5px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:11px;">rule_suggestions</code> row. No retroactive reparse (same posture as v14).</li>
+  <li><strong>Edit mode.</strong> Read DAO by id, prefill; on Save issue an UPDATE. Delete button
+    only for <code style="background:#1a1a1d; padding:1px 5px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:11px;">source = USER | LEARNED</code>. Seed rules get a read-only variant.</li>
+</ul>
+
+<div class="callout">
+  <strong>What this unblocks.</strong> Shipping #28 makes the v14 suggestion surface's <em>Pick
+  type…</em> and <em>Edit…</em> buttons actually go somewhere. Also closes #29's dependency chain —
+  the per-tx "Add a rule from this transaction" entry point can land immediately on top of this
+  screen once #28 merges.
+</div>
+
+</body>
+</html>

@@ -197,4 +197,19 @@ interface TransactionDao {
         """,
     )
     suspend fun findByMerchantKey(merchantKey: String): List<TransactionEntity>
+
+    /**
+     * Source for the add/edit rule screen's Test panel
+     * (settings-spec §3.6). Most-recent UPI recipients, deduped.
+     */
+    @Query(
+        """
+        SELECT DISTINCT merchant FROM transactions
+         WHERE classification = 'UPI_PAYMENT'
+           AND merchant IS NOT NULL
+         ORDER BY occurred_at_ms DESC
+         LIMIT :limit
+        """,
+    )
+    suspend fun findRecentUpiMerchants(limit: Int): List<String>
 }

@@ -459,6 +459,7 @@ class DashboardViewModelTest {
         ) = emptyList<com.yutori.database.dao.MerchantAggregateRow>()
         override suspend fun findByMerchantKey(merchantKey: String) =
             emptyList<TransactionEntity>()
+        override suspend fun findRecentUpiMerchants(limit: Int): List<String> = emptyList()
     }
 
     class FakeBudgetDao(

@@ -261,6 +261,7 @@ class SuggestionMinerTest {
         override suspend fun sumRefundsForMonth(monthKey: String): Double = 0.0
         override suspend fun findBySelfTransferCandidateMerchant(merchant: String): List<TransactionEntity> = emptyList()
         override suspend fun findByMerchantKey(merchantKey: String): List<TransactionEntity> = emptyList()
+        override suspend fun findRecentUpiMerchants(limit: Int): List<String> = emptyList()
     }
 
     private class FakeSuggestionDao(
