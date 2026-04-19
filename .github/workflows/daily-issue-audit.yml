@@ -118,13 +118,13 @@ jobs:
                       if latest_non_bot_comment is None or created > latest_non_bot_comment:
                           latest_non_bot_comment = created
 
-              touch = max(updated_at, latest_non_bot_comment or updated_at)
+              last_touch_timestamp = max(updated_at, latest_non_bot_comment or updated_at)
 
-              if latest_triage_marker is None or touch > latest_triage_marker:
+              if latest_triage_marker is None or last_touch_timestamp > latest_triage_marker:
                   stale_triage_all.append((updated_at, number))
 
               if "triage/invalid" not in labels:
-                  if latest_spec_marker is None or touch > latest_spec_marker:
+                  if latest_spec_marker is None or last_touch_timestamp > latest_spec_marker:
                       stale_spec_all.append((updated_at, number))
 
           stale_triage_all.sort(key=lambda item: (item[0], item[1]))
