@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v16 mockup: classification + category override (#132)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --divider-strong:rgba(237,238,240,0.14);
+    --accent:        #C6E3A3;
+    --accent-soft:   rgba(198,227,163,0.10);
+    --negative:      #E27A7A;
+    --info:          #9EC3E6;
+    --info-soft:     rgba(158,195,230,0.10);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 96px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 52px 0 10px; font-size: 17px; color: #C9CACD; }
+  h3 { font-weight: 500; margin: 24px 0 10px; font-size: 12px; color: var(--on-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 18px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: #8A8E96; font-size: 12px; max-width: 820px; margin: 12px 0 0; line-height: 1.55; }
+  .note strong { color: #C9CACD; }
+  .note code { background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  .phone {
+    width: 380px;
+    background: var(--surface);
+    border-radius: 28px;
+    padding: 20px 24px 26px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .phones { display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start; }
+  .caption { font-size: 12px; color: var(--on-muted); margin-top: 8px; max-width: 380px; }
+  .caption strong { color: var(--on); }
+
+  .back {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--on-muted); font-size: 13px; margin: 2px 0 18px;
+  }
+  .back svg { width: 18px; height: 18px; }
+  .screen-title { font-size: 20px; font-weight: 600; color: var(--on); margin: 0 0 16px; }
+
+  /* Form fields (cribbed from v15 for consistency) */
+  .field-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 600;
+    margin: 14px 0 6px;
+  }
+  .field-label .opt { text-transform: none; letter-spacing: 0; color: var(--on-faint); font-weight: 400; }
+  .field {
+    width: 100%;
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--on);
+    font-size: 14px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  .field.plain { font-family: 'Inter', sans-serif; }
+  .inline-help { margin-top: 5px; font-size: 11px; color: var(--on-faint); line-height: 1.5; }
+  .inline-help.warn { color: var(--info); }
+
+  .dropdown {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    font-size: 14px;
+  }
+  .dropdown .v { color: var(--on); }
+  .dropdown .v.placeholder { color: var(--on-faint); font-style: italic; }
+  .dropdown .v.dontchange { color: var(--info); }
+  .dropdown .chev { color: var(--on-faint); font-size: 11px; }
+
+  .menu {
+    margin-top: 4px;
+    background: var(--surface-el);
+    border: 1px solid var(--divider-strong);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .menu .opt {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--on);
+    border-bottom: 1px solid var(--divider);
+  }
+  .menu .opt:last-child { border-bottom: none; }
+  .menu .opt.selected {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .menu .opt.selected.dontchange { background: var(--info-soft); color: var(--info); }
+  .menu .opt .desc {
+    display: block; font-size: 11px; color: var(--on-muted); margin-top: 2px;
+    font-weight: 400;
+  }
+  .menu .opt.divider-row {
+    background: transparent;
+    color: var(--on-faint);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 8px 12px 6px;
+  }
+
+  .footer {
+    margin-top: 22px;
+    padding-top: 14px; border-top: 1px solid var(--divider);
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+  .btn {
+    padding: 10px 18px; border-radius: 10px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .btn.primary { background: var(--accent); color: #0B1206; }
+  .btn.primary[disabled] { opacity: 0.4; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--on-muted); border-color: var(--divider-strong); }
+
+  /* Tx-detail surfaces — cribbed from v13 / TransactionDetailScreen */
+  .hero { margin-bottom: 14px; }
+  .hero .when { font-size: 10px; color: var(--on-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .hero .amt {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 32px; font-weight: 600; color: var(--on);
+    letter-spacing: -0.01em;
+  }
+  .hero .merchant { margin-top: 12px; font-size: 16px; color: var(--on); font-weight: 500; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 12px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--surface-el);
+    color: var(--on-muted); font-size: 11px; font-weight: 500;
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--on-muted); }
+  .meta { padding-top: 6px; }
+  .meta .row-line {
+    display: flex; justify-content: space-between; padding: 8px 0;
+    font-size: 13px;
+  }
+  .meta .row-line .k { color: var(--on-muted); }
+  .meta .row-line .v { color: var(--on); }
+  .meta .row-line .v.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 500; }
+  .meta .row-line .v .badge {
+    margin-left: 6px;
+    font-size: 10px; padding: 1px 6px; border-radius: 4px;
+    background: var(--info-soft); color: var(--info);
+    font-family: 'Inter', sans-serif; letter-spacing: 0.02em;
+  }
+  .meta .divider { height: 1px; background: var(--divider); }
+
+  /* Action row — split into 2x2 since we now have 4 actions */
+  .actions {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin-top: 16px;
+    padding-top: 14px; border-top: 1px solid var(--divider);
+  }
+  .action-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 11px 8px;
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    color: var(--on); font-size: 12px; font-weight: 500;
+  }
+  .action-btn.ghost { color: var(--on-faint); background: transparent; border-style: dashed; }
+
+  /* Bottom sheet */
+  .sheet-host {
+    width: 380px; height: 620px; border-radius: 28px; overflow: hidden;
+    background: #060607; position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  .sheet-host .scrim {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.55);
+  }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--surface-el);
+    border-top-left-radius: 24px; border-top-right-radius: 24px;
+    padding: 14px 20px 22px;
+    box-shadow: 0 -1px 0 rgba(255,255,255,0.06);
+    max-height: 78%;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .sheet-handle {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: var(--divider-strong);
+    margin: 0 auto 14px;
+  }
+  .sheet-title { font-size: 15px; font-weight: 600; color: var(--on); }
+  .sheet-mode { font-size: 11px; color: var(--on-faint); margin-top: 4px; }
+  .sheet-mode.overridden { color: var(--info); }
+  .sheet-list {
+    margin-top: 12px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .sheet-opt {
+    padding: 10px 12px; border-radius: 10px;
+    font-size: 14px; color: var(--on);
+    cursor: pointer;
+  }
+  .sheet-opt.selected { background: var(--surface-el2); color: var(--accent); font-weight: 500; }
+  .sheet-opt.automatic { color: var(--info); }
+  .sheet-opt.automatic.selected { background: var(--info-soft); color: var(--info); }
+  .sheet-opt .sub { display: block; font-size: 11px; color: var(--on-faint); margin-top: 2px; font-weight: 400; }
+  .sheet-divider {
+    height: 1px; background: var(--divider); margin: 6px 4px;
+  }
+  .sheet-footer {
+    margin-top: 12px;
+    padding-top: 12px; border-top: 1px solid var(--divider);
+    display: flex; gap: 10px;
+  }
+  .sheet-footer .btn { flex: 1; }
+
+  .callout {
+    margin-top: 28px;
+    padding: 12px 14px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--on-muted); font-size: 12px; line-height: 1.55;
+    border-radius: 0 8px 8px 0;
+    max-width: 820px;
+  }
+  .callout strong { color: var(--on); }
+  .callout code { background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<h1>v16 — Classification + Category override</h1>
+<p class="blurb">
+  Issue <code>#132</code>. Today the classifier writes <code>classification</code> + <code>category</code>
+  at ingest time and never lets the user touch them. This mockup adds two override layers, kept
+  symmetrical for both fields:
+</p>
+<ul class="blurb" style="padding-left: 20px;">
+  <li><strong>Per-transaction overrides</strong> on the tx-detail screen — one sheet per field, each
+    with a "Use automatic" entry that clears the override and re-runs inference.</li>
+  <li><strong>Rule-level assignments</strong> on the recipient-rule add/edit form — both fields are
+    independently nullable. <em>Reclassify as</em> gets a new "Don't change" entry, so the rule can
+    be category-only (e.g. tag <code>swiggy-newbrand@paytm</code> as Food &amp; Dining without
+    touching its UPI_PAYMENT classification).</li>
+</ul>
+<p class="blurb">
+  The rule form and the per-tx sheet stay separate (Edit classification, Edit category — two
+  buttons, two sheets). We may later merge them into one combined sheet; out of scope for now.
+</p>
+
+<!-- =================================================== -->
+<h2>State A — Rule form: category-only rule (the Swiggy case)</h2>
+<p class="blurb">
+  The new <strong>"Don't change"</strong> entry sits at the top of the <em>Reclassify as</em> menu, visually distinct
+  (info-tinted) so it reads as "leave the parser's classification alone." Picking it keeps the rule
+  active but classification-neutral; combined with an Assigned category, this is the
+  category-only rule path.
+</p>
+
+<div class="phones">
+  <!-- A1: dropdown opened, Don't change highlighted -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Recipient rules
+      </div>
+      <div class="screen-title">Add rule</div>
+
+      <div class="field-label">Pattern</div>
+      <div class="field">swiggy-newbrand@paytm</div>
+
+      <div class="field-label">Pattern kind</div>
+      <div class="dropdown"><span class="v">Literal</span><span class="chev">▾</span></div>
+
+      <div class="field-label">Reclassify as</div>
+      <div class="dropdown"><span class="v dontchange">Don't change</span><span class="chev">▴</span></div>
+      <div class="menu">
+        <div class="opt selected dontchange">
+          Don't change
+          <span class="desc">Keep the parser's classification. Use this with Assigned category to tag without reclassifying.</span>
+        </div>
+        <div class="opt divider-row">Reclassify to…</div>
+        <div class="opt">CC bill payment <span class="desc">Drops from budget. UPI debits to CRED etc.</span></div>
+        <div class="opt">Self-transfer <span class="desc">Both legs drop. Requires linked account.</span></div>
+        <div class="opt">Refund <span class="desc">Subtracts from the month received.</span></div>
+        <div class="opt">Incoming credit <span class="desc">Counts as income.</span></div>
+        <div class="opt">Non-financial (drop) <span class="desc">Excludes from budget entirely.</span></div>
+      </div>
+      <div class="inline-help">"Don't change" + Assigned category lets you tag a merchant's category without flipping it to a refund / drop / etc.</div>
+    </div>
+    <div class="caption"><strong>A1.</strong> Dropdown opened. The new entry is at the top.</div>
+  </div>
+
+  <!-- A2: closed form, Don't change + Food & Dining set -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Recipient rules
+      </div>
+      <div class="screen-title">Add rule</div>
+
+      <div class="field-label">Pattern</div>
+      <div class="field">swiggy-newbrand@paytm</div>
+
+      <div class="field-label">Pattern kind</div>
+      <div class="dropdown"><span class="v">Literal</span><span class="chev">▾</span></div>
+
+      <div class="field-label">Reclassify as</div>
+      <div class="dropdown"><span class="v dontchange">Don't change</span><span class="chev">▾</span></div>
+
+      <div class="field-label">Assigned category <span class="opt">(optional)</span></div>
+      <div class="dropdown"><span class="v">Food &amp; Dining</span><span class="chev">▾</span></div>
+      <div class="inline-help">Applies to future matching transactions. Existing history stays unchanged until a reparse run.</div>
+
+      <div class="field-label">Note <span class="opt">(optional)</span></div>
+      <div class="field plain" style="color: var(--on-faint); font-style: italic;">A short label for yourself</div>
+
+      <div class="footer">
+        <button class="btn ghost">Cancel</button>
+        <button class="btn primary">Save</button>
+      </div>
+    </div>
+    <div class="caption"><strong>A2.</strong> The Swiggy case in flight. Save is enabled because at least one of <em>Reclassify as</em> / <em>Assigned category</em> is non-default.</div>
+  </div>
+</div>
+
+<!-- =================================================== -->
+<h2>State B — Rule form: validation when both fields are "no-op"</h2>
+<p class="blurb">
+  If the user picks <em>Don't change</em> and leaves Assigned category as None, the rule does
+  nothing — Save disables and an inline error explains why.
+</p>
+
+<div class="phones">
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Recipient rules
+      </div>
+      <div class="screen-title">Add rule</div>
+
+      <div class="field-label">Pattern</div>
+      <div class="field">somemerchant@upi</div>
+
+      <div class="field-label">Pattern kind</div>
+      <div class="dropdown"><span class="v">Literal</span><span class="chev">▾</span></div>
+
+      <div class="field-label">Reclassify as</div>
+      <div class="dropdown"><span class="v dontchange">Don't change</span><span class="chev">▾</span></div>
+
+      <div class="field-label">Assigned category <span class="opt">(optional)</span></div>
+      <div class="dropdown"><span class="v placeholder">None</span><span class="chev">▾</span></div>
+      <div class="inline-help warn">Pick a category, or pick a Reclassify target — otherwise this rule does nothing.</div>
+
+      <div class="footer">
+        <button class="btn ghost">Cancel</button>
+        <button class="btn primary" disabled>Save</button>
+      </div>
+    </div>
+    <div class="caption"><strong>B.</strong> No-op rule blocked.</div>
+  </div>
+</div>
+
+<!-- =================================================== -->
+<h2>State C — Tx detail: action row with Edit classification + Edit category</h2>
+<p class="blurb">
+  The four actions wrap into a 2×2 grid (was a single row of three: Edit note · Edit category ·
+  Add rule). <strong>Edit classification</strong> is new. Both edit buttons are gated by
+  <code>budget_effect ∈ {SPEND, REFUND}</code> and ghosted otherwise — non-categorisable rows
+  (DROP/INCOME) shouldn't pretend to be editable.
+</p>
+
+<div class="phones">
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Back
+      </div>
+
+      <div class="hero">
+        <div class="when">14 APR 2026 · 19:42</div>
+        <div class="amt">₹350.00</div>
+        <div class="merchant">swiggy-newbrand@paytm</div>
+        <span class="pill"><span class="dot"></span>UPI Payment · SPEND</span>
+      </div>
+
+      <div class="meta">
+        <div class="divider"></div>
+        <div class="row-line"><span class="k">Account</span><span class="v mono">Kotak ••0000</span></div>
+        <div class="row-line"><span class="k">Category</span><span class="v">Other<span class="badge">automatic</span></span></div>
+        <div class="row-line"><span class="k">Month</span><span class="v">April 2026</span></div>
+      </div>
+
+      <div class="actions">
+        <div class="action-btn">Edit note</div>
+        <div class="action-btn">Edit classification</div>
+        <div class="action-btn">Edit category</div>
+        <div class="action-btn ghost">Add rule</div>
+      </div>
+    </div>
+    <div class="caption"><strong>C1.</strong> Default state. Both edit buttons live; <em>Add rule</em> stays the existing ghost/Soon™.</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Back
+      </div>
+
+      <div class="hero">
+        <div class="when">14 APR 2026 · 19:42</div>
+        <div class="amt">₹350.00</div>
+        <div class="merchant">swiggy-newbrand@paytm</div>
+        <span class="pill"><span class="dot"></span>UPI Payment · SPEND</span>
+      </div>
+
+      <div class="meta">
+        <div class="divider"></div>
+        <div class="row-line"><span class="k">Account</span><span class="v mono">Kotak ••0000</span></div>
+        <div class="row-line"><span class="k">Category</span><span class="v">Food &amp; Dining<span class="badge">overridden</span></span></div>
+        <div class="row-line"><span class="k">Month</span><span class="v">April 2026</span></div>
+      </div>
+
+      <div class="actions">
+        <div class="action-btn">Edit note</div>
+        <div class="action-btn">Edit classification</div>
+        <div class="action-btn">Edit category</div>
+        <div class="action-btn ghost">Add rule</div>
+      </div>
+    </div>
+    <div class="caption"><strong>C2.</strong> After overriding category. The MetaRow gets a small <em>overridden</em> chip so the state is visible at a glance.</div>
+  </div>
+</div>
+
+<!-- =================================================== -->
+<h2>State D — Edit classification sheet</h2>
+<p class="blurb">
+  Mirrors the existing <em>Edit category</em> sheet from this PR: scrollable list, "Use automatic"
+  at the top, current-mode hint under the title, Save disabled until the selection actually changes
+  state. Picking a non-automatic value flips <code>classification_override = 1</code> and writes the
+  user's choice into <code>transactions.classification</code> (and recomputes <code>budget_effect</code>
+  via <code>BudgetEffectMapper</code>). Picking "Use automatic" clears the flag and recomputes
+  classification + budget_effect by re-running the classifier path.
+</p>
+
+<div class="phones">
+  <div>
+    <div class="sheet-host">
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Edit classification</div>
+        <div class="sheet-mode">Currently: automatic</div>
+        <div class="sheet-list">
+          <div class="sheet-opt automatic selected">
+            Use automatic classification
+            <span class="sub">Re-runs the classifier on this transaction (parser + accounts + rules).</span>
+          </div>
+          <div class="sheet-divider"></div>
+          <div class="sheet-opt">UPI Payment <span class="sub">Counts as spend.</span></div>
+          <div class="sheet-opt">CC Transaction <span class="sub">Counts as spend.</span></div>
+          <div class="sheet-opt">Debit Card <span class="sub">Counts as spend.</span></div>
+          <div class="sheet-opt">ATM Withdrawal <span class="sub">Counts as spend.</span></div>
+          <div class="sheet-opt">Refund <span class="sub">Subtracts from this month.</span></div>
+          <div class="sheet-opt">CC Bill Payment <span class="sub">Drops from budget.</span></div>
+          <div class="sheet-opt">Self-transfer <span class="sub">Drops from budget.</span></div>
+          <div class="sheet-opt">Incoming Credit <span class="sub">Counts as income.</span></div>
+          <div class="sheet-opt">Non-financial <span class="sub">Drops from budget.</span></div>
+        </div>
+        <div class="sheet-footer">
+          <button class="btn ghost">Cancel</button>
+          <button class="btn primary" disabled>Save</button>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><strong>D1.</strong> Initial open with no override. Save disabled (state matches current).</div>
+  </div>
+
+  <div>
+    <div class="sheet-host">
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Edit classification</div>
+        <div class="sheet-mode overridden">Currently: overridden</div>
+        <div class="sheet-list">
+          <div class="sheet-opt automatic">
+            Use automatic classification
+            <span class="sub">Re-runs the classifier on this transaction.</span>
+          </div>
+          <div class="sheet-divider"></div>
+          <div class="sheet-opt">UPI Payment</div>
+          <div class="sheet-opt">CC Transaction</div>
+          <div class="sheet-opt">Debit Card</div>
+          <div class="sheet-opt">ATM Withdrawal</div>
+          <div class="sheet-opt selected">Refund <span class="sub">Subtracts from this month.</span></div>
+          <div class="sheet-opt">CC Bill Payment</div>
+          <div class="sheet-opt">Self-transfer</div>
+          <div class="sheet-opt">Incoming Credit</div>
+          <div class="sheet-opt">Non-financial</div>
+        </div>
+        <div class="sheet-footer">
+          <button class="btn ghost">Cancel</button>
+          <button class="btn primary">Save</button>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><strong>D2.</strong> User picks Refund. Save enables. On commit, <code>budget_effect</code> recomputes to REFUND and the dashboard reflects immediately.</div>
+  </div>
+</div>
+
+<!-- =================================================== -->
+<h2>State E — Edit category sheet (already in PR; included for symmetry)</h2>
+<p class="blurb">
+  The category sheet shipping in PR #133. Shown here with the
+  <em>Currently: overridden</em> hint that Copilot added in <code>e3c44e3</code>, so the visual
+  treatment matches D2.
+</p>
+
+<div class="phones">
+  <div>
+    <div class="sheet-host">
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Edit category</div>
+        <div class="sheet-mode overridden">Currently: overridden</div>
+        <div class="sheet-list">
+          <div class="sheet-opt automatic">
+            Use automatic category
+            <span class="sub">Re-runs categorisation from current rules + Categorizer seeds.</span>
+          </div>
+          <div class="sheet-divider"></div>
+          <div class="sheet-opt selected">Food &amp; Dining</div>
+          <div class="sheet-opt">Groceries</div>
+          <div class="sheet-opt">Transport</div>
+          <div class="sheet-opt">Shopping</div>
+          <div class="sheet-opt">Entertainment</div>
+          <div class="sheet-opt">Bills &amp; Utilities</div>
+          <div class="sheet-opt">Health</div>
+          <div class="sheet-opt">Other</div>
+        </div>
+        <div class="sheet-footer">
+          <button class="btn ghost">Cancel</button>
+          <button class="btn primary" disabled>Save</button>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><strong>E.</strong> No new UI vs PR #133 — included so D and E are visually paired.</div>
+  </div>
+</div>
+
+<!-- =================================================== -->
+<h2>What this implies for schema + classifier (engineering notes)</h2>
+
+<div class="callout">
+  <strong>Schema (v5 migration, amended in place since v5 isn't merged yet):</strong>
+  <ul style="margin: 8px 0 0; padding-left: 20px;">
+    <li><code>recipient_rules.reclassify_as</code> — <strong>relax to nullable</strong> (table-recreate; SQLite won't drop NOT NULL with ALTER).</li>
+    <li><code>recipient_rules.assigned_category TEXT</code> — already in PR.</li>
+    <li><code>transactions.category_override INTEGER NOT NULL DEFAULT 0</code> — already in PR.</li>
+    <li><code>transactions.classification_override INTEGER NOT NULL DEFAULT 0</code> — <strong>new</strong>.</li>
+    <li><code>transactions.classification_inferred TEXT</code> + <code>transactions.category_inferred TEXT</code> — <strong>new</strong>. Snapshot of what the automatic path produced at write time. Lets "Use automatic" restore without re-parsing the SMS, and preserves the inference signal even if the user keeps overriding.</li>
+  </ul>
+</div>
+
+<div class="callout">
+  <strong>Classifier:</strong> add <code>resolveClassification(raw, matchedRule)</code> mirroring
+  <code>resolveCategory</code>. If <code>matchedRule?.reclassifyAs == null</code>, return raw —
+  this is the category-only path. <code>budget_effect</code> always derives from the final
+  classification via <code>BudgetEffectMapper</code>.
+</div>
+
+<div class="callout">
+  <strong>Backup:</strong> rule export already round-trips <code>assignedCategory</code>; extend so
+  <code>reclassifyAs</code> is omitted (not <code>"SELF_TRANSFER"</code>) when the rule has none.
+  Per-tx data isn't in the settings backup today — staying out of scope; tx export is
+  <code>ui-spec §11</code>.
+</div>
+
+<div class="callout">
+  <strong>Suggestion miner:</strong> the existing branch already excludes <code>category_override = 1</code>;
+  extend to also exclude <code>classification_override = 1</code> so the miner doesn't keep nagging
+  about merchants the user has explicitly handled by hand.
+</div>
+
+</body>
+</html>
