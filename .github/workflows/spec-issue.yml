@@ -41,10 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           case "${{ github.event_name }}" in
-            workflow_call)
-              issue_number='${{ inputs.issue_number }}'
-              ;;
-            workflow_dispatch)
+            workflow_call|workflow_dispatch)
               issue_number='${{ inputs.issue_number }}'
               ;;
             *)
