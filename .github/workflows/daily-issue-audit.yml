@@ -1,0 +1,217 @@
+name: Daily issue audit
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Enumerate only; skip dispatches"
+        type: boolean
+        default: false
+      triage_cap:
+        description: "Override MAX_TRIAGE (default 10)"
+        type: number
+        required: false
+      spec_cap:
+        description: "Override MAX_SPEC (default 10)"
+        type: number
+        required: false
+
+permissions:
+  contents: read
+  issues: read
+  actions: write
+
+concurrency:
+  group: daily-audit
+  cancel-in-progress: false
+
+env:
+  MAX_TRIAGE: 10
+  MAX_SPEC: 10
+
+jobs:
+  enumerate:
+    runs-on: ubuntu-latest
+    outputs:
+      stale_triage: ${{ steps.enumerate.outputs.stale_triage }}
+      stale_spec:   ${{ steps.enumerate.outputs.stale_spec }}
+      skipped_triage: ${{ steps.enumerate.outputs.skipped_triage }}
+      skipped_spec:   ${{ steps.enumerate.outputs.skipped_spec }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO:     ${{ github.repository }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
+      TRIAGE_CAP_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs.triage_cap || '' }}
+      SPEC_CAP_OVERRIDE:   ${{ github.event_name == 'workflow_dispatch' && inputs.spec_cap || '' }}
+    steps:
+      - name: Enumerate stale triage/spec issues
+        id: enumerate
+        run: |
+          set -euo pipefail
+          triage_cap="${TRIAGE_CAP_OVERRIDE:-}"
+          spec_cap="${SPEC_CAP_OVERRIDE:-}"
+          if ! [[ "$triage_cap" =~ ^[0-9]+$ ]]; then triage_cap="$MAX_TRIAGE"; fi
+          if ! [[ "$spec_cap" =~ ^[0-9]+$ ]]; then spec_cap="$MAX_SPEC"; fi
+          export TRIAGE_CAP="$triage_cap"
+          export SPEC_CAP="$spec_cap"
+
+          gh api "/repos/$REPO/issues?state=open&per_page=100" --paginate > issues.json
+
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          from collections import defaultdict
+
+          repo = os.environ["REPO"]
+          triage_marker = "<!-- yutori-triage:v1 -->"
+          spec_marker = "<!-- yutori-spec:v1 -->"
+          triage_cap = int(os.environ["TRIAGE_CAP"])
+          spec_cap = int(os.environ["SPEC_CAP"])
+          dry_run = str(os.environ.get("DRY_RUN", "false")).lower() == "true"
+
+          with open("issues.json", "r", encoding="utf-8") as fh:
+              issues = json.load(fh)
+
+          stale_triage_all = []
+          stale_spec_all = []
+
+          def fetch_comments(number: int):
+              output = subprocess.check_output(
+                  ["gh", "api", f"/repos/{repo}/issues/{number}/comments", "--paginate"],
+                  text=True,
+              )
+              return json.loads(output)
+
+          for issue in issues:
+              if issue.get("pull_request") is not None:
+                  continue
+              if (issue.get("user") or {}).get("type") == "Bot":
+                  continue
+
+              number = issue["number"]
+              updated_at = issue["updated_at"]
+              labels = {(label.get("name") or "") for label in issue.get("labels", [])}
+              comments = fetch_comments(number)
+
+              latest_triage_marker = None
+              latest_spec_marker = None
+              latest_non_bot_comment = None
+
+              for comment in comments:
+                  body = comment.get("body") or ""
+                  created = comment.get("created_at")
+                  if created is None:
+                      continue
+
+                  if triage_marker in body:
+                      if latest_triage_marker is None or created > latest_triage_marker:
+                          latest_triage_marker = created
+                  if spec_marker in body:
+                      if latest_spec_marker is None or created > latest_spec_marker:
+                          latest_spec_marker = created
+
+                  login = (comment.get("user") or {}).get("login")
+                  carries_marker = triage_marker in body or spec_marker in body
+                  if login != "github-actions[bot]" and not carries_marker:
+                      if latest_non_bot_comment is None or created > latest_non_bot_comment:
+                          latest_non_bot_comment = created
+
+              touch = max(updated_at, latest_non_bot_comment or updated_at)
+
+              if latest_triage_marker is None or touch > latest_triage_marker:
+                  stale_triage_all.append((updated_at, number))
+
+              if "triage/invalid" not in labels:
+                  if latest_spec_marker is None or touch > latest_spec_marker:
+                      stale_spec_all.append((updated_at, number))
+
+          stale_triage_all.sort(key=lambda item: (item[0], item[1]))
+          stale_spec_all.sort(key=lambda item: (item[0], item[1]))
+
+          stale_triage = [number for _, number in stale_triage_all[:triage_cap]]
+          stale_spec = [number for _, number in stale_spec_all[:spec_cap]]
+
+          skipped_triage = max(len(stale_triage_all) - len(stale_triage), 0)
+          skipped_spec = max(len(stale_spec_all) - len(stale_spec), 0)
+
+          output_path = os.environ["GITHUB_OUTPUT"]
+          with open(output_path, "a", encoding="utf-8") as out:
+              out.write(f"stale_triage={json.dumps(stale_triage)}\n")
+              out.write(f"stale_spec={json.dumps(stale_spec)}\n")
+              out.write(f"skipped_triage={skipped_triage}\n")
+              out.write(f"skipped_spec={skipped_spec}\n")
+
+          summary_path = os.environ["GITHUB_STEP_SUMMARY"]
+          with open(summary_path, "a", encoding="utf-8") as summary:
+              summary.write("## Daily issue audit enumeration\n\n")
+              summary.write(f"- Dry run: `{str(dry_run).lower()}`\n")
+              summary.write(f"- Triage cap: `{triage_cap}`\n")
+              summary.write(f"- Spec cap: `{spec_cap}`\n\n")
+              summary.write(f"- stale_triage: `{stale_triage}` (skipped `{skipped_triage}`)\n")
+              summary.write(f"- stale_spec: `{stale_spec}` (skipped `{skipped_spec}`)\n")
+          PY
+
+  triage-batch:
+    needs: enumerate
+    if: ${{ needs.enumerate.outputs.stale_triage != '[]' && (github.event_name != 'workflow_dispatch' || inputs.dry_run != true) }}
+    strategy:
+      matrix:
+        issue: ${{ fromJSON(needs.enumerate.outputs.stale_triage) }}
+      max-parallel: 1
+      fail-fast: false
+    uses: ./.github/workflows/triage-issue.yml
+    with:
+      issue_number: ${{ matrix.issue }}
+    secrets: inherit
+
+  spec-batch:
+    needs: enumerate
+    if: ${{ needs.enumerate.outputs.stale_spec != '[]' && (github.event_name != 'workflow_dispatch' || inputs.dry_run != true) }}
+    strategy:
+      matrix:
+        issue: ${{ fromJSON(needs.enumerate.outputs.stale_spec) }}
+      max-parallel: 1
+      fail-fast: false
+    uses: ./.github/workflows/spec-issue.yml
+    with:
+      issue_number: ${{ matrix.issue }}
+    secrets: inherit
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: [enumerate, triage-batch, spec-batch]
+    if: always()
+    steps:
+      - name: Summarize audit run
+        env:
+          TRIAGE_ISSUES: ${{ needs.enumerate.outputs.stale_triage }}
+          SPEC_ISSUES:   ${{ needs.enumerate.outputs.stale_spec }}
+          TRIAGE_RESULT: ${{ needs.triage-batch.result }}
+          SPEC_RESULT:   ${{ needs.spec-batch.result }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+
+          triage = json.loads(os.environ.get("TRIAGE_ISSUES") or "[]")
+          spec = json.loads(os.environ.get("SPEC_ISSUES") or "[]")
+          triage_result = os.environ.get("TRIAGE_RESULT", "skipped")
+          spec_result = os.environ.get("SPEC_RESULT", "skipped")
+
+          all_issues = sorted(set(triage) | set(spec))
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Daily issue audit outcomes\n\n")
+              summary.write(f"- triage-batch: `{triage_result}`\n")
+              summary.write(f"- spec-batch: `{spec_result}`\n\n")
+              summary.write("| Issue | Triage | Spec |\n")
+              summary.write("| --- | --- | --- |\n")
+              if not all_issues:
+                  summary.write("| _(none)_ | - | - |\n")
+              for issue in all_issues:
+                  triage_state = "queued" if issue in triage else "-"
+                  spec_state = "queued" if issue in spec else "-"
+                  summary.write(f"| #{issue} | {triage_state} | {spec_state} |\n")
+          PY

@@ -1,0 +1,301 @@
+name: Spec issue
+run-name: "Spec #${{ inputs.issue_number || github.event.inputs.issue_number }}"
+
+on:
+  workflow_call:
+    inputs:
+      issue_number:
+        required: true
+        type: number
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to spec"
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  issues:   write
+
+concurrency:
+  group: spec-${{ inputs.issue_number || github.event.inputs.issue_number }}
+  cancel-in-progress: false
+
+jobs:
+  spec:
+    name: Auto-spec
+    runs-on: ubuntu-latest
+
+    env:
+      MARKER: "<!-- yutori-spec:v1 -->"
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO:     ${{ github.repository }}
+
+    steps:
+      - name: Checkout repo (for spec prompt + plans)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Normalize issue context
+        id: normalize
+        run: |
+          set -euo pipefail
+          case "${{ github.event_name }}" in
+            workflow_call)
+              issue_number='${{ inputs.issue_number }}'
+              ;;
+            workflow_dispatch)
+              issue_number='${{ github.event.inputs.issue_number }}'
+              ;;
+            *)
+              echo "::error::Unsupported trigger: ${{ github.event_name }}"
+              exit 1
+              ;;
+          esac
+
+          if ! [[ "$issue_number" =~ ^[0-9]+$ ]]; then
+            echo "::error::Invalid issue_number: '$issue_number'"
+            exit 1
+          fi
+
+          echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
+          echo "ISSUE_NUMBER=$issue_number" >> "$GITHUB_ENV"
+
+          mkdir -p "$RUNNER_TEMP/spec"
+          cd "$RUNNER_TEMP/spec"
+          gh api "/repos/$REPO/issues/$issue_number" > issue.raw.json
+
+          if jq -e '.user.type == "Bot"' issue.raw.json >/dev/null; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping bot-authored issue #$issue_number"
+            exit 0
+          fi
+
+          jq '{
+                number: .number,
+                title: (.title // ""),
+                body: ((.body // "")[0:8192]),
+                author: (.user.login // "")
+              }' issue.raw.json > issue.json
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
+
+      - name: Preflight — verify COPILOT_GITHUB_TOKEN is set
+        if: steps.normalize.outputs.should_run == 'true'
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: |
+          if [ -z "${COPILOT_GITHUB_TOKEN:-}" ]; then
+            echo "::error::COPILOT_GITHUB_TOKEN secret is not configured."
+            exit 1
+          fi
+
+      - name: Check triage/invalid short-circuit
+        id: invalid_gate
+        if: steps.normalize.outputs.should_run == 'true'
+        run: |
+          set -euo pipefail
+          if gh api "/repos/$REPO/issues/$ISSUE_NUMBER/labels" --jq '.[].name' | grep -Fxq "triage/invalid"; then
+            echo "skip_spec=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip_spec=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post skip comment for triage/invalid
+        if: ${{ steps.normalize.outputs.should_run == 'true' && steps.invalid_gate.outputs.skip_spec == 'true' }}
+        run: |
+          set -euo pipefail
+          gh api "/repos/$REPO/issues/$ISSUE_NUMBER/comments" --paginate > comments.json
+          mapfile -t old_ids < <(jq -r --arg m "$MARKER" '.[] | select(.body | contains($m)) | .id' comments.json)
+          for id in "${old_ids[@]}"; do
+            [ -n "$id" ] && gh api -X DELETE "/repos/$REPO/issues/comments/$id" --silent || true
+          done
+
+          {
+            echo "$MARKER"
+            echo "_Spec pass skipped — issue is flagged \`triage/invalid\`._"
+          } > comment.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body-file comment.md
+
+      - name: Set up Node
+        if: ${{ steps.normalize.outputs.should_run == 'true' && steps.invalid_gate.outputs.skip_spec != 'true' }}
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f  # v6.3.0
+        with:
+          node-version: "20"
+
+      - name: Install Copilot CLI (pinned)
+        if: ${{ steps.normalize.outputs.should_run == 'true' && steps.invalid_gate.outputs.skip_spec != 'true' }}
+        run: npm install -g "@github/copilot@1.0.32"
+
+      - name: Stage open-issue context
+        if: ${{ steps.normalize.outputs.should_run == 'true' && steps.invalid_gate.outputs.skip_spec != 'true' }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/spec"
+          gh issue list \
+            --repo "$REPO" \
+            --state open \
+            --limit 100 \
+            --json number,title \
+            > open-issues.json
+
+      - name: Run Copilot CLI
+        if: ${{ steps.normalize.outputs.should_run == 'true' && steps.invalid_gate.outputs.skip_spec != 'true' }}
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/spec"
+          cp "$GITHUB_WORKSPACE/.github/spec-prompt.md" prompt.md
+          cp "$GITHUB_WORKSPACE/CLAUDE.md" CLAUDE.md
+          rm -f spec.json
+          copilot \
+            -p "$(cat prompt.md)" \
+            --allow-tool='write' \
+            --allow-tool='read(./**)' \
+            --no-ask-user
+          if [ ! -f spec.json ]; then
+            echo "::error::Copilot did not produce spec.json"
+            exit 1
+          fi
+
+      - name: Validate spec.json
+        if: ${{ steps.normalize.outputs.should_run == 'true' && steps.invalid_gate.outputs.skip_spec != 'true' }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/spec"
+
+          jq '
+            def clean(n): if type == "string" then .[0:n] | gsub("[`<>]"; "") else null end;
+            def bool: if type == "boolean" then . else false end;
+            def list(n; m): if type == "array" then map(select(type == "string") | .[0:m] | gsub("[`<>]"; "")) | .[0:n] else [] end;
+
+            {
+              valid:          (.valid | bool),
+              invalid_reason: ((.invalid_reason // null) | clean(280)),
+              scope_summary:  ((.scope_summary  // null) | clean(800)),
+              affected_files: ((.affected_files // [])   | list(15; 200)),
+              approach:       ((.approach       // [])   | list(10; 400)),
+              test_plan:      ((.test_plan      // null) | clean(800)),
+              open_questions: ((.open_questions // [])   | list(5; 400)),
+              risk_notes:     ((.risk_notes     // null) | clean(800))
+            }
+          ' spec.json > validated.json
+
+      - name: Drop non-existent affected files
+        if: ${{ steps.normalize.outputs.should_run == 'true' && steps.invalid_gate.outputs.skip_spec != 'true' }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/spec"
+          mapfile -t proposed < <(jq -r '.affected_files[]?' validated.json)
+          existing=()
+          for path in "${proposed[@]}"; do
+            if git -C "$GITHUB_WORKSPACE" cat-file -e "HEAD:$path" 2>/dev/null; then
+              existing+=("$path")
+            else
+              echo "::warning::Dropping non-existent affected file path: $path"
+            fi
+          done
+
+          if [ ${#existing[@]} -eq 0 ]; then
+            jq '.affected_files = []' validated.json > validated.json.tmp
+          else
+            printf '%s\n' "${existing[@]}" | jq -R . | jq -s . > existing-files.json
+            jq --slurpfile files existing-files.json '.affected_files = $files[0]' validated.json > validated.json.tmp
+          fi
+          mv validated.json.tmp validated.json
+
+      - name: Post spec comment
+        if: ${{ steps.normalize.outputs.should_run == 'true' && steps.invalid_gate.outputs.skip_spec != 'true' }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/spec"
+
+          valid=$(jq -r '.valid' validated.json)
+          invalid_reason=$(jq -r '.invalid_reason // ""' validated.json)
+          scope=$(jq -r '.scope_summary // ""' validated.json)
+          test_plan=$(jq -r '.test_plan // ""' validated.json)
+          risk_notes=$(jq -r '.risk_notes // ""' validated.json)
+
+          gh api "/repos/$REPO/issues/$ISSUE_NUMBER/comments" --paginate > comments.json
+          mapfile -t old_ids < <(jq -r --arg m "$MARKER" '.[] | select(.body | contains($m)) | .id' comments.json)
+          for id in "${old_ids[@]}"; do
+            [ -n "$id" ] && gh api -X DELETE "/repos/$REPO/issues/comments/$id" --silent || true
+          done
+
+          {
+            echo "$MARKER"
+            if [ "$valid" != "true" ]; then
+              echo "## Spec pass skipped"
+              echo
+              echo "${invalid_reason:-No implementation scope generated.}"
+            else
+              echo "## Proposed approach"
+              echo
+              if [ -n "$scope" ]; then
+                echo "**Scope:** $scope"
+                echo
+              fi
+
+              mapfile -t files < <(jq -r '.affected_files[]?' validated.json)
+              if [ ${#files[@]} -gt 0 ]; then
+                echo "**Affected files:**"
+                for f in "${files[@]}"; do
+                  echo "- \`$f\`"
+                done
+                echo
+              fi
+
+              mapfile -t approach < <(jq -r '.approach[]?' validated.json)
+              if [ ${#approach[@]} -gt 0 ]; then
+                echo "**Approach:**"
+                i=1
+                for item in "${approach[@]}"; do
+                  echo "$i. $item"
+                  i=$((i + 1))
+                done
+                echo
+              fi
+
+              if [ -n "$test_plan" ]; then
+                echo "**Test plan:** $test_plan"
+                echo
+              fi
+
+              mapfile -t questions < <(jq -r '.open_questions[]?' validated.json)
+              if [ ${#questions[@]} -gt 0 ]; then
+                echo "**Open questions:**"
+                for item in "${questions[@]}"; do
+                  echo "- $item"
+                done
+                echo
+              fi
+
+              if [ -n "$risk_notes" ]; then
+                echo "**Risk notes:** $risk_notes"
+                echo
+              fi
+            fi
+
+            echo "_<sub>Generated by \`.github/workflows/spec-issue.yml\` — re-run to refresh. AI-generated — verify before acting.</sub>_"
+          } > comment.md
+
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body-file comment.md
+
+      - name: Fallback — post "spec failed" comment
+        if: ${{ failure() && steps.normalize.outputs.should_run == 'true' }}
+        run: |
+          set -u
+          cd "$RUNNER_TEMP" || cd /tmp
+
+          gh api "/repos/$REPO/issues/$ISSUE_NUMBER/comments" --paginate > comments.json 2>/dev/null || echo '[]' > comments.json
+          mapfile -t old_ids < <(jq -r --arg m "$MARKER" '.[] | select(.body | contains($m)) | .id' comments.json 2>/dev/null || true)
+          for id in "${old_ids[@]}"; do
+            [ -n "$id" ] && gh api -X DELETE "/repos/$REPO/issues/comments/$id" --silent 2>/dev/null || true
+          done
+
+          {
+            echo "$MARKER"
+            echo "## Spec pass failed"
+            echo "Run: [${GITHUB_RUN_ID}](https://github.com/$REPO/actions/runs/$GITHUB_RUN_ID)"
+          } > fallback.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body-file fallback.md || true

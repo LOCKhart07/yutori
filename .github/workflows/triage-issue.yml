@@ -1,5 +1,5 @@
 name: Triage issue
-run-name: "Triage #${{ github.event.issue.number }}"
+run-name: "Triage #${{ inputs.issue_number || github.event.issue.number || github.event.inputs.issue_number }}"
 
 # Spec: docs/issue-triage.md. Prompt: .github/triage-prompt.md.
 # Labels must exist before this runs — scripts/bootstrap-triage-labels.sh.
@@ -7,24 +7,32 @@ run-name: "Triage #${{ github.event.issue.number }}"
 on:
   issues:
     types: [opened]
+  workflow_call:
+    inputs:
+      issue_number:
+        required: true
+        type: number
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to triage"
+        required: true
+        type: number
 
 permissions:
   contents: read
   issues:   write
 
 concurrency:
-  group: triage-${{ github.event.issue.number }}
+  group: triage-${{ inputs.issue_number || github.event.issue.number || github.event.inputs.issue_number }}
   cancel-in-progress: false
 
 jobs:
   triage:
     name: Auto-triage
     runs-on: ubuntu-latest
-    # Skip bot-opened issues. A human can re-trigger manually.
-    if: ${{ github.event.issue.user.type != 'Bot' }}
 
     env:
-      ISSUE_NUMBER: ${{ github.event.issue.number }}
       MARKER: "<!-- yutori-triage:v1 -->"
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO:     ${{ github.repository }}
@@ -33,7 +41,50 @@ jobs:
       - name: Checkout repo (for triage-prompt.md)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
+      - name: Normalize issue context
+        id: normalize
+        run: |
+          set -euo pipefail
+          case "${{ github.event_name }}" in
+            workflow_call)
+              issue_number='${{ inputs.issue_number }}'
+              ;;
+            workflow_dispatch)
+              issue_number='${{ github.event.inputs.issue_number }}'
+              ;;
+            *)
+              issue_number='${{ github.event.issue.number }}'
+              ;;
+          esac
+
+          if ! [[ "$issue_number" =~ ^[0-9]+$ ]]; then
+            echo "::error::Invalid issue_number: '$issue_number'"
+            exit 1
+          fi
+
+          echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
+          echo "ISSUE_NUMBER=$issue_number" >> "$GITHUB_ENV"
+
+          mkdir -p "$RUNNER_TEMP/triage"
+          cd "$RUNNER_TEMP/triage"
+          gh api "/repos/$REPO/issues/$issue_number" > issue.raw.json
+
+          if jq -e '.user.type == "Bot"' issue.raw.json >/dev/null; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping bot-authored issue #$issue_number"
+            exit 0
+          fi
+
+          jq '{
+                number: .number,
+                title: (.title // ""),
+                body: ((.body // "")[0:8192]),
+                author: (.user.login // "")
+              }' issue.raw.json > issue.json
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
+
       - name: Preflight — verify COPILOT_GITHUB_TOKEN is set
+        if: steps.normalize.outputs.should_run == 'true'
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
@@ -44,33 +95,17 @@ jobs:
           fi
 
       - name: Set up Node
+        if: steps.normalize.outputs.should_run == 'true'
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f  # v6.3.0
         with:
           node-version: "20"
 
       - name: Install Copilot CLI (pinned)
+        if: steps.normalize.outputs.should_run == 'true'
         run: npm install -g "@github/copilot@1.0.32"
 
-      - name: Stage issue data (truncate body to 8 KB)
-        env:
-          ISSUE_TITLE:  ${{ github.event.issue.title }}
-          ISSUE_BODY:   ${{ github.event.issue.body }}
-          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/triage"
-          cd "$RUNNER_TEMP/triage"
-          # --arg keeps raw text as one argument — no shell interpolation
-          # touches the untrusted body.
-          jq -n \
-            --argjson number "$ISSUE_NUMBER" \
-            --arg     title   "$ISSUE_TITLE" \
-            --arg     body    "${ISSUE_BODY:0:8192}" \
-            --arg     author  "$ISSUE_AUTHOR" \
-            '{number: $number, title: $title, body: $body, author: $author}' \
-            > issue.json
-
       - name: Stage open-issue context (for duplicate detection)
+        if: steps.normalize.outputs.should_run == 'true'
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/triage"
@@ -82,6 +117,7 @@ jobs:
             > open-issues.json
 
       - name: Assemble prompt
+        if: steps.normalize.outputs.should_run == 'true'
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/triage"
@@ -101,6 +137,7 @@ jobs:
           } > prompt.txt
 
       - name: Run Copilot CLI
+        if: steps.normalize.outputs.should_run == 'true'
         env:
           # Explicitly set Copilot's own token — else the CLI falls back
           # to GH_TOKEN (the built-in GITHUB_TOKEN), which has no
@@ -120,6 +157,7 @@ jobs:
           fi
 
       - name: Validate triage.json
+        if: steps.normalize.outputs.should_run == 'true'
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/triage"
@@ -161,6 +199,7 @@ jobs:
           jq . validated.json
 
       - name: Apply labels + post comment
+        if: steps.normalize.outputs.should_run == 'true'
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/triage"
@@ -261,7 +300,7 @@ jobs:
           gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body-file comment.md
 
       - name: Fallback — post "triage failed" comment
-        if: failure()
+        if: ${{ failure() && steps.normalize.outputs.should_run == 'true' }}
         run: |
           set -u
           cd "$RUNNER_TEMP" || cd /tmp

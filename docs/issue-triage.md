@@ -1,10 +1,12 @@
 # Issue triage workflow
 
-A GitHub Actions workflow (`.github/workflows/triage-issue.yml`, not
-yet implemented — this doc is the spec) that runs the **GitHub Copilot
-CLI** on every newly opened issue, classifies it against a fixed
-taxonomy, and posts a structured triage comment plus labels. Designed
-for a public repo with an untrusted issue intake.
+A GitHub Actions workflow (`.github/workflows/triage-issue.yml`) runs
+the **GitHub Copilot CLI** on newly opened issues, classifies each
+issue against a fixed taxonomy, and posts a structured triage comment
+plus labels. A second workflow (`.github/workflows/spec-issue.yml`)
+posts a richer implementation-spec comment. A daily backlog audit
+(`.github/workflows/daily-issue-audit.yml`) re-runs stale triage/spec
+passes.
 
 A human still owns every issue. The workflow only *shapes* the
 starting point — it never closes, assigns, or merges.
@@ -15,10 +17,20 @@ starting point — it never closes, assigns, or merges.
 on:
   issues:
     types: [opened]
+  workflow_call:
+    inputs:
+      issue_number:
+        required: true
+        type: number
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        required: true
+        type: number
 ```
 
-Nothing else — not `edited`, not `labeled`, not `issue_comment`. Comment
-triggers are out of scope for v1 (see *Open decisions §1*).
+The `issues.opened` path remains immediate triage. Reusable/manual
+triggers are used by daily audit and ad-hoc maintainer refreshes.
 
 ## Step-by-step
 
@@ -268,6 +280,67 @@ linger), then posts fresh.
 
 The marker is versioned — `v1` today. A breaking change to the shape
 bumps to `v2`; old comments remain untouched so history is legible.
+
+## Spec pass
+
+`spec-issue.yml` is a reusable/manual workflow (`workflow_call` +
+`workflow_dispatch`) that complements triage with a scoped
+implementation proposal:
+
+- marker: `<!-- yutori-spec:v1 -->`
+- prompt: `.github/spec-prompt.md` (static, never interpolated)
+- output: validated `spec.json` containing scope summary, affected files,
+  approach, test plan, open questions, and risk notes
+- idempotency: prior marker comments are deleted, then one fresh comment
+  is posted
+- short-circuit: if the issue has `triage/invalid`, spec posts a marker
+  comment noting the skip and exits early
+
+Spec does **not** apply labels.
+
+## Daily audit
+
+`daily-issue-audit.yml` runs on:
+
+```yaml
+schedule:
+  - cron: '0 3 * * *'
+workflow_dispatch:
+  inputs:
+    dry_run:   # enumerate only
+    triage_cap # optional override
+    spec_cap   # optional override
+```
+
+It enumerates open issues, computes stale triage/spec lists, sorts each
+list by `issue.updated_at` ascending (ties by issue number), caps
+dispatches (`MAX_TRIAGE`, `MAX_SPEC` in workflow env), and dispatches:
+
+- triage batch → `./.github/workflows/triage-issue.yml`
+- spec batch → `./.github/workflows/spec-issue.yml`
+
+Triage/spec batches run independently and serialize within each batch
+(`max-parallel: 1`, `fail-fast: false`) to avoid quota spikes.
+
+## Staleness semantics
+
+For pass `P ∈ {triage, spec}`, an issue is stale iff:
+
+1. no marker comment `<!-- yutori-P:v1 -->` exists, **or**
+2. `max(issue.updated_at, latest_non_bot_comment.created_at) >
+   marker_comment.created_at`.
+
+`latest_non_bot_comment` excludes:
+
+- comments by `github-actions[bot]`, and
+- comments that carry the marker string itself (defensive against
+  marker copy/paste).
+
+Additional rules:
+
+- Bot-authored issues are skipped entirely (`issue.user.type == "Bot"`).
+- `triage/invalid` issues are excluded from spec stale lists (but can be
+  re-triaged if triage is stale).
 
 ## Out of scope for v1
 
