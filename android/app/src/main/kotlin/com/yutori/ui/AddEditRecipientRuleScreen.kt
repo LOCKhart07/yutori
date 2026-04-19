@@ -104,6 +104,7 @@ fun AddEditRecipientRuleScreen(
 ) {
     val scope = rememberCoroutineScope()
     val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
+    val colors = YutoriTheme.colors
 
     val existingRule: RecipientRuleEntity? by produceState<RecipientRuleEntity?>(null, ruleId) {
         value = ruleId?.let { recipientRuleDao.getById(it) }
