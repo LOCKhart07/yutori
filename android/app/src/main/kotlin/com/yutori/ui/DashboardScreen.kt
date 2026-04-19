@@ -92,6 +92,7 @@ fun DashboardScreen(
     currentMonthKey: String,
     observeMonth: (String) -> Flow<DashboardUiState>,
     importStatus: ImportStatus = ImportStatus.Idle,
+    latestIngestedMessages: List<LatestIngestedMessage> = emptyList(),
     onSetBudget: () -> Unit = {},
     onImport: () -> Unit = {},
     onSettings: () -> Unit = {},
@@ -238,6 +239,7 @@ fun DashboardScreen(
                 MonthPage(
                     state = state,
                     importStatus = importStatus,
+                    latestIngestedMessages = latestIngestedMessages,
                     onSetBudget = onSetBudget,
                     onCategoryClick = onCategoryClick,
                     onCardClick = onCardClick,
@@ -254,6 +256,7 @@ fun DashboardScreen(
 private fun MonthPage(
     state: DashboardUiState,
     importStatus: ImportStatus,
+    latestIngestedMessages: List<LatestIngestedMessage>,
     onSetBudget: () -> Unit,
     onCategoryClick: (String) -> Unit,
     onCardClick: (accountId: Long?, last4: String?) -> Unit,
@@ -265,14 +268,14 @@ private fun MonthPage(
         is DashboardUiState.Loading -> LoadingView()
         is DashboardUiState.NeedsPermission -> NeedsPermissionView()
         is DashboardUiState.Empty -> EmptyView(
-            state, onSetBudget, importStatus, isCurrentMonth,
+            state, onSetBudget, importStatus, latestIngestedMessages, isCurrentMonth,
             pageMonthKey, onJumpToMonth,
         )
         is DashboardUiState.Ready ->
             ReadyView(
-                state, importStatus,
+                state, importStatus, latestIngestedMessages,
                 onSetBudget, onCategoryClick, onCardClick,
-                pageMonthKey, onJumpToMonth,
+                isCurrentMonth, pageMonthKey, onJumpToMonth,
             )
     }
 }
@@ -298,6 +301,7 @@ private fun EmptyView(
     state: DashboardUiState.Empty,
     onSetBudget: () -> Unit,
     importStatus: ImportStatus,
+    latestIngestedMessages: List<LatestIngestedMessage>,
     isCurrentMonth: Boolean,
     pageMonthKey: String,
     onJumpToMonth: (String) -> Unit,
@@ -349,6 +353,9 @@ private fun EmptyView(
         }
         Spacer(Modifier.height(24.dp))
         ImportStatusBlock(importStatus, pageMonthKey, onJumpToMonth)
+        if (isCurrentMonth) {
+            LatestIngestedMessagesBlock(latestIngestedMessages)
+        }
     }
 }
 
@@ -356,9 +363,11 @@ private fun EmptyView(
 private fun ReadyView(
     state: DashboardUiState.Ready,
     importStatus: ImportStatus,
+    latestIngestedMessages: List<LatestIngestedMessage>,
     onSetBudget: () -> Unit,
     onCategoryClick: (String) -> Unit,
     onCardClick: (accountId: Long?, last4: String?) -> Unit,
+    isCurrentMonth: Boolean,
     pageMonthKey: String,
     onJumpToMonth: (String) -> Unit,
 ) {
@@ -450,6 +459,9 @@ private fun ReadyView(
         }
 
         ImportStatusBlock(importStatus, pageMonthKey, onJumpToMonth)
+        if (isCurrentMonth) {
+            LatestIngestedMessagesBlock(latestIngestedMessages)
+        }
 
         // By category
         Spacer(Modifier.height(24.dp))
@@ -1211,6 +1223,77 @@ private fun ImportStatusBlock(
                 color = YutoriTheme.colors.negative,
             )
         }
+    }
+}
+
+@Composable
+private fun LatestIngestedMessagesBlock(
+    messages: List<LatestIngestedMessage>,
+) {
+    if (messages.isEmpty()) return
+
+    Spacer(Modifier.height(16.dp))
+    SectionHead(title = "Latest ingested messages", meta = null)
+    Spacer(Modifier.height(10.dp))
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp)),
+        color = YutoriTheme.colors.surfaceElevated,
+    ) {
+        Column {
+            messages.forEachIndexed { index, msg ->
+                LatestIngestedRow(msg)
+                if (index < messages.lastIndex) {
+                    HorizontalDivider(color = YutoriTheme.colors.divider)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LatestIngestedRow(
+    message: LatestIngestedMessage,
+) {
+    val colors = YutoriTheme.colors
+    val (label, tone) = when (message.outcome) {
+        IngestedMessageOutcome.COUNTED_IN_BUDGET -> "Counted in budget" to colors.positive
+        IngestedMessageOutcome.IGNORED -> "Ignored" to colors.onMuted
+        IngestedMessageOutcome.NEEDS_REVIEW -> "Needs review" to colors.warn
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = message.sender,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+            )
+            Surface(
+                shape = RoundedCornerShape(999.dp),
+                color = tone.copy(alpha = 0.2f),
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = tone,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                )
+            }
+        }
+        Text(
+            text = message.bodyPreview,
+            style = MaterialTheme.typography.bodySmall,
+            color = colors.onMuted,
+            modifier = Modifier.padding(top = 2.dp),
+        )
     }
 }
 

@@ -66,6 +66,11 @@ class FakeSmsLogDao : SmsLogDao {
     override fun observeUnmatched(): Flow<List<SmsLogEntity>> =
         MutableStateFlow(all.filter { it.classification == "UNMATCHED" }).asStateFlow()
 
+    override fun observeLatest(limit: Int): Flow<List<SmsLogEntity>> =
+        MutableStateFlow(
+            all.sortedByDescending { it.receivedAtMs }.take(limit),
+        ).asStateFlow()
+
     override suspend fun findInRange(startMs: Long, endMs: Long): List<SmsLogEntity> =
         all.filter { it.receivedAtMs in startMs..endMs }
 
