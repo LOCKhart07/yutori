@@ -63,7 +63,6 @@ jobs:
           import json
           import os
           import subprocess
-          from collections import defaultdict
 
           repo = os.environ["REPO"]
           triage_marker = "<!-- yutori-triage:v1 -->"

@@ -1,5 +1,5 @@
 name: Triage issue
-run-name: "Triage #${{ inputs.issue_number || github.event.issue.number || github.event.inputs.issue_number }}"
+run-name: "Triage #${{ inputs.issue_number || github.event.issue.number }}"
 
 # Spec: docs/issue-triage.md. Prompt: .github/triage-prompt.md.
 # Labels must exist before this runs — scripts/bootstrap-triage-labels.sh.
@@ -24,7 +24,7 @@ permissions:
   issues:   write
 
 concurrency:
-  group: triage-${{ inputs.issue_number || github.event.issue.number || github.event.inputs.issue_number }}
+  group: triage-${{ inputs.issue_number || github.event.issue.number }}
   cancel-in-progress: false
 
 jobs:
@@ -50,7 +50,7 @@ jobs:
               issue_number='${{ inputs.issue_number }}'
               ;;
             workflow_dispatch)
-              issue_number='${{ github.event.inputs.issue_number }}'
+              issue_number='${{ inputs.issue_number }}'
               ;;
             *)
               issue_number='${{ github.event.issue.number }}'
