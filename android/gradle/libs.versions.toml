@@ -6,6 +6,7 @@ kotlin = "2.3.20"
 # KSP became version-agnostic from 2.3.0 — one KSP build now works
 # with any Kotlin 2.3.x. No more Kotlin-version suffix.
 ksp = "2.3.6"
+detekt = "1.23.6"
 
 # --- AndroidX runtime ---
 activityCompose = "1.13.0"
@@ -115,3 +116,4 @@ android-test = { id = "com.android.test", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
