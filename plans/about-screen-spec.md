@@ -222,9 +222,6 @@ android/app/src/main/kotlin/com/yutori/ui/SettingsScreen.kt
 README.md
     + ## Why "Yutori"
     + ## Principles
-plans/backlog.md
-    - remove the #66 entry (per
-      memory/feedback_backlog_sync_with_feature)
 ```
 
 No test code beyond what the normal Compose unit-test harness

@@ -32,10 +32,11 @@ prefix is forced:
 | `**/src/test/**`, `**/src/androidTest/**`, `**/src/testDebug/**`                  | `test:`        |
 | Kotlin / XML under `android/**/src/main/**`                                       | `feat:` / `fix:` / `perf:` / `refactor:` (pick by intent) |
 
-Mixed commits are fine: a `feat:` that also bumps `plans/backlog.md`
-is correct — the doc edit is incidental to the feature. Prefix the
-commit for the **app-code change**; the trailing doc/CI edits ride
-along. Don't split unless the two halves are independently shippable.
+Mixed commits are fine: a `feat:` that also bumps a spec under
+`plans/` is correct — the doc edit is incidental to the feature.
+Prefix the commit for the **app-code change**; the trailing doc/CI
+edits ride along. Don't split unless the two halves are independently
+shippable.
 
 ### `docs:` is repo-internal only
 

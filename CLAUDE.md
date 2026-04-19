@@ -9,7 +9,8 @@ Yutori (was **SpendWise** until 2026-04-17 — fully renamed, including `com.yut
 - `plans/yutori-plan.md` — top-level product and design doc. Read §4 (classification & double-counting), §11–§12 (resolved decisions and open questions) before touching parser/classifier logic.
 - `plans/business-logic-spec.md` — dedup rules (§4.2 in particular), budget/alert semantics, reparse pipeline.
 - `plans/parser-spec.md`, `plans/ingestion-spec.md`, `plans/schema.md`, `plans/ui-spec.md`, `plans/settings-spec.md`, `plans/error-states-spec.md`, `plans/testing-spec.md` — domain-specific specs.
-- `plans/backlog.md` — thin index linking every pending work item to its GitHub issue. Issues are the source of truth; the index is just a sorted view by tier. `plans/pending.md` was retired 2026-04-16 — its contents migrated to issues #5–#73.
+
+Pending work lives in [GitHub issues](https://github.com/LOCKhart07/yutori/issues) — filter by `tier/` or `status/ready` labels (set by the auto-triage bot, see `docs/issue-triage.md`). The old `plans/pending.md` and `plans/backlog.md` side-ledgers were retired (2026-04-16 and 2026-04-19 respectively); cross-issue dependencies now live in the issue bodies themselves (`Follows #X`, `Blocks #Y`).
 
 ## Build and test
 

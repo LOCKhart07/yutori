@@ -26,7 +26,7 @@ Yutori is an opinionated app. A few load-bearing principles decide what ships an
 
 ## Status
 
-Personal project, single user. Active development. The `plans/` directory captures intent; work-in-progress is tracked in [GitHub issues](../../issues) — `plans/backlog.md` is a thin tiered index.
+Personal project, single user. Active development. The `plans/` directory captures intent; work-in-progress is tracked in [GitHub issues](../../issues), labelled by tier and status.
 
 ## Build
 
