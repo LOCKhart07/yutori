@@ -1,0 +1,37 @@
+build:
+  maxIssues: 0
+
+config:
+  validation: true
+
+complexity:
+  LongMethod:
+    active: true
+    threshold: 80
+  LongParameterList:
+    active: true
+    functionThreshold: 7
+    constructorThreshold: 7
+    ignoreAnnotated:
+      - Composable
+  NestedBlockDepth:
+    active: true
+    threshold: 5
+  TooManyFunctions:
+    active: false
+
+style:
+  UnusedPrivateMember:
+    active: true
+  UnusedParameter:
+    active: true
+  MagicNumber:
+    active: false
+  WildcardImport:
+    active: false
+
+naming:
+  active: true
+
+potential-bugs:
+  active: true
