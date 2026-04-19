@@ -66,27 +66,8 @@ fun AppUpdatesSection(
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 13.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "Current version",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        text = state.currentVersion,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
-                        color = YutoriTheme.colors.onMuted,
-                    )
-                }
-                HorizontalDivider(color = YutoriTheme.colors.divider)
-
                 val statusClickable = state.phase is UpdateScreenState.Phase.Available
                 Row(
                     modifier = Modifier
