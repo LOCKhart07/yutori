@@ -1,5 +1,294 @@
 <?xml version="1.0" ?>
 <SmellBaseline>
   <ManuallySuppressedIssues />
-  <CurrentIssues />
+  <CurrentIssues>
+    <ID>ComplexCondition:IngestionPipeline.kt$IngestionPipeline$decision != null &amp;&amp; decision !is MergeDecision.Dropped &amp;&amp; (classified.budgetEffect == BudgetEffect.SPEND || classified.budgetEffect == BudgetEffect.REFUND)</ID>
+    <ID>CyclomaticComplexMethod:AccountEditScreen.kt$@Composable fun AccountEditScreen( initial: AccountDraft?, onSave: (AccountDraft) -&gt; Unit, onCancel: () -&gt; Unit, onDelete: (() -&gt; Unit)? = null, )</ID>
+    <ID>CyclomaticComplexMethod:AddEditRecipientRuleScreen.kt$@Composable fun AddEditRecipientRuleScreen( ruleId: Long?, prefillSuggestionId: Long?, recipientRuleDao: RecipientRuleDao, ruleSuggestionDao: RuleSuggestionDao, transactionDao: TransactionDao, accountDao: AccountDao, onBack: () -&gt; Unit, onSaved: () -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:DashboardScreen.kt$@Composable private fun ReadyView( state: DashboardUiState.Ready, importStatus: ImportStatus, onSetBudget: () -&gt; Unit, onCategoryClick: (String) -&gt; Unit, onCardClick: (accountId: Long?, last4: String?) -&gt; Unit, pageMonthKey: String, onJumpToMonth: (String) -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:DashboardScreen.kt$@Composable private fun StatRow( snap: MonthSnapshot, derived: DashboardDerived, inr: NumberFormat, )</ID>
+    <ID>CyclomaticComplexMethod:HistoricalImportWorker.kt$HistoricalImportWorker$override suspend fun doWork(): Result</ID>
+    <ID>CyclomaticComplexMethod:MainActivity.kt$@Composable private fun AppContent()</ID>
+    <ID>CyclomaticComplexMethod:MarkdownRenderer.kt$MarkdownRenderer$fun parse(source: String): List&lt;MdBlock&gt;</ID>
+    <ID>CyclomaticComplexMethod:MarkdownRenderer.kt$MarkdownRenderer$private fun parseInline(text: String): InlineText</ID>
+    <ID>CyclomaticComplexMethod:SettingsBackup.kt$SettingsBackup$suspend fun importFromJson( json: String, accountDao: AccountDao, ruleDao: RecipientRuleDao, nowMs: Long, ): ImportSummary</ID>
+    <ID>CyclomaticComplexMethod:TransactionDetailScreen.kt$@Composable private fun Hero(tx: TransactionEntity)</ID>
+    <ID>CyclomaticComplexMethod:UpdateDialog.kt$@Composable fun UpdateDialog( state: UpdateScreenState, onDismiss: () -&gt; Unit, onStartDownload: () -&gt; Unit, onCancelDownload: () -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:UpdateDownloader.kt$UpdateDownloader$fun download(asset: LatestRelease.Asset): Flow&lt;DownloadState&gt;</ID>
+    <ID>ForbiddenComment:SmsLogReconciler.kt$SmsLogReconciler$// v1.1 TODO: reassign transaction_sms_sources to the</ID>
+    <ID>FunctionNaming:AboutScreen.kt$@Composable fun AboutScreen( versionName: String, commitSha: String, onBack: () -&gt; Unit, onCheckForUpdates: () -&gt; Unit, onOpenLicenses: () -&gt; Unit, onOpenRepo: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:AboutScreen.kt$@Composable private fun BuildCard( versionName: String, commitSha: String, onCheckForUpdates: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:AboutScreen.kt$@Composable private fun BuildInfoRow(label: String, value: String)</ID>
+    <ID>FunctionNaming:AboutScreen.kt$@Composable private fun Hero()</ID>
+    <ID>FunctionNaming:AboutScreen.kt$@Composable private fun LinkRow( leadingIcon: ImageVector, label: String, subtitle: String, onClick: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:AboutScreen.kt$@Composable private fun PrincipleCard(num: String, title: String, body: String)</ID>
+    <ID>FunctionNaming:AboutScreen.kt$@Composable private fun PrinciplesList()</ID>
+    <ID>FunctionNaming:AboutScreen.kt$@Composable private fun SectionHead(label: String)</ID>
+    <ID>FunctionNaming:AboutScreen.kt$@Composable private fun WhyYutoriCard()</ID>
+    <ID>FunctionNaming:AccountEditScreen.kt$@Composable fun AccountEditScreen( initial: AccountDraft?, onSave: (AccountDraft) -&gt; Unit, onCancel: () -&gt; Unit, onDelete: (() -&gt; Unit)? = null, )</ID>
+    <ID>FunctionNaming:AccountEditScreen.kt$@Composable private fun HandleRow(handle: String, onRemove: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:AccountEditScreen.kt$@Composable private fun SectionLabel(text: String)</ID>
+    <ID>FunctionNaming:AccountEditScreen.kt$@Composable private fun ThemedTextField( value: String, onValueChange: (String) -&gt; Unit, placeholder: String, mono: Boolean = false, error: Boolean = false, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:AccountEditScreen.kt$@Composable private fun TypeChip( label: String, selected: Boolean, onClick: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:AccountsScreen.kt$@Composable fun AccountsScreen( accountsFlow: Flow&lt;List&lt;AccountEntity&gt;&gt;, onBack: () -&gt; Unit, onAdd: () -&gt; Unit, onEdit: (Long) -&gt; Unit, onConfirmSuggestion: (Long) -&gt; Unit, onIgnoreSuggestion: (Long) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:AccountsScreen.kt$@Composable private fun AccountRow(entity: AccountEntity, onClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:AccountsScreen.kt$@Composable private fun AddAccountLink(onAdd: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:AccountsScreen.kt$@Composable private fun SectionCaps(title: String, subtitle: String? = null)</ID>
+    <ID>FunctionNaming:AccountsScreen.kt$@Composable private fun SuggestionRow( entity: AccountEntity, onAdd: () -&gt; Unit, onIgnore: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:AddEditRecipientRuleScreen.kt$@Composable fun AddEditRecipientRuleScreen( ruleId: Long?, prefillSuggestionId: Long?, recipientRuleDao: RecipientRuleDao, ruleSuggestionDao: RuleSuggestionDao, transactionDao: TransactionDao, accountDao: AccountDao, onBack: () -&gt; Unit, onSaved: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:AddEditRecipientRuleScreen.kt$@Composable private fun &lt;T&gt; EnumDropdown( value: String, options: List&lt;T&gt;, optionLabel: (T) -&gt; String, onPick: (T) -&gt; Unit, placeholder: Boolean = false, enabled: Boolean = true, )</ID>
+    <ID>FunctionNaming:AddEditRecipientRuleScreen.kt$@Composable private fun ActionRow( showDelete: Boolean, canSave: Boolean, onCancel: () -&gt; Unit, onDelete: () -&gt; Unit, onSave: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:AddEditRecipientRuleScreen.kt$@Composable private fun EnabledToggle(enabled: Boolean, onChange: (Boolean) -&gt; Unit)</ID>
+    <ID>FunctionNaming:AddEditRecipientRuleScreen.kt$@Composable private fun FieldLabel(text: String)</ID>
+    <ID>FunctionNaming:AddEditRecipientRuleScreen.kt$@Composable private fun InlineError(text: String)</ID>
+    <ID>FunctionNaming:AddEditRecipientRuleScreen.kt$@Composable private fun InlineHelp(text: String)</ID>
+    <ID>FunctionNaming:AddEditRecipientRuleScreen.kt$@Composable private fun PrefillBanner(suggestion: RuleSuggestionEntity)</ID>
+    <ID>FunctionNaming:AddEditRecipientRuleScreen.kt$@Composable private fun SeedReadOnlyBanner()</ID>
+    <ID>FunctionNaming:AddEditRecipientRuleScreen.kt$@Composable private fun TestPanel( eval: RecipientRuleMatching.DraftEval, totalScanned: Int, )</ID>
+    <ID>FunctionNaming:AddEditRecipientRuleScreen.kt$@Composable private fun ThemedTextField( value: String, onValueChange: (String) -&gt; Unit, placeholder: String, mono: Boolean = false, error: Boolean = false, readOnly: Boolean = false, )</ID>
+    <ID>FunctionNaming:AlertSettingsScreen.kt$@Composable fun AlertSettingsScreen( settings: ImpactAlertSettings, onBack: () -&gt; Unit, warnThresholdPct: Int = 80, )</ID>
+    <ID>FunctionNaming:AlertSettingsScreen.kt$@Composable private fun ImpactCard( cfg: ImpactAlertSettings.Config, onToggle: (Boolean) -&gt; Unit, onThresholdChange: (Int) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:AppUpdatesSection.kt$@Composable fun AppUpdatesSection( state: UpdateScreenState, onToggleCheckOnOpen: (Boolean) -&gt; Unit, onCheckNow: () -&gt; Unit, onOpenDialog: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:AppUpdatesSection.kt$@Composable private fun CheckNowButton(phase: UpdateScreenState.Phase, onClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:AppUpdatesSection.kt$@Composable private fun StatusLine(phase: UpdateScreenState.Phase)</ID>
+    <ID>FunctionNaming:BudgetSetupScreen.kt$@Composable fun BudgetSetupScreen( monthKey: String, currentBudget: Budget?, onSave: (Budget) -&gt; Unit, onCancel: () -&gt; Unit, inheritedFromMonthKey: String? = null, )</ID>
+    <ID>FunctionNaming:BudgetSetupScreen.kt$@Composable internal fun PrimaryActionButton( text: String, onClick: () -&gt; Unit, enabled: Boolean = true, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:BudgetSetupScreen.kt$@Composable internal fun SecondaryButton( text: String, onClick: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:BudgetSetupScreen.kt$@Composable private fun InheritedBudgetNote( sourceMonthKey: String, targetMonthKey: String, )</ID>
+    <ID>FunctionNaming:CardDrillDownScreen.kt$@Composable fun CardDrillDownScreen( monthKey: String, last4: String?, issuerLabel: String?, transactionsFlow: Flow&lt;List&lt;TransactionEntity&gt;&gt;, onBack: () -&gt; Unit, onTransactionClick: (Long) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:CategoryDrillDownScreen.kt$@Composable fun CategoryDrillDownScreen( monthKey: String, category: String, transactionsFlow: Flow&lt;List&lt;TransactionEntity&gt;&gt;, onBack: () -&gt; Unit, onTransactionClick: (Long) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:CategoryDrillDownScreen.kt$@Composable internal fun BackRow(label: String, onBack: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:CommonStates.kt$@Composable fun EmptyState( title: String, description: String? = null, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:CommonStates.kt$@Composable fun LoadingSpinner(modifier: Modifier = Modifier)</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun AccountStrip( cards: List&lt;CardChip&gt;, inr: NumberFormat, onCardClick: (accountId: Long?, last4: String?) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun Banner(kind: BannerKind, title: String, detail: String)</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun CategoryRow( slice: CategorySlice, inr: NumberFormat, onClick: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun EmptySection(text: String)</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun EmptyView( state: DashboardUiState.Empty, onSetBudget: () -&gt; Unit, importStatus: ImportStatus, isCurrentMonth: Boolean, pageMonthKey: String, onJumpToMonth: (String) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun HeroAmount( primaryText: String, subText: String, primaryColor: Color? = null, subColor: Color? = null, onClick: (() -&gt; Unit)? = null, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun ImportStatusBlock( status: ImportStatus, pageMonthKey: String, onJumpToMonth: (String) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun LoadingView()</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun MonthPage( state: DashboardUiState, importStatus: ImportStatus, onSetBudget: () -&gt; Unit, onCategoryClick: (String) -&gt; Unit, onCardClick: (accountId: Long?, last4: String?) -&gt; Unit, isCurrentMonth: Boolean, pageMonthKey: String, onJumpToMonth: (String) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun NeedsPermissionView()</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun NotificationPermissionBanner( onAction: () -&gt; Unit, onDismiss: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun PaceTintedHeroCard( pace: PaceBucket, content: @Composable () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun PrimaryButton(text: String, onClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun ProgressTrack( fraction: Float, color: Color, expectedFraction: Float? = null, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun ReadyView( state: DashboardUiState.Ready, importStatus: ImportStatus, onSetBudget: () -&gt; Unit, onCategoryClick: (String) -&gt; Unit, onCardClick: (accountId: Long?, last4: String?) -&gt; Unit, pageMonthKey: String, onJumpToMonth: (String) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun ScrollingShell(content: @Composable () -&gt; Unit)</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun SectionHead(title: String, meta: String?)</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun SortableSectionHead( title: String, sortLabel: String, sortIcon: ImageVector?, onCycle: () -&gt; Unit, showSort: Boolean, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun StatChip( label: String, value: String, valueColor: Color? = null, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun StatRow( snap: MonthSnapshot, derived: DashboardDerived, inr: NumberFormat, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable private fun TopBar( monthLabel: String, onImport: () -&gt; Unit, onSettings: () -&gt; Unit, hasSettingsBadge: Boolean = false, onMonthPrev: () -&gt; Unit = {}, onMonthNext: () -&gt; Unit = {}, onResetMonth: () -&gt; Unit = {}, canGoPrev: Boolean = true, canGoNext: Boolean = true, isCurrentMonth: Boolean = true, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@OptIn(ExperimentalFoundationApi::class) @Composable fun DashboardScreen( viewedMonthKey: String, earliestMonthKey: String, currentMonthKey: String, observeMonth: (String) -&gt; Flow&lt;DashboardUiState&gt;, importStatus: ImportStatus = ImportStatus.Idle, onSetBudget: () -&gt; Unit = {}, onImport: () -&gt; Unit = {}, onSettings: () -&gt; Unit = {}, onCategoryClick: (String) -&gt; Unit = {}, onCardClick: (accountId: Long?, last4: String?) -&gt; Unit = { _, _ -&gt; }, hasSettingsBadge: Boolean = false, onMonthSettled: (String) -&gt; Unit = {}, onResetMonth: () -&gt; Unit = {}, showNotificationPermissionBanner: Boolean = false, onOpenNotificationSettings: () -&gt; Unit = {}, onDismissNotificationBanner: () -&gt; Unit = {}, )</ID>
+    <ID>FunctionNaming:ImportDialog.kt$@Composable fun ImportDialog( onConfirm: (sinceMs: Long) -&gt; Unit, onDismiss: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:ImportDialog.kt$@Composable private fun RadioRow( label: String, selected: Boolean, onClick: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:MainActivity.kt$@Composable private fun AppContent()</ID>
+    <ID>FunctionNaming:MainActivity.kt$@Composable private fun LoadingPlaceholder()</ID>
+    <ID>FunctionNaming:MigrationErrorScreen.kt$@Composable fun MigrationErrorScreen(error: Throwable)</ID>
+    <ID>FunctionNaming:OpenSourceLicensesScreen.kt$@Composable fun OpenSourceLicensesScreen(onBack: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:OpenSourceLicensesScreen.kt$@Composable private fun LicenseRow(entry: LicenseEntry)</ID>
+    <ID>FunctionNaming:PermissionScreen.kt$@Composable fun PermissionScreen(onGranted: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:PermissionScreen.kt$@Composable private fun InitialGate(onGrant: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:PermissionScreen.kt$@Composable private fun PermCard(icon: ImageVector, title: String, detail: String)</ID>
+    <ID>FunctionNaming:PermissionScreen.kt$@Composable private fun RestrictedSettingsGuidance( onOpenAppInfo: () -&gt; Unit, onRetry: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:PermissionScreen.kt$@Composable private fun Step(n: String, title: String, detail: String)</ID>
+    <ID>FunctionNaming:PermissionScreen.kt$@Composable private fun StepsCard()</ID>
+    <ID>FunctionNaming:RecipientRulesScreen.kt$@Composable fun RecipientRulesScreen( rulesFlow: Flow&lt;List&lt;RecipientRuleEntity&gt;&gt;, suggestionsFlow: Flow&lt;List&lt;RuleSuggestionEntity&gt;&gt;, scanningFlow: StateFlow&lt;Boolean&gt;, onBack: () -&gt; Unit, onToggleEnabled: (RecipientRuleEntity, Boolean) -&gt; Unit, onDeleteUserRule: (RecipientRuleEntity) -&gt; Unit, onAcceptSuggestion: (RuleSuggestionEntity) -&gt; Unit, onDismissSuggestion: (Long) -&gt; Unit, onRescan: () -&gt; Unit, loadMatches: suspend (String) -&gt; List&lt;TxMatchRow&gt;, onAddNewRule: () -&gt; Unit, onEditRule: (RecipientRuleEntity) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:RecipientRulesScreen.kt$@Composable private fun AddRuleEntry(onClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:RecipientRulesScreen.kt$@Composable private fun CapsHeader(text: String)</ID>
+    <ID>FunctionNaming:RecipientRulesScreen.kt$@Composable private fun MatchesList(matches: List&lt;TxMatchRow&gt;)</ID>
+    <ID>FunctionNaming:RecipientRulesScreen.kt$@Composable private fun MetaGrid(rows: List&lt;Pair&lt;String, String&gt;&gt;)</ID>
+    <ID>FunctionNaming:RecipientRulesScreen.kt$@Composable private fun RuleCard( rule: RecipientRuleEntity, onToggle: (RecipientRuleEntity, Boolean) -&gt; Unit, onDelete: (() -&gt; Unit)?, onClick: (() -&gt; Unit)? = null, )</ID>
+    <ID>FunctionNaming:RecipientRulesScreen.kt$@Composable private fun SpinningIcon(scanning: Boolean, tint: Color)</ID>
+    <ID>FunctionNaming:RecipientRulesScreen.kt$@Composable private fun SuggestedHeader(count: Int, scanning: Boolean, onRescan: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:RecipientRulesScreen.kt$@Composable private fun SuggestionActionButton( label: String, onClick: () -&gt; Unit, primary: Boolean, modifier: Modifier = Modifier, muted: Boolean = false, enabled: Boolean = true, )</ID>
+    <ID>FunctionNaming:RecipientRulesScreen.kt$@Composable private fun SuggestionCard( suggestion: RuleSuggestionEntity, onAccept: () -&gt; Unit, onReview: () -&gt; Unit, onDismiss: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:RecipientRulesScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun SuggestionReviewSheet( suggestion: RuleSuggestionEntity, loadMatches: suspend (String) -&gt; List&lt;TxMatchRow&gt;, onDismiss: () -&gt; Unit, onAccept: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:SendFeedbackScreen.kt$@Composable fun SendFeedbackScreen( vm: FeedbackViewModel, onClose: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:SendFeedbackScreen.kt$@Composable private fun ComposeBody( title: String, description: String, errorMessage: String?, onTitleChange: (String) -&gt; Unit, onDescriptionChange: (String) -&gt; Unit, onRetry: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:SendFeedbackScreen.kt$@Composable private fun ContextPreview()</ID>
+    <ID>FunctionNaming:SendFeedbackScreen.kt$@Composable private fun ErrorRow(message: String, onRetry: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:SendFeedbackScreen.kt$@Composable private fun SentConfirmation( number: Int, onView: () -&gt; Unit, onDone: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:SendFeedbackScreen.kt$@Composable private fun TopBar( canSend: Boolean, sending: Boolean, onClose: () -&gt; Unit, onSend: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:SettingsScreen.kt$@Composable fun SettingsScreen( onBack: () -&gt; Unit, onAccounts: () -&gt; Unit, onRecipientRules: () -&gt; Unit, onAlertSettings: () -&gt; Unit = {}, onSendFeedback: () -&gt; Unit = {}, onAbout: () -&gt; Unit = {}, accountSuggestionCount: Int = 0, updateState: UpdateScreenState? = null, onCheckForUpdates: () -&gt; Unit = {}, onToggleCheckOnOpen: (Boolean) -&gt; Unit = {}, onOpenUpdateDialog: () -&gt; Unit = {}, )</ID>
+    <ID>FunctionNaming:SettingsScreen.kt$@Composable private fun SettingsItem( title: String, subtitle: String, onClick: () -&gt; Unit, badge: Int? = null, )</ID>
+    <ID>FunctionNaming:SettingsScreen.kt$@Composable private fun SettingsSection( title: String, content: @Composable () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable fun TransactionDetailScreen( transactionId: Long, transactionDao: TransactionDao, recipientRuleDao: RecipientRuleDao, sourceDao: TransactionSourceDao, smsLogDao: SmsLogDao, onBack: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun ActionButton( label: String, onClick: () -&gt; Unit, modifier: Modifier = Modifier, ghost: Boolean = false, )</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun ActionRow( hasNote: Boolean, onEditNote: () -&gt; Unit, canEditCategory: Boolean, onEditCategory: () -&gt; Unit, onEditClassification: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun ClassificationPill(classification: String, budgetEffect: String)</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun Hero(tx: TransactionEntity)</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun InfoPill(label: String, tint: Color)</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun LoadingView(onBack: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun MetaRow(label: String, value: String, mono: Boolean = false)</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun MetaSection(tx: TransactionEntity)</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun NotesCard(note: String, onEdit: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun Pill(label: String, tint: Color)</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun ReadyView( details: Details, onBack: () -&gt; Unit, onSaveNote: (String?) -&gt; Unit, onSaveCategory: (String?) -&gt; Unit, onSaveClassification: (String?) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun SourceBlock(src: TransactionSourceEntity, log: SmsLogEntity?)</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@Composable private fun SourcesSection(sources: List&lt;Pair&lt;TransactionSourceEntity, SmsLogEntity?&gt;&gt;)</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun EditCategorySheet( initialCategory: String?, initiallyOverridden: Boolean, onDismiss: () -&gt; Unit, onSave: (String?) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun EditClassificationSheet( initialClassification: String, initiallyOverridden: Boolean, onDismiss: () -&gt; Unit, onSave: (String?) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:TransactionDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun EditNoteSheet( initialNote: String?, onDismiss: () -&gt; Unit, onSave: (String?) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:TransactionListItem.kt$@Composable fun TransactionListItem( entity: TransactionEntity, inr: NumberFormat, onClick: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:TransactionListItem.kt$@Composable private fun EffectChip(label: String, tint: Color)</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable fun UpdateDialog( state: UpdateScreenState, onDismiss: () -&gt; Unit, onStartDownload: () -&gt; Unit, onCancelDownload: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun BulletBlock(block: MdBlock.Bullet)</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun DialogHeader(title: String, subtitle: String)</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun DownloadErrorBody()</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun DownloadingBody(phase: UpdateScreenState.Phase.Downloading)</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun ErrorCard(heading: String, body: String)</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun GhostButton(label: String, onClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun HeadingBlock(block: MdBlock.Heading)</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun InstallErrorBody(phase: UpdateScreenState.Phase.InstallFailed)</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun ParagraphBlock(block: MdBlock.Paragraph)</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun PinnedActions( phase: UpdateScreenState.Phase, onDismiss: () -&gt; Unit, onStartDownload: () -&gt; Unit, onCancelDownload: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun PrimaryButton(label: String, onClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun ReleaseNotes(body: String)</ID>
+    <ID>FunctionNaming:UpdateDialog.kt$@Composable private fun RuleBlock()</ID>
+    <ID>FunctionNaming:YutoriTheme.kt$@Composable fun YutoriTheme( darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -&gt; Unit, )</ID>
+    <ID>LongMethod:AccountEditScreen.kt$@Composable fun AccountEditScreen( initial: AccountDraft?, onSave: (AccountDraft) -&gt; Unit, onCancel: () -&gt; Unit, onDelete: (() -&gt; Unit)? = null, )</ID>
+    <ID>LongMethod:AddEditRecipientRuleScreen.kt$@Composable fun AddEditRecipientRuleScreen( ruleId: Long?, prefillSuggestionId: Long?, recipientRuleDao: RecipientRuleDao, ruleSuggestionDao: RuleSuggestionDao, transactionDao: TransactionDao, accountDao: AccountDao, onBack: () -&gt; Unit, onSaved: () -&gt; Unit, )</ID>
+    <ID>LongMethod:AlertSettingsScreen.kt$@Composable private fun ImpactCard( cfg: ImpactAlertSettings.Config, onToggle: (Boolean) -&gt; Unit, onThresholdChange: (Int) -&gt; Unit, )</ID>
+    <ID>LongMethod:AppUpdatesSection.kt$@Composable fun AppUpdatesSection( state: UpdateScreenState, onToggleCheckOnOpen: (Boolean) -&gt; Unit, onCheckNow: () -&gt; Unit, onOpenDialog: () -&gt; Unit, )</ID>
+    <ID>LongMethod:BudgetSetupScreen.kt$@Composable fun BudgetSetupScreen( monthKey: String, currentBudget: Budget?, onSave: (Budget) -&gt; Unit, onCancel: () -&gt; Unit, inheritedFromMonthKey: String? = null, )</ID>
+    <ID>LongMethod:CategoryDrillDownScreen.kt$@Composable fun CategoryDrillDownScreen( monthKey: String, category: String, transactionsFlow: Flow&lt;List&lt;TransactionEntity&gt;&gt;, onBack: () -&gt; Unit, onTransactionClick: (Long) -&gt; Unit, )</ID>
+    <ID>LongMethod:DashboardScreen.kt$@Composable private fun ReadyView( state: DashboardUiState.Ready, importStatus: ImportStatus, onSetBudget: () -&gt; Unit, onCategoryClick: (String) -&gt; Unit, onCardClick: (accountId: Long?, last4: String?) -&gt; Unit, pageMonthKey: String, onJumpToMonth: (String) -&gt; Unit, )</ID>
+    <ID>LongMethod:DashboardScreen.kt$@Composable private fun StatRow( snap: MonthSnapshot, derived: DashboardDerived, inr: NumberFormat, )</ID>
+    <ID>LongMethod:DashboardScreen.kt$@Composable private fun TopBar( monthLabel: String, onImport: () -&gt; Unit, onSettings: () -&gt; Unit, hasSettingsBadge: Boolean = false, onMonthPrev: () -&gt; Unit = {}, onMonthNext: () -&gt; Unit = {}, onResetMonth: () -&gt; Unit = {}, canGoPrev: Boolean = true, canGoNext: Boolean = true, isCurrentMonth: Boolean = true, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:DashboardScreen.kt$@OptIn(ExperimentalFoundationApi::class) @Composable fun DashboardScreen( viewedMonthKey: String, earliestMonthKey: String, currentMonthKey: String, observeMonth: (String) -&gt; Flow&lt;DashboardUiState&gt;, importStatus: ImportStatus = ImportStatus.Idle, onSetBudget: () -&gt; Unit = {}, onImport: () -&gt; Unit = {}, onSettings: () -&gt; Unit = {}, onCategoryClick: (String) -&gt; Unit = {}, onCardClick: (accountId: Long?, last4: String?) -&gt; Unit = { _, _ -&gt; }, hasSettingsBadge: Boolean = false, onMonthSettled: (String) -&gt; Unit = {}, onResetMonth: () -&gt; Unit = {}, showNotificationPermissionBanner: Boolean = false, onOpenNotificationSettings: () -&gt; Unit = {}, onDismissNotificationBanner: () -&gt; Unit = {}, )</ID>
+    <ID>LongMethod:HistoricalImportWorker.kt$HistoricalImportWorker$override suspend fun doWork(): Result</ID>
+    <ID>LongMethod:MainActivity.kt$@Composable private fun AppContent()</ID>
+    <ID>LongMethod:MigrationErrorScreen.kt$@Composable fun MigrationErrorScreen(error: Throwable)</ID>
+    <ID>LongMethod:PermissionScreen.kt$@Composable private fun InitialGate(onGrant: () -&gt; Unit)</ID>
+    <ID>LongMethod:PermissionScreen.kt$@Composable private fun RestrictedSettingsGuidance( onOpenAppInfo: () -&gt; Unit, onRetry: () -&gt; Unit, )</ID>
+    <ID>LongMethod:RecipientRulesScreen.kt$@Composable fun RecipientRulesScreen( rulesFlow: Flow&lt;List&lt;RecipientRuleEntity&gt;&gt;, suggestionsFlow: Flow&lt;List&lt;RuleSuggestionEntity&gt;&gt;, scanningFlow: StateFlow&lt;Boolean&gt;, onBack: () -&gt; Unit, onToggleEnabled: (RecipientRuleEntity, Boolean) -&gt; Unit, onDeleteUserRule: (RecipientRuleEntity) -&gt; Unit, onAcceptSuggestion: (RuleSuggestionEntity) -&gt; Unit, onDismissSuggestion: (Long) -&gt; Unit, onRescan: () -&gt; Unit, loadMatches: suspend (String) -&gt; List&lt;TxMatchRow&gt;, onAddNewRule: () -&gt; Unit, onEditRule: (RecipientRuleEntity) -&gt; Unit, )</ID>
+    <ID>LongMethod:SettingsBackup.kt$SettingsBackup$suspend fun importFromJson( json: String, accountDao: AccountDao, ruleDao: RecipientRuleDao, nowMs: Long, ): ImportSummary</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onBack: () -&gt; Unit, onAccounts: () -&gt; Unit, onRecipientRules: () -&gt; Unit, onAlertSettings: () -&gt; Unit = {}, onSendFeedback: () -&gt; Unit = {}, onAbout: () -&gt; Unit = {}, accountSuggestionCount: Int = 0, updateState: UpdateScreenState? = null, onCheckForUpdates: () -&gt; Unit = {}, onToggleCheckOnOpen: (Boolean) -&gt; Unit = {}, onOpenUpdateDialog: () -&gt; Unit = {}, )</ID>
+    <ID>LongMethod:TransactionDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun EditCategorySheet( initialCategory: String?, initiallyOverridden: Boolean, onDismiss: () -&gt; Unit, onSave: (String?) -&gt; Unit, )</ID>
+    <ID>LongMethod:TransactionDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun EditClassificationSheet( initialClassification: String, initiallyOverridden: Boolean, onDismiss: () -&gt; Unit, onSave: (String?) -&gt; Unit, )</ID>
+    <ID>LongMethod:TransactionDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun EditNoteSheet( initialNote: String?, onDismiss: () -&gt; Unit, onSave: (String?) -&gt; Unit, )</ID>
+    <ID>LongParameterList:DashboardDerived.kt$DashboardDerived.Companion$( hasBudget: Boolean, percentUsed: Double, dayOfMonth: Int, daysLeft: Int, daysInMonth: Int, remaining: Double, projectedSurplus: Double?, dailyCap: Double?, )</ID>
+    <ID>LongParameterList:DashboardViewModelTest.kt$DashboardViewModelTest$( id: Long, inrAmount: Double? = 100.0, effect: String = "SPEND", category: String? = "FOOD_DINING", last4: String? = "3333", issuer: String? = "Kotak", monthKey: String = "2026-04", rateSource: String? = null, accountId: Long? = null, )</ID>
+    <ID>LongParameterList:DedupMatcherTest.kt$DedupMatcherTest$( classification: Classification = Classification.UPI_PAYMENT, effect: BudgetEffect = BudgetEffect.SPEND, amount: Double? = 100.0, currency: String = "INR", merchant: String? = "VVCMC Property Tax", merchantKey: String? = "vvcmc property tax", last4: String? = null, )</ID>
+    <ID>LongParameterList:DedupMatcherTest.kt$DedupMatcherTest$( id: Long = 1, classification: Classification = Classification.UPI_PAYMENT, effect: BudgetEffect = BudgetEffect.SPEND, inrAmount: Double? = 100.0, merchant: String? = "VVCMC", merchantKey: String? = "vvcmc", last4: String? = null, occurredAtMs: Long = baseTime, )</ID>
+    <ID>LongParameterList:FeedbackContext.kt$FeedbackContext$( versionName: String = BuildConfig.VERSION_NAME, versionCode: Int = BuildConfig.VERSION_CODE, commitSha: String = BuildConfig.COMMIT_SHA, androidRelease: String = Build.VERSION.RELEASE ?: "", sdkInt: Int = Build.VERSION.SDK_INT, locale: Locale = Locale.getDefault(), deviceModel: String = Build.MODEL ?: "", deviceManufacturer: String = Build.MANUFACTURER ?: "", deviceProduct: String = Build.PRODUCT ?: "", )</ID>
+    <ID>LongParameterList:IngestionPipeline.kt$IngestionPipeline$( private val smsLogDao: SmsLogDao, private val transactionDao: TransactionDao, private val transactionSourceDao: TransactionSourceDao, private val accountDao: AccountDao, private val recipientRuleDao: RecipientRuleDao, private val budgetDao: BudgetDao, private val budgetAlertStateDao: BudgetAlertStateDao, private val zone: ZoneId = ZoneId.systemDefault(), private val nowMs: () -&gt; Long = { System.currentTimeMillis() }, /** User config for the per-tx "impact" notification. Off → no impacts produced. */ private val impactConfigProvider: () -&gt; ImpactConfig = { ImpactConfig.OFF }, )</ID>
+    <ID>LongParameterList:RuleSuggestionDao.kt$RuleSuggestionDao$( id: Long, pattern: String, patternKind: String, inferredClassification: String?, inferredAccountId: Long?, reasonCode: String, matchCount: Int, totalInr: Double, lastScannedMs: Long, )</ID>
+    <ID>LongParameterList:TransactionBuilderTest.kt$TransactionBuilderTest$( classification: Classification = Classification.UPI_PAYMENT, effect: BudgetEffect = BudgetEffect.SPEND, amount: Double? = 100.0, currency: String = "INR", merchant: String? = "VVCMC ONLINE PROPERTY TAX ACCOUNT", merchantKey: String? = "vvcmc online property tax account", last4: String? = null, category: Category? = null, classificationOriginal: Classification? = null, accountId: Long? = null, )</ID>
+    <ID>LongParameterList:UpdateViewModel.kt$UpdateViewModel$( private val fetchLatest: suspend () -&gt; Result&lt;LatestRelease?&gt;, private val downloadAsset: (LatestRelease.Asset) -&gt; Flow&lt;DownloadState&gt;, private val installApk: (File) -&gt; Unit, private val prefs: UpdatePrefs, currentVersion: String, private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO, private val clock: () -&gt; Long = System::currentTimeMillis, installOutcomes: SharedFlow&lt;UpdateInstallEvents.Outcome&gt; = UpdateInstallEvents.outcomes, )</ID>
+    <ID>LoopWithTooManyJumpStatements:BudgetCalculator.kt$BudgetCalculator$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SettingsBackup.kt$SettingsBackup$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SmsLogReconciler.kt$SmsLogReconciler$for</ID>
+    <ID>LoopWithTooManyJumpStatements:YutoriSmsReceiver.kt$YutoriSmsReceiver$for</ID>
+    <ID>MatchingDeclarationName:AccountEditScreen.kt$AccountDraft</ID>
+    <ID>MatchingDeclarationName:Color.kt$YutoriColors</ID>
+    <ID>MatchingDeclarationName:Licenses.kt$LicenseEntry</ID>
+    <ID>MatchingDeclarationName:RecipientRulesScreen.kt$TxMatchRow</ID>
+    <ID>MaxLineLength:AboutScreen.kt$append(" (余裕) is Japanese for \"breathing room\": financial margin, mental ease, room to spend without friction. The logo is the hiragana ")</ID>
+    <ID>MaxLineLength:AndroidAlertNotifierTest.kt$AndroidAlertNotifierTest$private val inr: NumberFormat = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build())</ID>
+    <ID>MaxLineLength:AxisCashback.kt$"""^Congratulations! Cashback of INR (?&lt;amt&gt;[\d.]+) has been credited to your Axis Bank .*? Credit Card XX(?&lt;last4&gt;\w+)"""</ID>
+    <ID>MaxLineLength:AxisCashbackTest.kt$AxisCashbackTest$body = "Congratulations! Cashback of INR 100 has been credited to your Axis Bank Ace Credit Card XX1111 towards your last month spends - Axis Bank"</ID>
+    <ID>MaxLineLength:AxisCashbackTest.kt$AxisCashbackTest$body = "Congratulations! Cashback of INR 42.50 has been credited to your Axis Bank Magnus Credit Card XX1234 towards your spends"</ID>
+    <ID>MaxLineLength:AxisCashbackTest.kt$AxisCashbackTest$body = "Spent INR 100.00\nAxis Bank Card no. XX1111\n01-01-26 12:00:00 IST\nBHARAT PETR\nAvl Limit: INR 50000"</ID>
+    <ID>MaxLineLength:AxisCcSpendTest.kt$AxisCcSpendTest$body = "Spent INR 100.00\nAxis Bank Card no. XX1111\n01-01-26 12:00:00 IST\nBHARAT PETR\nAvl Limit: INR 50000"</ID>
+    <ID>MaxLineLength:AxisCcSpendTest.kt$AxisCcSpendTest$body = "Spent JPY 1000\nAxis Bank Card no. XX1111\n01-01-26 12:00:00 IST\nSOME MERCHANT\nAvl Limit: INR 50000"</ID>
+    <ID>MaxLineLength:AxisCcSpendTest.kt$AxisCcSpendTest$body = "Spent USD 10.00\nAxis Bank Card no. XX1111\n01-01-26 12:00:00 IST\nGITHUB, INC\nAvl Limit: INR 50000"</ID>
+    <ID>MaxLineLength:AxisSavingsUpiCreditTest.kt$AxisSavingsUpiCreditTest$body = "INR 100.00 credited\nA/c no. XX2222\n01-01-26, 12:00:00 IST\nUPI/P2A/000000000000/EXAMPLE E/KKBK/Cc p - Axis Bank"</ID>
+    <ID>MaxLineLength:AxisSavingsUpiCreditTest.kt$AxisSavingsUpiCreditTest$body = "INR 50.00 credited\nA/c no. XX2222\n01-01-26, 12:00:00 IST\nUPI/P2A/000000000000/EXAMPLE E/BACB/Jeet - Axis Bank"</ID>
+    <ID>MaxLineLength:AxisSavingsUpiCreditTest.kt$AxisSavingsUpiCreditTest$body = "Spent INR 100.00\nAxis Bank Card no. XX1111\n01-01-26 12:00:00 IST\nBHARAT PETR\nAvl Limit: INR 100"</ID>
+    <ID>MaxLineLength:BlinkitRefundTest.kt$BlinkitRefundTest$body = "We have initiated a refund of Rs.100.00 for the cancelled order ORD000000000000 into your UPI after applying a cancellation fee of Rs 20.00. The refund amount should reflect in 3-5 business days. -blinkit"</ID>
+    <ID>MaxLineLength:CardDrillDownScreen.kt$if (selfTransfers.isNotEmpty()) sectionBlock("Self-transfers", selfTransfers, inr, onTransactionClick)</ID>
+    <ID>MaxLineLength:DashboardScreen.kt$detail = "At your current pace you'll carry +${inr.formatAmount(b.projectedSurplusInr, compact = true)} into next month."</ID>
+    <ID>MaxLineLength:DashboardScreen.kt$detail = "You'll start next month with a ${inr.formatAmount(b.deficit, compact = true)} deficit carried over."</ID>
+    <ID>MaxLineLength:IciciEazypayTest.kt$IciciEazypayTest$body = "Dear Sir/Madam, you have made a payment of Rs. 100.00 to VVCMC ONLINE PROPERTY TAX ACCOUNT vide ICICI Bank eazypay reference ID 000000000000000."</ID>
+    <ID>MaxLineLength:IciciEazypayTest.kt$IciciEazypayTest$body = "Dear Sir/Madam, you have made a payment of Rs. 100.00 to VVCMC vide ICICI Bank eazypay reference ID 000000000000000."</ID>
+    <ID>MaxLineLength:IciciEazypayTest.kt$IciciEazypayTest$body = "Dear Sir/Madam, you have made a payment of Rs. 50.00 to SOME MERCHANT vide ICICI Bank eazypay reference ID 123"</ID>
+    <ID>MaxLineLength:IngestionPipelineTest.kt$IngestionPipelineTest$body = "We have initiated a refund of Rs.3000.00 for the cancelled order ORD0000000 into your UPI after applying a cancellation fee of Rs 20.00. -blinkit"</ID>
+    <ID>MaxLineLength:KotakCcSpendTest.kt$KotakCcSpendTest$body = "INR 100 spent on Kotak Credit Card x3333 on 01-Jan-2026 at UPI-000000000000-KAWI. Avl limit is INR 10000"</ID>
+    <ID>MaxLineLength:KotakCcSpendTest.kt$KotakCcSpendTest$body = "INR 50.00 spent on Kotak Credit Card x3333 on 01-JAN-2026 at UPI-000000000000-ZOMAT. Avl limit is INR 10000"</ID>
+    <ID>MaxLineLength:KotakNeftCredit.kt$"""^Rs\.\s*(?&lt;amt&gt;[\d.]+) credited to your Kotak Bank a/c XX(?&lt;last4&gt;\w+) via NEFT from beneficiary (?&lt;src&gt;.+?)\. UTR Ref"""</ID>
+    <ID>MaxLineLength:KotakNeftCreditTest.kt$KotakNeftCreditTest$body = "Rs. 50000.00 credited to your Kotak Bank a/c XX0000 via NEFT from beneficiary ACME CORP. UTR Ref. HDFCH00000000001"</ID>
+    <ID>MaxLineLength:KotakNeftCreditTest.kt$KotakNeftCreditTest$body = "Rs. 60000.00 credited to your Kotak Bank a/c XX0000 via NEFT from beneficiary ACME CORP. UTR Ref. HDFCH00000000002"</ID>
+    <ID>MaxLineLength:KotakUpiCreditTest.kt$KotakUpiCreditTest$body = "Received Rs.100.00 in your Kotak Bank AC X0000 from goog-payments@axisbank on 01-01-26.UPI Ref:000000000000."</ID>
+    <ID>MaxLineLength:KotakUpiCreditTest.kt$KotakUpiCreditTest$body = "Received Rs.50.00 in your Kotak Bank AC X0000 from friendone-1@okicici on 01-01-26.UPI Ref:000000000000."</ID>
+    <ID>MaxLineLength:MoneyFormattingTest.kt$MoneyFormattingTest$private val inr: NumberFormat = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build())</ID>
+    <ID>MaxLineLength:PaytmSebiCreditTest.kt$PaytmSebiCreditTest$body = "Rs. 100.00 successfully transferred on 03 January 2026 to your bank account as SEBI-mandated Quarterly settlement via Paytm Money Ltd. Transaction no: AXNH000000000000."</ID>
+    <ID>MaxLineLength:PaytmSebiCreditTest.kt$PaytmSebiCreditTest$body = "Rs. 100.00 successfully transferred on 03 January 2026 to your bank account as SEBI-mandated Quarterly settlement via Paytm Money Ltd."</ID>
+    <ID>MaxLineLength:PaytmSebiCreditTest.kt$PaytmSebiCreditTest$body = "Rs. 50.00 successfully transferred on 07 March 2026 to your bank account as SEBI-mandated Monthly settlement via Paytm Money Ltd. Transaction no: AXNH000000000001."</ID>
+    <ID>MaxLineLength:SuggestionMinerTest.kt$SuggestionMinerTest.FakeTxDao$override fun observeByMonthAndAccount(monthKey: String, accountId: Long): Flow&lt;List&lt;TransactionEntity&gt;&gt;</ID>
+    <ID>MaxLineLength:SuggestionMinerTest.kt$SuggestionMinerTest.FakeTxDao$override fun observeByMonthAndCategory(monthKey: String, category: String): Flow&lt;List&lt;TransactionEntity&gt;&gt;</ID>
+    <ID>MaxLineLength:SuggestionMinerTest.kt$SuggestionMinerTest.FakeTxDao$override suspend fun findBySelfTransferCandidateMerchant(merchant: String): List&lt;TransactionEntity&gt;</ID>
+    <ID>MaxLineLength:TransactionDetailScreen.kt$color = if (selectedNow) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface</ID>
+    <ID>MaxLineLength:TransactionDetailScreen.kt$style = if (mono) YutoriTextStyles.Mono.copy(fontWeight = FontWeight.Normal) else MaterialTheme.typography.bodyMedium</ID>
+    <ID>MaxLineLength:VjsbnkInterestTest.kt$VjsbnkInterestTest$body = "Rs.10.00 is Credited By Trf in A/c 006666 on 01/01/26 INT: 01/01-31/03. Clear balance Rs.1000.00. Vasai Janata Bank"</ID>
+    <ID>ReturnCount:AccountAutoDetector.kt$AccountAutoDetector$fun detect( sender: String, parserLast4: String?, classification: Classification, existingAccounts: List&lt;Account&gt;, ): Action?</ID>
+    <ID>ReturnCount:AccountResolver.kt$AccountResolver$fun resolve( last4: String?, classification: Classification, accounts: List&lt;Account&gt;, ): Account?</ID>
+    <ID>ReturnCount:AccountResolver.kt$AccountResolver$private fun narrowByKind( matches: List&lt;Account&gt;, classification: Classification, ): List&lt;Account&gt;</ID>
+    <ID>ReturnCount:AndroidAlertNotifier.kt$internal fun computePaceDeltaDays( monthKey: String, actualPct: Double, nowMs: Long, zone: ZoneId = ZoneId.systemDefault(), ): Int?</ID>
+    <ID>ReturnCount:AxisCashback.kt$fun axisCashback(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:AxisCcAdmin.kt$fun axisCcAdmin(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:AxisCcBillReceived.kt$fun axisCcBillReceived(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:AxisCcSpend.kt$fun axisCcSpend(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:AxisSavingsCcBillDebit.kt$fun axisSavingsCcBillDebit(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:AxisSavingsUpiCredit.kt$fun axisSavingsUpiCredit(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:BlinkitRefund.kt$fun blinkitRefund(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:CardDrillResolution.kt$suspend fun resolveCardDrill( accountId: Long?, last4: String?, accountDao: AccountDao, ): CardDrillResolution</ID>
+    <ID>ReturnCount:Categorizer.kt$Categorizer$fun categoryFor( classification: Classification, parserAssignedCategory: Category?, merchantKey: String?, ): Category?</ID>
+    <ID>ReturnCount:DashboardDerived.kt$DashboardDerived.Companion$internal fun computePace( hasBudget: Boolean, actualPct: Double, expectedPct: Double?, ): PaceBucket</ID>
+    <ID>ReturnCount:DashboardDerived.kt$DashboardDerived.Companion$private fun computeBanner( hasBudget: Boolean, percentUsed: Double, dayOfMonth: Int, daysLeft: Int, daysInMonth: Int, remaining: Double, projectedSurplus: Double?, dailyCap: Double?, ): DashboardBanner</ID>
+    <ID>ReturnCount:DashboardViewModel.kt$DashboardViewModel$private suspend fun toUiState( monthKey: String, txEntities: List&lt;TransactionEntity&gt;, budgetEntity: BudgetEntity?, pendingForexCount: Int, ): DashboardUiState</ID>
+    <ID>ReturnCount:DedupMatcher.kt$DedupMatcher$fun findCandidate( event: IncomingEvent, transactions: List&lt;TransactionRow&gt;, ): TransactionRow?</ID>
+    <ID>ReturnCount:DedupMatcher.kt$DedupMatcher$private fun isCandidate( event: IncomingEvent, eventInr: Double, existing: TransactionRow, ): Boolean</ID>
+    <ID>ReturnCount:ErApiForexRateClient.kt$ErApiForexRateClient$internal fun parseInrFromBody(body: String): ForexFetchResult</ID>
+    <ID>ReturnCount:ErApiForexRateClient.kt$ErApiForexRateClient$private fun fetchBlocking(currency: String): ForexFetchResult</ID>
+    <ID>ReturnCount:IciciEazypay.kt$fun iciciEazypay(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:IngestionPipeline.kt$IngestionPipeline$private fun maybeBuildImpact( classified: com.yutori.classifier.ClassificationOutcome, decision: MergeDecision?, alertEvaluation: AlertEvaluation?, monthKey: String, ): ImpactNotification?</ID>
+    <ID>ReturnCount:IngestionPipeline.kt$IngestionPipeline$private suspend fun runTransactionBuilder( smsLogId: Long, parseResult: com.yutori.parser.ParseResult, classified: com.yutori.classifier.ClassificationOutcome, occurredAtMs: Long, monthKey: String, issuer: String?, ): MergeDecision?</ID>
+    <ID>ReturnCount:IngestionPipeline.kt$IngestionPipeline$suspend fun ingest(raw: RawSms): IngestionOutcome</ID>
+    <ID>ReturnCount:KotakCcBillReceived.kt$fun kotakCcBillReceived(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:KotakCcSpend.kt$fun kotakCcSpend(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:KotakNeftCredit.kt$fun kotakNeftCredit(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:KotakUpiCredit.kt$fun kotakUpiCredit(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:KotakUpiDebit.kt$fun kotakUpiDebit(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:MainActivity.kt$@Composable private fun AppContent()</ID>
+    <ID>ReturnCount:MerchantKeyNormalizer.kt$MerchantKeyNormalizer$fun normalize(merchant: String?): String?</ID>
+    <ID>ReturnCount:MissedCalls.kt$fun missedCalls(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:Otp.kt$fun otp(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:PaytmSebiCredit.kt$fun paytmSebiCredit(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:RecipientRuleMatcher.kt$RecipientRuleMatcher$fun firstMatch(merchant: String?, rules: List&lt;RecipientRule&gt;): RecipientRule?</ID>
+    <ID>ReturnCount:SelfTransferHeuristic.kt$SelfTransferHeuristic$fun apply(raw: Classification, matchedRule: RecipientRule?): Classification</ID>
+    <ID>ReturnCount:Suggestion.kt$SuggestionInference$fun infer( candidate: SuggestionCandidate, accounts: List&lt;Account&gt;, recipientRules: List&lt;RecipientRule&gt;, middlemanKeywords: List&lt;String&gt; = DEFAULT_MIDDLEMAN_KEYWORDS, ): InferredSuggestion</ID>
+    <ID>ReturnCount:UpdateViewModel.kt$UpdateViewModel$fun onColdStartCheck()</ID>
+    <ID>ReturnCount:VersionComparator.kt$VersionComparator$fun hasUpdate(current: String, remoteTag: String): Boolean</ID>
+    <ID>ReturnCount:VersionComparator.kt$VersionComparator$private fun String.toIntParts(): List&lt;Int&gt;?</ID>
+    <ID>ReturnCount:VjsbnkInterest.kt$fun vjsbnkInterest(input: SmsInput): ParseResult?</ID>
+    <ID>ReturnCount:YutoriSmsReceiver.kt$YutoriSmsReceiver$override fun onReceive(context: Context, intent: Intent)</ID>
+    <ID>SwallowedException:UpdateDownloader.kt$UpdateDownloader$e: IOException</ID>
+    <ID>SwallowedException:UpdateDownloader.kt$UpdateDownloader$e: SecurityException</ID>
+    <ID>SwallowedException:UpdateRepository.kt$UpdateRepository$e: IOException</ID>
+    <ID>SwallowedException:UpdateRepository.kt$UpdateRepository$e: JsonDataException</ID>
+    <ID>SwallowedException:UpdateRepository.kt$UpdateRepository$e: JsonEncodingException</ID>
+    <ID>TooGenericExceptionCaught:BackupActions.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ErApiForexRateClient.kt$ErApiForexRateClient$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:HistoricalImportWorker.kt$HistoricalImportWorker$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:SettingsBackup.kt$SettingsBackup$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SuggestionsController.kt$SuggestionsController$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:UpdateInstallResultReceiver.kt$UpdateInstallResultReceiver$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:UpdateInstaller.kt$UpdateInstaller$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:YutoriApp.kt$YutoriApp$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:YutoriSmsReceiver.kt$IngestionCoordinator$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:YutoriSmsReceiver.kt$YutoriSmsReceiver$e: Exception</ID>
+    <ID>UnusedPrivateMember:DashboardScreen.kt$@Composable private fun progressColor(percentUsed: Double): Color</ID>
+    <ID>VariableNaming:ForexBackoffTest.kt$ForexBackoffTest$private val FIVE_M = 5 * 60_000L</ID>
+    <ID>VariableNaming:ForexBackoffTest.kt$ForexBackoffTest$private val ONE_H = 60 * 60_000L</ID>
+    <ID>VariableNaming:ForexBackoffTest.kt$ForexBackoffTest$private val SIX_H = 6 * ONE_H</ID>
+    <ID>VariableNaming:ForexBackoffTest.kt$ForexBackoffTest$private val THIRTY_S = 30_000L</ID>
+    <ID>VariableNaming:ForexBackoffTest.kt$ForexBackoffTest$private val TWENTY_FOUR_H = 24 * ONE_H</ID>
+    <ID>VariableNaming:MonthKeyComputerTest.kt$MonthKeyComputerTest$private val IST = ZoneId.of("Asia/Kolkata")</ID>
+    <ID>VariableNaming:MonthKeyComputerTest.kt$MonthKeyComputerTest$private val LA = ZoneId.of("America/Los_Angeles")</ID>
+    <ID>VariableNaming:MonthKeyComputerTest.kt$MonthKeyComputerTest$private val UTC = ZoneId.of("UTC")</ID>
+  </CurrentIssues>
 </SmellBaseline>
