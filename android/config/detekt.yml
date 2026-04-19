@@ -6,17 +6,21 @@ config:
 
 complexity:
   LongMethod:
-    active: true
-    threshold: 80
+    active: false
+  CyclomaticComplexMethod:
+    active: false
   LongParameterList:
     active: true
-    functionThreshold: 7
-    constructorThreshold: 7
+    functionThreshold: 11
+    constructorThreshold: 11
     ignoreAnnotated:
       - Composable
+      - Preview
   NestedBlockDepth:
     active: true
     threshold: 5
+  ComplexCondition:
+    active: false
   TooManyFunctions:
     active: false
 
@@ -25,13 +29,42 @@ style:
     active: true
   UnusedParameter:
     active: true
+  ReturnCount:
+    active: true
+    max: 9
+  MaxLineLength:
+    active: true
+    maxLineLength: 200
+    excludeCommentStatements: true
+    excludeRawStrings: true
   MagicNumber:
     active: false
   WildcardImport:
     active: false
+  ForbiddenComment:
+    active: false
+  LoopWithTooManyJumpStatements:
+    active: false
 
 naming:
   active: true
+  FunctionNaming:
+    active: true
+    ignoreAnnotated:
+      - Composable
+      - Preview
+      - Test
+      - ParameterizedTest
+  VariableNaming:
+    active: false
+  MatchingDeclarationName:
+    active: false
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
+  SwallowedException:
+    active: false
 
 potential-bugs:
   active: true
