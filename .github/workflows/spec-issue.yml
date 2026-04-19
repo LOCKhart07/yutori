@@ -144,12 +144,12 @@ jobs:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          cd "$RUNNER_TEMP/spec"
-          cp "$GITHUB_WORKSPACE/.github/spec-prompt.md" prompt.md
-          cp "$GITHUB_WORKSPACE/CLAUDE.md" CLAUDE.md
+          cd "$GITHUB_WORKSPACE"
+          cp "$RUNNER_TEMP/spec/issue.json" ./issue.json
+          cp "$RUNNER_TEMP/spec/open-issues.json" ./open-issues.json
           rm -f spec.json
           copilot \
-            -p "$(cat prompt.md)" \
+            -p "$(cat .github/spec-prompt.md)" \
             --allow-tool='write' \
             --allow-tool='read(./**)' \
             --no-ask-user
@@ -157,6 +157,8 @@ jobs:
             echo "::error::Copilot did not produce spec.json"
             exit 1
           fi
+          mv spec.json "$RUNNER_TEMP/spec/spec.json"
+          rm -f issue.json open-issues.json
 
       - name: Validate spec.json
         if: ${{ steps.normalize.outputs.should_run == 'true' && steps.invalid_gate.outputs.skip_spec != 'true' }}
