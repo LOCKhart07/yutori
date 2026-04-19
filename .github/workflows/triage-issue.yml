@@ -260,6 +260,79 @@ jobs:
 
           gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body-file comment.md
 
+      - name: Auto-assign Copilot for eligible bug issues
+        env:
+          ISSUE_NODE_ID: ${{ github.event.issue.node_id }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/triage"
+
+          # Gate: bug + ready + P1/P2, not touching money-math modules.
+          # Spec: docs/copilot-coding-agent.md.
+          valid=$(jq   -r '.valid   // false' validated.json)
+          kind=$(jq    -r '.kind    // ""'    validated.json)
+          tier=$(jq    -r '.tier    // ""'    validated.json)
+          blocker=$(jq -r '.blocker // ""'    validated.json)
+          mapfile -t mods < <(jq -r '.modules[]?' validated.json)
+
+          eligible=true
+          [ "$valid"   = "true" ]  || eligible=false
+          [ "$kind"    = "bug"  ]  || eligible=false
+          [ "$blocker" = "ready" ] || eligible=false
+          case "$tier" in P1|P2) ;; *) eligible=false ;; esac
+          for m in "${mods[@]}"; do
+            case "$m" in parser|classifier|budget) eligible=false ;; esac
+          done
+
+          if [ "$eligible" != "true" ]; then
+            echo "Not eligible for Copilot auto-assignment (kind=$kind blocker=$blocker tier=$tier modules=${mods[*]:-none})."
+            exit 0
+          fi
+
+          # Don't wipe existing assignees — if a human (or a prior triage
+          # run) claimed this issue, leave it alone. replaceActorsForAssignable
+          # replaces the entire actor list; there is no additive mutation.
+          current=$(gh api "/repos/$REPO/issues/$ISSUE_NUMBER" --jq '.assignees | map(.login) | join(",")')
+          if [ -n "$current" ]; then
+            echo "Issue already has assignees ($current) — skipping Copilot auto-assign."
+            exit 0
+          fi
+
+          # Look up the Copilot bot's node id via suggestedActors.
+          owner="${REPO%/*}"
+          name="${REPO#*/}"
+          actor_id=$(gh api graphql \
+            -f owner="$owner" \
+            -f name="$name" \
+            -f query='
+              query($owner: String!, $name: String!) {
+                repository(owner: $owner, name: $name) {
+                  suggestedActors(capabilities: [CAN_BE_ASSIGNED], first: 100, loginNames: ["copilot-swe-agent"]) {
+                    nodes { ... on Bot { id login } }
+                  }
+                }
+              }' --jq '.data.repository.suggestedActors.nodes[0].id' 2>/dev/null || true)
+
+          if [ -z "${actor_id:-}" ] || [ "$actor_id" = "null" ]; then
+            echo "::warning::Copilot bot not found in suggestedActors. Is the Copilot coding agent enabled for this repo?"
+            exit 0
+          fi
+
+          if ! gh api graphql \
+            -f assignable="$ISSUE_NODE_ID" \
+            -f actor="$actor_id" \
+            -f query='
+              mutation($assignable: ID!, $actor: ID!) {
+                replaceActorsForAssignable(input: {assignableId: $assignable, actorIds: [$actor]}) {
+                  clientMutationId
+                }
+              }' 2>/dev/null; then
+            echo "::warning::Failed to assign Copilot to issue #$ISSUE_NUMBER. Assign manually if desired."
+            exit 0
+          fi
+
+          echo "Assigned Copilot to issue #$ISSUE_NUMBER."
+
       - name: Fallback — post "triage failed" comment
         if: failure()
         run: |

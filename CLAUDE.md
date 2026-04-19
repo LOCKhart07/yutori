@@ -79,6 +79,12 @@ Package layout in each module is `com.yutori.<module>`; `:app` uses `com.yutori.
   `docs/issue-triage.md`. When picking up an issue, *read the existing
   triage comment + labels first* — don't redo the classification by
   hand. Disagreeing is fine; just note it.
+- **Eligible bugs are auto-assigned to Copilot.** The triage workflow
+  assigns the Copilot coding agent when the validated triage says bug
+  + ready + P1/P2 + modules ∉ {parser, classifier, budget}. Copilot
+  opens a PR gated by `.github/workflows/pr-checks.yml`. Spec:
+  `docs/copilot-coding-agent.md`. Per-PR rules (spec-first, proof,
+  tests) live in `.github/copilot-instructions.md`.
 - **UI changes need a mockup first.** Any visible-to-user UI change — new screen, new banner, new layout, restyle of an existing surface — should be presented as a mockup (HTML in `mockups/`, screenshot, or annotated description) and approved by the user *before* code is written. This applies to the dashboard, drill-downs, settings, and any new screens. Pure-logic changes (DAO, classifier rules, ViewModel internals) don't need mockup approval.
 - **Bugs take priority over features.** When the user asks "what's next," surface real bugs (broken behavior, data loss, wrong totals) ahead of features.
 - **Verify audit / hypothesis claims before coding.** Two of the audit subagent's "missing" findings (alerts wired, FX banner) turned out to already exist. Always grep / read the alleged code path before claiming it's a gap.
