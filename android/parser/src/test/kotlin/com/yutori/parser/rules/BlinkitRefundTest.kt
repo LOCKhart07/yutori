@@ -14,7 +14,11 @@ class BlinkitRefundTest {
         val result = blinkitRefund(
             SmsInput(
                 sender = "JK-blnkit-S",
-                body = "We have initiated a refund of Rs.100.00 for the cancelled order ORD000000000000 into your UPI after applying a cancellation fee of Rs 20.00. The refund amount should reflect in 3-5 business days. -blinkit",
+                body =
+                    "We have initiated a refund of Rs.100.00 for the cancelled order " +
+                        "ORD000000000000 into your UPI after applying a cancellation fee " +
+                        "of Rs 20.00. The refund amount should reflect in 3-5 business days. " +
+                        "-blinkit",
             ),
         )!!
         result.classification shouldBe Classification.REFUND

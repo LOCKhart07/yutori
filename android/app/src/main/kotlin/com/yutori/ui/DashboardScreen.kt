@@ -676,17 +676,6 @@ private fun subLineColor(banner: DashboardBanner): Color? {
 }
 
 @Composable
-private fun progressColor(percentUsed: Double): Color {
-    val colors = YutoriTheme.colors
-    val dim = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-    return when {
-        percentUsed >= 100.0 -> colors.negative
-        percentUsed >= 80.0  -> colors.warn
-        else                 -> dim
-    }
-}
-
-@Composable
 private fun ProgressTrack(
     fraction: Float,
     color: Color,

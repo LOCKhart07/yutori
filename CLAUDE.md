@@ -36,7 +36,7 @@ cd android
 ./gradlew :app:assembleRelease
 ```
 
-Tests use JUnit Platform (`useJUnitPlatform()`) across all modules. `:app` additionally wires JUnit Vintage so Robolectric JUnit4 Compose UI tests run alongside JUnit5 unit tests under `testDebug`. There is no lint task configured beyond AGP defaults.
+Tests use JUnit Platform (`useJUnitPlatform()`) across all modules. `:app` additionally wires JUnit Vintage so Robolectric JUnit4 Compose UI tests run alongside JUnit5 unit tests under `testDebug`. Kotlin linting uses detekt (`./gradlew detekt`) with config at `config/detekt.yml` and baseline at `config/detekt-baseline.xml`. CI enforces detekt checks on the release workflow.
 
 ## Module graph
 
