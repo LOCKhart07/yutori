@@ -40,7 +40,7 @@ import com.yutori.database.entities.TransactionSourceEntity
         BudgetEntity::class,
         BudgetAlertStateEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(EnumConverters::class)
@@ -127,6 +127,97 @@ abstract class YutoriDatabase : RoomDatabase() {
                     "CREATE INDEX IF NOT EXISTS " +
                         "`index_rule_suggestions_inferred_account_id` " +
                         "ON `rule_suggestions` (`inferred_account_id`)",
+                )
+            }
+        }
+
+        /**
+         * v5 adds classification + category override support
+         * (business-logic-spec.md §3.4):
+         *
+         * - `recipient_rules.assigned_category` — optional rule-level
+         *   category.
+         * - `recipient_rules.reclassify_as` — relaxed to nullable so a
+         *   rule can be category-only (the Swiggy case). Requires
+         *   table-recreate; SQLite doesn't support DROP NOT NULL.
+         * - `transactions.category_override` / `classification_override`
+         *   — per-row manual-override flags.
+         * - `transactions.classification_inferred` /
+         *   `category_inferred` — snapshot of what the automatic path
+         *   produced, captured at ingest. Lets "Use automatic" restore
+         *   without re-parsing the SMS.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Additive columns first.
+                db.execSQL(
+                    "ALTER TABLE transactions " +
+                        "ADD COLUMN category_override INTEGER NOT NULL DEFAULT 0",
+                )
+                db.execSQL(
+                    "ALTER TABLE transactions " +
+                        "ADD COLUMN classification_override INTEGER NOT NULL DEFAULT 0",
+                )
+                db.execSQL(
+                    "ALTER TABLE transactions " +
+                        "ADD COLUMN classification_inferred TEXT",
+                )
+                db.execSQL(
+                    "ALTER TABLE transactions " +
+                        "ADD COLUMN category_inferred TEXT",
+                )
+                db.execSQL(
+                    "ALTER TABLE recipient_rules " +
+                        "ADD COLUMN assigned_category TEXT",
+                )
+
+                // Backfill the inferred snapshots from the live values
+                // for existing rows; on day one the live and inferred
+                // values match (no one has overridden anything yet).
+                db.execSQL(
+                    "UPDATE transactions SET " +
+                        "classification_inferred = classification, " +
+                        "category_inferred = category",
+                )
+
+                // Recreate recipient_rules to drop NOT NULL on
+                // reclassify_as. SQLite can't ALTER away a NOT NULL.
+                db.execSQL(
+                    "CREATE TABLE recipient_rules_new (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`pattern` TEXT NOT NULL, " +
+                        "`pattern_kind` TEXT NOT NULL, " +
+                        "`reclassify_as` TEXT, " +
+                        "`assigned_category` TEXT, " +
+                        "`account_id` INTEGER, " +
+                        "`source` TEXT NOT NULL, " +
+                        "`note` TEXT, " +
+                        "`is_enabled` INTEGER NOT NULL, " +
+                        "FOREIGN KEY(`account_id`) REFERENCES `accounts`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE SET NULL" +
+                        ")",
+                )
+                db.execSQL(
+                    "INSERT INTO recipient_rules_new (" +
+                        "id, pattern, pattern_kind, reclassify_as, " +
+                        "assigned_category, account_id, source, note, " +
+                        "is_enabled" +
+                        ") SELECT " +
+                        "id, pattern, pattern_kind, reclassify_as, " +
+                        "assigned_category, account_id, source, note, " +
+                        "is_enabled FROM recipient_rules",
+                )
+                db.execSQL("DROP TABLE recipient_rules")
+                db.execSQL("ALTER TABLE recipient_rules_new RENAME TO recipient_rules")
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                        "`index_recipient_rules_pattern_pattern_kind` " +
+                        "ON `recipient_rules` (`pattern`, `pattern_kind`)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS " +
+                        "`index_recipient_rules_account_id` " +
+                        "ON `recipient_rules` (`account_id`)",
                 )
             }
         }

@@ -171,15 +171,53 @@ Fields:
   - Regex: Java `Pattern`-compatible regex; shown with a live-match
     preview against the user's most recent 100 UPI recipients (read
     from `transactions.merchant` where classification = UPI_PAYMENT).
-- Reclassify as (dropdown: CC_BILL_PAYMENT, SELF_TRANSFER, REFUND,
-  INCOMING_CREDIT, NON_FINANCIAL).
+- Reclassify as (dropdown).
+  - `Don't change` (top entry, info-tinted) — keeps the parser's
+    classification; combined with Assigned category this is the
+    category-only rule path (mockup v16 State A).
+  - Reclassify targets: CC_BILL_PAYMENT, SELF_TRANSFER, REFUND,
+    INCOMING_CREDIT, NON_FINANCIAL.
+- Assigned category (optional dropdown: None + all `Category` enum
+  values). Visible whenever the selected reclassify target can carry a
+  category in dashboard math (SPEND/REFUND), or when reclassify-as is
+  `Don't change` (the rule defers to the parser's classification, which
+  for the rule-addressable cases — UPI_PAYMENT, CC_TRANSACTION,
+  DEBIT_CARD, ATM_WITHDRAWAL — is SPEND-effect).
 - Linked account (optional; only if reclassify_as = SELF_TRANSFER).
 - Note (optional text).
+
+Behavior notes:
+- Rule-level category assignment and reclassify_as affect future
+  matching transactions only. They do not retroactively recategorize
+  history until the reparse pipeline runs.
+- A rule with `reclassify_as = null` and `assigned_category = null` is
+  a no-op; Save is disabled with an inline explanation.
 
 Validation:
 - Pattern non-empty.
 - If regex kind: compile check. Invalid regex shows inline error.
 - No duplicate (pattern, pattern_kind) — check at save.
+- At least one of `reclassify_as` / `assigned_category` must be set.
+
+### 3.5.1 Edit transaction (classification + category)
+
+Transaction-detail screen exposes two action buttons — `Edit
+classification` and `Edit category` — each opening a focused bottom
+sheet (mockup v16 States C–E). Both sheets:
+
+- Show "Use automatic <field>" at the top (info-tinted), which clears
+  the per-tx override flag and copies the matching `*_inferred`
+  snapshot back into the live column.
+- Show a `Currently: automatic` / `Currently: overridden` hint under the
+  title.
+- Disable Save unless the selection actually changes the field's value
+  or its override flag.
+
+Edit classification additionally:
+- Recomputes `budget_effect` via `BudgetEffectMapper` on save.
+- Is gated by `budget_effect ∈ {SPEND, REFUND}` only as a UI affordance;
+  the underlying mutation accepts any value (matches the per-tx-edit
+  power-user model).
 
 ### 3.6 Rule test tool
 

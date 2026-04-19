@@ -4,6 +4,7 @@ import com.yutori.classifier.PatternKind
 import com.yutori.classifier.RecipientRule
 import com.yutori.classifier.RuleSource
 import com.yutori.database.entities.RecipientRuleEntity
+import com.yutori.parser.Category
 import com.yutori.parser.Classification
 
 object RecipientRuleMapper {
@@ -12,7 +13,8 @@ object RecipientRuleMapper {
         id = entity.id,
         pattern = entity.pattern,
         patternKind = PatternKind.valueOf(entity.patternKind),
-        reclassifyAs = Classification.valueOf(entity.reclassifyAs),
+        reclassifyAs = entity.reclassifyAs?.let(Classification::valueOf),
+        assignedCategory = entity.assignedCategory?.let(Category::valueOf),
         accountId = entity.accountId,
         source = RuleSource.valueOf(entity.source),
         isEnabled = entity.isEnabled,
@@ -23,7 +25,8 @@ object RecipientRuleMapper {
         id = rule.id,
         pattern = rule.pattern,
         patternKind = rule.patternKind.name,
-        reclassifyAs = rule.reclassifyAs.name,
+        reclassifyAs = rule.reclassifyAs?.name,
+        assignedCategory = rule.assignedCategory?.name,
         accountId = rule.accountId,
         source = rule.source.name,
         note = rule.note,

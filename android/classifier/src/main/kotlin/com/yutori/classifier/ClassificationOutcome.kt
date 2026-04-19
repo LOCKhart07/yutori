@@ -27,4 +27,14 @@ data class ClassificationOutcome(
     val category: Category?,
     val classificationOriginal: Classification?,
     val matchedRuleId: Long? = null,
+    /**
+     * Snapshot of [finalClassification] / [category] at the moment of
+     * classification. Mirrored to `transactions.classification_inferred`
+     * / `category_inferred` so the per-tx "Use automatic" path can
+     * restore without re-running the parser. See business-logic-spec
+     * §3.4. Today these are equal to [finalClassification] / [category];
+     * they diverge only after a reparse run vs a per-tx override.
+     */
+    val classificationInferred: Classification = finalClassification,
+    val categoryInferred: Category? = category,
 )

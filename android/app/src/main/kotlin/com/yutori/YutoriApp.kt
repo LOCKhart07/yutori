@@ -186,6 +186,7 @@ class YutoriApp : Application() {
                     YutoriDatabase.MIGRATION_1_2,
                     YutoriDatabase.MIGRATION_2_3,
                     YutoriDatabase.MIGRATION_3_4,
+                    YutoriDatabase.MIGRATION_4_5,
                 )
                 // No destructive fallback — user data is the point.
                 .build()

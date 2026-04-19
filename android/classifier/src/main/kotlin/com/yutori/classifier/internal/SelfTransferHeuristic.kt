@@ -12,6 +12,9 @@ import com.yutori.parser.Classification
  *
  * Rules:
  * - No matched rule → raw classification unchanged.
+ * - Matched rule with `reclassifyAs = null` (category-only rule) → raw
+ *   classification unchanged. The rule still carries an
+ *   `assignedCategory` that the Categorizer pipeline picks up.
  * - Matched rule with `reclassifyAs = SELF_TRANSFER` only takes effect
  *   when raw is `UPI_PAYMENT` or `INCOMING_CREDIT`. Applying it to, say,
  *   a `CC_TRANSACTION` would be nonsensical — self-transfer doesn't
@@ -24,8 +27,9 @@ internal object SelfTransferHeuristic {
 
     fun apply(raw: Classification, matchedRule: RecipientRule?): Classification {
         if (matchedRule == null) return raw
+        val target = matchedRule.reclassifyAs ?: return raw
 
-        return when (matchedRule.reclassifyAs) {
+        return when (target) {
             Classification.SELF_TRANSFER -> {
                 if (raw == Classification.UPI_PAYMENT ||
                     raw == Classification.INCOMING_CREDIT
@@ -35,7 +39,7 @@ internal object SelfTransferHeuristic {
                     raw
                 }
             }
-            else -> matchedRule.reclassifyAs
+            else -> target
         }
     }
 }

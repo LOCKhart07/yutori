@@ -42,6 +42,7 @@ object ReclassifyOnRuleAdd {
                         budgetEffect = "DROP",
                         accountId = tx.accountId ?: accountId,
                         category = null,   // SELF_TRANSFER has no category
+                        categoryOverride = false,
                     ),
                 )
                 reclassified++

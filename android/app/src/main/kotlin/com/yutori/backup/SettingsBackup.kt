@@ -159,11 +159,22 @@ object SettingsBackup {
             }
             if (linkedLast4 != null && resolvedId == null) rulesUnlinked++
 
+            val reclassifyAs = obj.optStringOrNull("reclassifyAs")
+            val assignedCategory = obj.optStringOrNull("assignedCategory")
+            // Skip rules that were exported with neither field set —
+            // they're no-ops and the form would block saving them today.
+            if (reclassifyAs == null && assignedCategory == null) {
+                warnings += "rule[$i]: skipped — neither reclassifyAs " +
+                    "nor assignedCategory set"
+                rulesSkipped++
+                continue
+            }
             ruleDao.insert(
                 RecipientRuleEntity(
                     pattern = pattern,
                     patternKind = patternKind,
-                    reclassifyAs = obj.optString("reclassifyAs", "SELF_TRANSFER"),
+                    reclassifyAs = reclassifyAs,
+                    assignedCategory = assignedCategory,
                     accountId = resolvedId,
                     source = obj.optString("source", "USER"),
                     isEnabled = obj.optBoolean("isEnabled", true),
@@ -195,7 +206,8 @@ object SettingsBackup {
         JSONObject().apply {
             put("pattern", pattern)
             put("patternKind", patternKind)
-            put("reclassifyAs", reclassifyAs)
+            putOpt("reclassifyAs", reclassifyAs)
+            putOpt("assignedCategory", assignedCategory)
             put("source", source)
             put("isEnabled", isEnabled)
             putOpt("note", note)

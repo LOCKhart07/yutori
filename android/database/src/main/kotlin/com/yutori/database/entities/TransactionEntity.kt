@@ -90,4 +90,22 @@ data class TransactionEntity(
     val manuallyAdjusted: Boolean = false,
 
     val notes: String? = null,
+
+    @ColumnInfo(name = "category_override")
+    val categoryOverride: Boolean = false,
+
+    @ColumnInfo(name = "classification_override")
+    val classificationOverride: Boolean = false,
+
+    /**
+     * Snapshot of what the classifier would emit for this row, captured
+     * at ingest (and refreshed on reparse). Lets the per-tx "Use
+     * automatic" path restore without re-parsing the source SMS. See
+     * business-logic-spec.md §3.4.
+     */
+    @ColumnInfo(name = "classification_inferred")
+    val classificationInferred: String? = null,
+
+    @ColumnInfo(name = "category_inferred")
+    val categoryInferred: String? = null,
 )

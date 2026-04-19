@@ -1,21 +1,28 @@
 package com.yutori.classifier
 
 import com.yutori.parser.Classification
+import com.yutori.parser.Category
 
 /**
- * A recipient-matching rule per §12.2 + §12.4. When a classifier input's
- * merchant/VPA matches the [pattern], [reclassifyAs] overrides the raw
- * parser classification. Accounts linked via [accountId] carry the
- * resolved account through.
+ * A recipient-matching rule per §12.2 + §12.4. When a classifier
+ * input's merchant/VPA matches the [pattern]:
+ *  - [reclassifyAs], if non-null, overrides the raw parser
+ *    classification.
+ *  - [assignedCategory], if non-null and the final classification
+ *    carries categories (SPEND/REFUND), overrides the categorizer.
  *
- * Storage lives in the future Room `recipient_rules` table; this is the
+ * Either field can be null; both null is a no-op rule and the form
+ * blocks Save (settings-spec §3.5).
+ *
+ * Storage lives in the Room `recipient_rules` table; this is the
  * in-memory domain representation.
  */
 data class RecipientRule(
     val id: Long,
     val pattern: String,
     val patternKind: PatternKind,
-    val reclassifyAs: Classification,
+    val reclassifyAs: Classification?,
+    val assignedCategory: Category? = null,
     val accountId: Long? = null,
     val source: RuleSource = RuleSource.USER,
     val isEnabled: Boolean = true,

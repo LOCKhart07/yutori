@@ -81,12 +81,30 @@ class MappersTest {
             pattern = """cred\.club[@¡]axisb""",
             patternKind = PatternKind.REGEX,
             reclassifyAs = Classification.CC_BILL_PAYMENT,
+            assignedCategory = Category.BILLS_UTILITIES,
             accountId = null,
             source = RuleSource.SEED,
             isEnabled = true,
             note = "CRED CC bill payments",
         )
         val entity = RecipientRuleMapper.toEntity(source)
+        RecipientRuleMapper.toDomain(entity) shouldBe source
+    }
+
+    @Test
+    fun `category-only rule with null reclassifyAs round-trips`() {
+        // The Swiggy use case from issue #132 — tag a UPI merchant with
+        // a category without flipping its Classification.
+        val source = RecipientRule(
+            id = 8,
+            pattern = "swiggy-newbrand@paytm",
+            patternKind = PatternKind.LITERAL,
+            reclassifyAs = null,
+            assignedCategory = Category.FOOD_DINING,
+            source = RuleSource.USER,
+        )
+        val entity = RecipientRuleMapper.toEntity(source)
+        entity.reclassifyAs shouldBe null
         RecipientRuleMapper.toDomain(entity) shouldBe source
     }
 
@@ -144,6 +162,10 @@ class MappersTest {
             occurredAtMs = 1_700_000_000_000L,
             monthKey = "2026-04",
             manuallyAdjusted = true,
+            categoryOverride = true,
+            classificationOverride = true,
+            classificationInferred = Classification.UPI_PAYMENT,
+            categoryInferred = Category.OTHER,
         )
         TransactionMapper.toDomain(TransactionMapper.toEntity(source)) shouldBe source
     }

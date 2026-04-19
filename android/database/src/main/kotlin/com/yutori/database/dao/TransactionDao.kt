@@ -28,6 +28,32 @@ interface TransactionDao {
     suspend fun updateNote(id: Long, note: String?): Int
 
     @Query(
+        "UPDATE transactions " +
+            "SET category = :category, category_override = :isOverridden " +
+            "WHERE id = :id",
+    )
+    suspend fun updateCategory(id: Long, category: String?, isOverridden: Boolean): Int
+
+    /**
+     * Per-tx classification override. `budgetEffect` is recomputed by
+     * the caller (UI) since it lives in the classifier module's
+     * BudgetEffectMapper, not here.
+     */
+    @Query(
+        "UPDATE transactions " +
+            "SET classification = :classification, " +
+            "    budget_effect = :budgetEffect, " +
+            "    classification_override = :isOverridden " +
+            "WHERE id = :id",
+    )
+    suspend fun updateClassification(
+        id: Long,
+        classification: String,
+        budgetEffect: String,
+        isOverridden: Boolean,
+    ): Int
+
+    @Query(
         """
         SELECT * FROM transactions
          WHERE month_key = :monthKey
@@ -160,9 +186,13 @@ interface TransactionDao {
 
     /**
      * Rule-suggestion miner source (suggestions-spec §3.2). Groups recent
-     * mis- or un-classified transactions by [merchant_key] and returns
-     * only groups whose count meets [threshold]. Already-covered filtering
-     * happens in Kotlin against the enabled-rule list.
+     * mis-/un-classified transactions plus repeat category-gap UPI merchants
+     * (SPEND/REFUND rows currently in OTHER/UNCATEGORIZED with no manual
+     * category- or classification-override) by [merchant_key] and returns
+     * only groups whose count meets [threshold]. Rows the user has
+     * explicitly overridden are excluded — they're already handled by hand.
+     * Already-covered filtering happens in Kotlin against the enabled-rule
+     * list.
      */
     @Query(
         """
@@ -171,8 +201,18 @@ interface TransactionDao {
                COALESCE(SUM(inr_amount), 0.0) AS total_inr
           FROM transactions
          WHERE occurred_at_ms >= :cutoffMs
-           AND merchant_key IS NOT NULL
-           AND classification IN ('UNMATCHED', 'UPI_PAYMENT')
+            AND merchant_key IS NOT NULL
+            AND classification_override = 0
+            AND (
+              classification = 'UNMATCHED'
+              OR (
+                classification = 'UPI_PAYMENT'
+                AND
+                budget_effect IN ('SPEND', 'REFUND')
+                AND category IN ('OTHER', 'UNCATEGORIZED')
+                AND category_override = 0
+              )
+            )
          GROUP BY merchant_key
         HAVING COUNT(*) >= :threshold
          ORDER BY total_inr DESC, match_count DESC

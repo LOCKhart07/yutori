@@ -6,6 +6,7 @@ import com.yutori.classifier.internal.Categorizer
 import com.yutori.classifier.internal.MerchantKeyNormalizer
 import com.yutori.classifier.internal.RecipientRuleMatcher
 import com.yutori.classifier.internal.SelfTransferHeuristic
+import com.yutori.parser.Category
 import com.yutori.parser.Classification
 import com.yutori.parser.ParseResult
 
@@ -70,10 +71,11 @@ object Classifier {
         val budgetEffect = BudgetEffectMapper.effectFor(finalClassification)
         val merchantKey = MerchantKeyNormalizer.normalize(parseResult.merchant)
 
-        val category = Categorizer.categoryFor(
+        val category = resolveCategory(
             classification = finalClassification,
             parserAssignedCategory = parseResult.category,
             merchantKey = merchantKey,
+            matchedRule = matchedRule,
         )
 
         val classificationOriginal =
@@ -92,5 +94,40 @@ object Classifier {
             classificationOriginal = classificationOriginal,
             matchedRuleId = matchedRule?.id,
         )
+    }
+
+    /**
+     * Public surface for the per-tx classification-override flow:
+     * given a chosen classification, derive the matching budget effect.
+     * Mirrors the internal mapper at ingest time so per-tx edits and
+     * automatic classification stay consistent.
+     */
+    fun budgetEffectFor(classification: Classification): BudgetEffect =
+        BudgetEffectMapper.effectFor(classification)
+
+    /**
+     * Category resolution shared by ingest-time classification and
+     * post-hoc per-transaction "clear override" recompute.
+     */
+    fun resolveCategory(
+        classification: Classification,
+        parserAssignedCategory: Category?,
+        merchantKey: String?,
+        matchedRule: RecipientRule?,
+    ): Category? {
+        val computed = Categorizer.categoryFor(
+            classification = classification,
+            parserAssignedCategory = parserAssignedCategory,
+            merchantKey = merchantKey,
+        )
+        val canCarryCategory = BudgetEffectMapper.effectFor(classification) in setOf(
+            BudgetEffect.SPEND,
+            BudgetEffect.REFUND,
+        )
+        return if (canCarryCategory && matchedRule?.assignedCategory != null) {
+            matchedRule.assignedCategory
+        } else {
+            computed
+        }
     }
 }

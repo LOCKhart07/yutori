@@ -244,6 +244,10 @@ class SuggestionMinerTest {
         override suspend fun delete(row: TransactionEntity) = Unit
         override suspend fun getById(id: Long): TransactionEntity? = null
         override suspend fun updateNote(id: Long, note: String?): Int = 0
+        override suspend fun updateCategory(id: Long, category: String?, isOverridden: Boolean): Int = 0
+        override suspend fun updateClassification(
+            id: Long, classification: String, budgetEffect: String, isOverridden: Boolean,
+        ): Int = 0
         override fun observeByMonth(monthKey: String): Flow<List<TransactionEntity>> = flowOf(emptyList())
         override suspend fun getBeforeMonth(monthKey: String): List<TransactionEntity> = emptyList()
         override fun observeByMonthAndAccount(monthKey: String, accountId: Long): Flow<List<TransactionEntity>> = flowOf(emptyList())

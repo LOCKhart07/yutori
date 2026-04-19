@@ -344,6 +344,7 @@ private fun AppContent() {
             TransactionDetailScreen(
                 transactionId = s.transactionId,
                 transactionDao = database.transactionDao(),
+                recipientRuleDao = database.recipientRuleDao(),
                 sourceDao = database.transactionSourceDao(),
                 smsLogDao = database.smsLogDao(),
                 onBack = { goBack() },

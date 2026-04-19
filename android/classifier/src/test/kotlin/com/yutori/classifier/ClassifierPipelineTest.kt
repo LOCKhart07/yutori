@@ -297,4 +297,61 @@ class ClassifierPipelineTest {
         outcome.classificationOriginal shouldBe Classification.UPI_PAYMENT
         outcome.matchedRuleId shouldBe credMiddleman.id
     }
+
+    @Test
+    fun `category-only rule (null reclassify) preserves classification and tags category`() {
+        val rule = RecipientRule(
+            id = 300,
+            pattern = "swiggy-newbrand@paytm",
+            patternKind = PatternKind.LITERAL,
+            reclassifyAs = null,
+            assignedCategory = Category.FOOD_DINING,
+        )
+        val outcome = Classifier.classify(
+            parseResult = ParseResult(
+                classification = Classification.UPI_PAYMENT,
+                amount = 350.0,
+                merchant = "swiggy-newbrand@paytm",
+                pattern = "kotak_upi_debit",
+            ),
+            accounts = accounts,
+            recipientRules = listOf(rule),
+        )
+
+        outcome.finalClassification shouldBe Classification.UPI_PAYMENT
+        outcome.budgetEffect shouldBe BudgetEffect.SPEND
+        outcome.category shouldBe Category.FOOD_DINING
+        // No reclassification happened, so classification_original stays
+        // null per Classifier.classify().
+        outcome.classificationOriginal shouldBe null
+        outcome.matchedRuleId shouldBe rule.id
+        // Inferred snapshot mirrors the live values at ingest.
+        outcome.classificationInferred shouldBe Classification.UPI_PAYMENT
+        outcome.categoryInferred shouldBe Category.FOOD_DINING
+    }
+
+    @Test
+    fun `rule with reclassify and category applies both`() {
+        val rule = RecipientRule(
+            id = 301,
+            pattern = "refund-merchant@upi",
+            patternKind = PatternKind.LITERAL,
+            reclassifyAs = Classification.REFUND,
+            assignedCategory = Category.SHOPPING,
+        )
+        val outcome = Classifier.classify(
+            parseResult = ParseResult(
+                classification = Classification.UPI_PAYMENT,
+                amount = 100.0,
+                merchant = "refund-merchant@upi",
+                pattern = "kotak_upi_debit",
+            ),
+            accounts = accounts,
+            recipientRules = listOf(rule),
+        )
+
+        outcome.finalClassification shouldBe Classification.REFUND
+        outcome.classificationOriginal shouldBe Classification.UPI_PAYMENT
+        outcome.category shouldBe Category.SHOPPING
+    }
 }
