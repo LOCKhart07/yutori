@@ -1,5 +1,5 @@
 name: Spec issue
-run-name: "Spec #${{ inputs.issue_number || github.event.inputs.issue_number }}"
+run-name: "Spec #${{ inputs.issue_number }}"
 
 on:
   workflow_call:
@@ -19,7 +19,7 @@ permissions:
   issues:   write
 
 concurrency:
-  group: spec-${{ inputs.issue_number || github.event.inputs.issue_number }}
+  group: spec-${{ inputs.issue_number }}
   cancel-in-progress: false
 
 jobs:
@@ -45,7 +45,7 @@ jobs:
               issue_number='${{ inputs.issue_number }}'
               ;;
             workflow_dispatch)
-              issue_number='${{ github.event.inputs.issue_number }}'
+              issue_number='${{ inputs.issue_number }}'
               ;;
             *)
               echo "::error::Unsupported trigger: ${{ github.event_name }}"
