@@ -21,10 +21,17 @@ class LatestIngestedMessageTest {
     }
 
     @Test
-    fun `spend classifications map to counted in budget`() {
+    fun `spend classifications map to affects budget`() {
         smsLog(classification = "UPI_PAYMENT")
             .toLatestIngestedMessage()
-            .outcome shouldBe IngestedMessageOutcome.COUNTED_IN_BUDGET
+            .outcome shouldBe IngestedMessageOutcome.AFFECTS_BUDGET
+    }
+
+    @Test
+    fun `incoming credits map to tracked as income`() {
+        smsLog(classification = "INCOMING_CREDIT")
+            .toLatestIngestedMessage()
+            .outcome shouldBe IngestedMessageOutcome.TRACKED_AS_INCOME
     }
 
     @Test

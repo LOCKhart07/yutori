@@ -1258,7 +1258,8 @@ private fun LatestIngestedRow(
 ) {
     val colors = YutoriTheme.colors
     val (label, tone) = when (message.outcome) {
-        IngestedMessageOutcome.COUNTED_IN_BUDGET -> "Counted in budget" to colors.positive
+        IngestedMessageOutcome.AFFECTS_BUDGET -> "Affects budget" to colors.positive
+        IngestedMessageOutcome.TRACKED_AS_INCOME -> "Tracked as income" to colors.info
         IngestedMessageOutcome.IGNORED -> "Ignored" to colors.onMuted
         IngestedMessageOutcome.NEEDS_REVIEW -> "Needs review" to colors.warn
     }

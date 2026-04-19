@@ -11,7 +11,8 @@ data class LatestIngestedMessage(
 )
 
 enum class IngestedMessageOutcome {
-    COUNTED_IN_BUDGET,
+    AFFECTS_BUDGET,
+    TRACKED_AS_INCOME,
     IGNORED,
     NEEDS_REVIEW,
 }
@@ -47,8 +48,10 @@ private fun Classification?.toIngestedMessageOutcome(): IngestedMessageOutcome =
         Classification.DEBIT_CARD,
         Classification.ATM_WITHDRAWAL,
         Classification.REFUND,
+        -> IngestedMessageOutcome.AFFECTS_BUDGET
+
         Classification.INCOMING_CREDIT,
-        -> IngestedMessageOutcome.COUNTED_IN_BUDGET
+        -> IngestedMessageOutcome.TRACKED_AS_INCOME
     }
 
 private const val BODY_PREVIEW_MAX_CHARS = 80
