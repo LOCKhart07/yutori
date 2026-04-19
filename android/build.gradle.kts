@@ -16,7 +16,7 @@ subprojects {
     apply(plugin = "io.gitlab.arturbosch.detekt")
 
     extensions.configure<DetektExtension> {
-        toolVersion = "1.23.6"
+        toolVersion = libs.versions.detekt.get()
         config.setFrom(rootProject.file("config/detekt.yml"))
         baseline = rootProject.file("config/detekt-baseline.xml")
         buildUponDefaultConfig = true
