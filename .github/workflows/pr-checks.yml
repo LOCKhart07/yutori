@@ -1,0 +1,18 @@
+name: PR checks
+run-name: "PR #${{ github.event.pull_request.number }}"
+
+# Runs on every PR into main. Calls the reusable tests.yml so the
+# gradle invocation matches exactly what gates a release.
+#
+# To make tests required before merge, flip on in
+# Settings → Branches → main → Require status checks → tick `test`.
+# See docs/copilot-coding-agent.md.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml

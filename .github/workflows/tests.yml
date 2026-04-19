@@ -1,0 +1,40 @@
+name: Unit tests
+
+# Reusable workflow — called by release.yml (on tag push) and
+# pr-checks.yml (on pull_request). Keep the gradle invocation in one
+# place so release gating and PR gating can't drift apart.
+
+on:
+  workflow_call:
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle (with cache)
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          # Default is read-only on non-default branches; this workflow
+          # is called from tag pushes and PRs, so without this override
+          # PR runs never write cache and pay cold-dep cost every time.
+          cache-read-only: false
+
+      - name: Run unit tests
+        run: >-
+          ./gradlew
+          :parser:test :classifier:test :budget:test :transactions:test
+          :ingestion:test :database:test :app:testDebugUnitTest
+          --parallel --build-cache --stacktrace
