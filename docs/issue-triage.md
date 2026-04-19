@@ -324,7 +324,7 @@ Triage/spec batches run independently and serialize within each batch
 
 ## Staleness semantics
 
-For pass `P ∈ {triage, spec}`, an issue is stale iff:
+For pass `P in {triage, spec}`, an issue is stale iff:
 
 1. no marker comment `<!-- yutori-P:v1 -->` exists, **or**
 2. `max(issue.updated_at, latest_non_bot_comment.created_at) >

@@ -191,6 +191,11 @@ jobs:
           mapfile -t proposed < <(jq -r '.affected_files[]?' validated.json)
           existing=()
           for path in "${proposed[@]}"; do
+            if ! [[ "$path" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+              echo "::warning::Dropping suspicious affected file path: $path"
+              continue
+            fi
+
             if git -C "$GITHUB_WORKSPACE" cat-file -e "HEAD:$path" 2>/dev/null; then
               existing+=("$path")
             else
