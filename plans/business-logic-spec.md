@@ -200,14 +200,41 @@ money-moving events (SPEND, REFUND, INCOME).
 
 ### 3.4 User override (current behavior)
 
-Users can now override category at two levels:
-- Rule-level (`recipient_rules.assigned_category`) for future matching
-  transactions.
-- Per-transaction (`transactions.category_override`) from transaction
-  detail; this takes precedence over rule/parser/keyword assignment.
+Users can now override **category** and **classification** independently
+at two levels each:
 
-Override changes are forward-looking unless a reparse run is invoked for
-historical rows.
+- **Rule-level** on `recipient_rules`:
+  - `assigned_category` — applies to future matching transactions whose
+    final classification carries categories (SPEND/REFUND).
+  - `reclassify_as` — nullable. `null` means "don't change the
+    classification" — the rule is category-only. Combined with
+    `assigned_category` this lets a user tag a UPI merchant (e.g.
+    `swiggy-newbrand@paytm` → FOOD_DINING) without flipping its
+    Classification.
+  - Validation: at least one of `reclassify_as` / `assigned_category`
+    must be non-null. A rule with both null is a no-op and the form
+    blocks Save.
+
+- **Per-transaction** on `transactions`:
+  - `category_override` (boolean) + the chosen `category`.
+  - `classification_override` (boolean) + the chosen `classification`
+    (and recomputed `budget_effect`).
+  - Per-tx values always win over rule-/parser-/keyword-derived values.
+
+To support a clean "Use automatic" restore path without re-parsing the
+SMS, ingestion snapshots the inferred values alongside the live ones:
+
+- `transactions.classification_inferred` — the classification the
+  classifier would emit (post-rule-reclassify) for this row.
+- `transactions.category_inferred` — the category the resolution chain
+  would emit for this row.
+
+Clearing an override copies the matching `*_inferred` snapshot back into
+the live column. Snapshots are written at ingest and refreshed on
+reparse runs; they don't move when the user toggles overrides.
+
+Override changes are forward-looking. Historical rows aren't rewritten
+until a reparse run is invoked.
 
 ## 4. Transaction creation (§12.3 merge flow)
 

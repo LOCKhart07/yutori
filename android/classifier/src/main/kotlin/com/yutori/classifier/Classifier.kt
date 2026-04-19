@@ -97,6 +97,15 @@ object Classifier {
     }
 
     /**
+     * Public surface for the per-tx classification-override flow:
+     * given a chosen classification, derive the matching budget effect.
+     * Mirrors the internal mapper at ingest time so per-tx edits and
+     * automatic classification stay consistent.
+     */
+    fun budgetEffectFor(classification: Classification): BudgetEffect =
+        BudgetEffectMapper.effectFor(classification)
+
+    /**
      * Category resolution shared by ingest-time classification and
      * post-hoc per-transaction "clear override" recompute.
      */

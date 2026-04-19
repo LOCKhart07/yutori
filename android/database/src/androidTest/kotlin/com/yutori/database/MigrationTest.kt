@@ -143,9 +143,34 @@ class MigrationTest {
     }
 
     @Test
-    fun migrate_4_to_5_adds_category_override_columns() {
-        helper.createDatabase(testDbName, 4).close()
+    fun migrate_4_to_5_adds_override_columns_and_relaxes_reclassify_as() {
+        // --- Arrange: seed a v4 DB with a rule (NOT NULL reclassify_as)
+        // and a transaction. The migration should preserve both, add
+        // override + inferred snapshot columns, and relax
+        // reclassify_as so a category-only rule (NULL reclassify) can
+        // be inserted afterwards.
+        helper.createDatabase(testDbName, 4).apply {
+            execSQL(
+                "INSERT INTO recipient_rules " +
+                    "(id, pattern, pattern_kind, reclassify_as, account_id, " +
+                    " source, note, is_enabled) " +
+                    "VALUES (1, 'cred.club', 'LITERAL', 'CC_BILL_PAYMENT', " +
+                    " NULL, 'SEED', NULL, 1)",
+            )
+            execSQL(
+                "INSERT INTO transactions " +
+                    "(id, classification, budget_effect, inr_amount, original_amount, " +
+                    " original_currency, merchant, merchant_key, category, account_id, " +
+                    " last4, issuer, occurred_at_ms, month_key, is_manual_entry, " +
+                    " manually_adjusted, notes) " +
+                    "VALUES (1, 'UPI_PAYMENT', 'SPEND', 100.0, NULL, 'INR', " +
+                    " 'x@ybl', 'x@ybl', 'OTHER', NULL, NULL, NULL, 1, '2026-04', " +
+                    " 0, 0, NULL)",
+            )
+            close()
+        }
 
+        // --- Act
         val db = helper.runMigrationsAndValidate(
             testDbName,
             5,
@@ -153,27 +178,67 @@ class MigrationTest {
             YutoriDatabase.MIGRATION_4_5,
         )
 
-        db.execSQL(
-            "INSERT INTO recipient_rules " +
-                "(pattern, pattern_kind, reclassify_as, assigned_category, source, is_enabled) " +
-                "VALUES ('swiggy@paytm', 'LITERAL', 'UPI_PAYMENT', 'FOOD_DINING', 'USER', 1)",
-        )
-        db.query("SELECT assigned_category FROM recipient_rules").use { cur ->
+        // --- Assert: pre-existing rule survived the table recreate.
+        db.query(
+            "SELECT pattern, reclassify_as, source FROM recipient_rules WHERE id = 1",
+        ).use { cur ->
             assert(cur.moveToFirst())
-            assertEquals("FOOD_DINING", cur.getString(0))
+            assertEquals("cred.club", cur.getString(0))
+            assertEquals("CC_BILL_PAYMENT", cur.getString(1))
+            assertEquals("SEED", cur.getString(2))
         }
 
+        // --- Assert: category-only rule (null reclassify_as) is now legal.
+        db.execSQL(
+            "INSERT INTO recipient_rules " +
+                "(pattern, pattern_kind, reclassify_as, assigned_category, " +
+                " source, is_enabled) " +
+                "VALUES ('swiggy@paytm', 'LITERAL', NULL, 'FOOD_DINING', 'USER', 1)",
+        )
+        db.query(
+            "SELECT reclassify_as, assigned_category FROM recipient_rules " +
+                "WHERE pattern = 'swiggy@paytm'",
+        ).use { cur ->
+            assert(cur.moveToFirst())
+            assertNull(cur.getString(0))
+            assertEquals("FOOD_DINING", cur.getString(1))
+        }
+
+        // --- Assert: existing tx got inferred-snapshot backfill (mirrors
+        // live values) and override flags default to 0.
+        db.query(
+            "SELECT category_override, classification_override, " +
+                "       classification_inferred, category_inferred " +
+                "FROM transactions WHERE id = 1",
+        ).use { cur ->
+            assert(cur.moveToFirst())
+            assertEquals(0, cur.getInt(0))
+            assertEquals(0, cur.getInt(1))
+            assertEquals("UPI_PAYMENT", cur.getString(2))
+            assertEquals("OTHER", cur.getString(3))
+        }
+
+        // --- Assert: per-tx override columns accept writes.
         db.execSQL(
             "INSERT INTO transactions " +
                 "(classification, budget_effect, inr_amount, original_amount, original_currency, " +
                 "merchant, merchant_key, category, account_id, last4, issuer, occurred_at_ms, " +
-                "month_key, is_manual_entry, manually_adjusted, notes, category_override) " +
-                "VALUES ('UPI_PAYMENT', 'SPEND', 100.0, NULL, 'INR', 'x@ybl', 'x@ybl', " +
-                "'OTHER', NULL, NULL, NULL, 1, '2026-04', 0, 0, NULL, 1)",
+                "month_key, is_manual_entry, manually_adjusted, notes, category_override, " +
+                "classification_override, classification_inferred, category_inferred) " +
+                "VALUES ('REFUND', 'REFUND', 50.0, NULL, 'INR', 'y@ybl', 'y@ybl', " +
+                "'SHOPPING', NULL, NULL, NULL, 2, '2026-04', 0, 0, NULL, 1, 1, " +
+                "'UPI_PAYMENT', 'OTHER')",
         )
-        db.query("SELECT category_override FROM transactions").use { cur ->
+        db.query(
+            "SELECT category_override, classification_override, " +
+                "       classification_inferred, category_inferred " +
+                "FROM transactions WHERE id != 1",
+        ).use { cur ->
             assert(cur.moveToFirst())
             assertEquals(1, cur.getInt(0))
+            assertEquals(1, cur.getInt(1))
+            assertEquals("UPI_PAYMENT", cur.getString(2))
+            assertEquals("OTHER", cur.getString(3))
         }
         db.close()
     }

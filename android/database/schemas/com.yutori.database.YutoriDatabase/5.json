@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 5,
-    "identityHash": "801be148836c7f9656ad2f546f9971e0",
+    "identityHash": "e8944f15878717957098e3749714521a",
     "entities": [
       {
         "tableName": "sms_log",
@@ -102,7 +102,7 @@
       },
       {
         "tableName": "transactions",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `classification` TEXT NOT NULL, `classification_original` TEXT, `budget_effect` TEXT NOT NULL, `inr_amount` REAL, `original_amount` REAL, `original_currency` TEXT NOT NULL, `exchange_rate` REAL, `rate_source` TEXT, `merchant` TEXT, `merchant_key` TEXT, `category` TEXT, `account_id` INTEGER, `last4` TEXT, `issuer` TEXT, `occurred_at_ms` INTEGER NOT NULL, `month_key` TEXT NOT NULL, `is_manual_entry` INTEGER NOT NULL, `manually_adjusted` INTEGER NOT NULL, `notes` TEXT, `category_override` INTEGER NOT NULL, FOREIGN KEY(`account_id`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `classification` TEXT NOT NULL, `classification_original` TEXT, `budget_effect` TEXT NOT NULL, `inr_amount` REAL, `original_amount` REAL, `original_currency` TEXT NOT NULL, `exchange_rate` REAL, `rate_source` TEXT, `merchant` TEXT, `merchant_key` TEXT, `category` TEXT, `account_id` INTEGER, `last4` TEXT, `issuer` TEXT, `occurred_at_ms` INTEGER NOT NULL, `month_key` TEXT NOT NULL, `is_manual_entry` INTEGER NOT NULL, `manually_adjusted` INTEGER NOT NULL, `notes` TEXT, `category_override` INTEGER NOT NULL, `classification_override` INTEGER NOT NULL, `classification_inferred` TEXT, `category_inferred` TEXT, FOREIGN KEY(`account_id`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "id",
@@ -228,8 +228,25 @@
             "fieldPath": "categoryOverride",
             "columnName": "category_override",
             "affinity": "INTEGER",
-            "notNull": true,
-            "defaultValue": "0"
+            "notNull": true
+          },
+          {
+            "fieldPath": "classificationOverride",
+            "columnName": "classification_override",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "classificationInferred",
+            "columnName": "classification_inferred",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "categoryInferred",
+            "columnName": "category_inferred",
+            "affinity": "TEXT",
+            "notNull": false
           }
         ],
         "primaryKey": {
@@ -460,7 +477,7 @@
       },
       {
         "tableName": "recipient_rules",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `pattern` TEXT NOT NULL, `pattern_kind` TEXT NOT NULL, `reclassify_as` TEXT NOT NULL, `assigned_category` TEXT, `account_id` INTEGER, `source` TEXT NOT NULL, `note` TEXT, `is_enabled` INTEGER NOT NULL, FOREIGN KEY(`account_id`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `pattern` TEXT NOT NULL, `pattern_kind` TEXT NOT NULL, `reclassify_as` TEXT, `assigned_category` TEXT, `account_id` INTEGER, `source` TEXT NOT NULL, `note` TEXT, `is_enabled` INTEGER NOT NULL, FOREIGN KEY(`account_id`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "id",
@@ -484,7 +501,7 @@
             "fieldPath": "reclassifyAs",
             "columnName": "reclassify_as",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "assignedCategory",
@@ -777,7 +794,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '801be148836c7f9656ad2f546f9971e0')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e8944f15878717957098e3749714521a')"
     ]
   }
 }

@@ -34,6 +34,25 @@ interface TransactionDao {
     )
     suspend fun updateCategory(id: Long, category: String?, isOverridden: Boolean): Int
 
+    /**
+     * Per-tx classification override. `budgetEffect` is recomputed by
+     * the caller (UI) since it lives in the classifier module's
+     * BudgetEffectMapper, not here.
+     */
+    @Query(
+        "UPDATE transactions " +
+            "SET classification = :classification, " +
+            "    budget_effect = :budgetEffect, " +
+            "    classification_override = :isOverridden " +
+            "WHERE id = :id",
+    )
+    suspend fun updateClassification(
+        id: Long,
+        classification: String,
+        budgetEffect: String,
+        isOverridden: Boolean,
+    ): Int
+
     @Query(
         """
         SELECT * FROM transactions
@@ -169,9 +188,11 @@ interface TransactionDao {
      * Rule-suggestion miner source (suggestions-spec §3.2). Groups recent
      * mis-/un-classified transactions plus repeat category-gap UPI merchants
      * (SPEND/REFUND rows currently in OTHER/UNCATEGORIZED with no manual
-     * category override) by [merchant_key] and returns only groups whose count
-     * meets [threshold]. Already-covered filtering happens in Kotlin against
-     * the enabled-rule list.
+     * category- or classification-override) by [merchant_key] and returns
+     * only groups whose count meets [threshold]. Rows the user has
+     * explicitly overridden are excluded — they're already handled by hand.
+     * Already-covered filtering happens in Kotlin against the enabled-rule
+     * list.
      */
     @Query(
         """
@@ -181,6 +202,7 @@ interface TransactionDao {
           FROM transactions
          WHERE occurred_at_ms >= :cutoffMs
             AND merchant_key IS NOT NULL
+            AND classification_override = 0
             AND (
               classification = 'UNMATCHED'
               OR (

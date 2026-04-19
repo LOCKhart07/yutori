@@ -646,8 +646,9 @@ private fun RuleCard(
                 )
             }
             Spacer(Modifier.height(4.dp))
+            val targetText = rule.reclassifyAs?.let { "→ $it" } ?: "tag only"
             Text(
-                text = "${rule.patternKind} · → ${rule.reclassifyAs}" +
+                text = "${rule.patternKind} · $targetText" +
                     (rule.assignedCategory?.let { " · ${prettyCategory(it)}" } ?: "") +
                     (rule.note?.let { " · $it" } ?: "") +
                     if (rule.source == "LEARNED") " · learned" else "",

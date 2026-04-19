@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 
 class SelfTransferHeuristicTest {
 
-    private fun rule(reclassifyAs: Classification) = RecipientRule(
+    private fun rule(reclassifyAs: Classification?) = RecipientRule(
         id = 1,
         pattern = "ignored",
         patternKind = PatternKind.LITERAL,
@@ -19,6 +19,14 @@ class SelfTransferHeuristicTest {
     fun `no matched rule returns raw classification`() {
         SelfTransferHeuristic.apply(Classification.UPI_PAYMENT, null) shouldBe
             Classification.UPI_PAYMENT
+    }
+
+    @Test
+    fun `category-only rule (null reclassify) returns raw classification`() {
+        SelfTransferHeuristic.apply(
+            Classification.UPI_PAYMENT,
+            rule(reclassifyAs = null),
+        ) shouldBe Classification.UPI_PAYMENT
     }
 
     @Test

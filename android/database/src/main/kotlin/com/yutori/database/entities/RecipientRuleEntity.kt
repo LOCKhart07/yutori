@@ -37,9 +37,15 @@ data class RecipientRuleEntity(
     @ColumnInfo(name = "pattern_kind")
     val patternKind: String,
 
-    /** Target [com.yutori.parser.Classification] name. */
+    /**
+     * Target [com.yutori.parser.Classification] name.
+     *
+     * `null` means "don't change the classification" — the rule is
+     * category-only (must then carry `assignedCategory`). See
+     * business-logic-spec.md §3.4.
+     */
     @ColumnInfo(name = "reclassify_as")
-    val reclassifyAs: String,
+    val reclassifyAs: String?,
 
     @ColumnInfo(name = "assigned_category")
     val assignedCategory: String? = null,

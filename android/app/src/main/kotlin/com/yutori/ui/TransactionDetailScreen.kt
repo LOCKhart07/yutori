@@ -126,32 +126,59 @@ fun TransactionDetailScreen(
                                 isOverridden = true,
                             )
                         } else {
-                            val rules = recipientRuleDao.getEnabled()
-                                .map(RecipientRuleMapper::toDomain)
-                            val matchedRule = RecipientRuleMatching.firstMatch(d.tx.merchant, rules)
-                            val classification = runCatching {
-                                Classification.valueOf(d.tx.classification)
-                            }.getOrNull()
-                            val fallback = classification?.let {
-                                Classifier.resolveCategory(
-                                    classification = it,
-                                    parserAssignedCategory = null,
-                                    merchantKey = d.tx.merchantKey,
-                                    matchedRule = matchedRule,
-                                )
-                            }
+                            // "Use automatic" — prefer the snapshot, fall
+                            // back to recomputing from the current rules
+                            // for rows ingested before the snapshot
+                            // column existed (pre-v5).
+                            val fallback = d.tx.categoryInferred
+                                ?: recomputeCategory(d.tx, recipientRuleDao)
                             transactionDao.updateCategory(
                                 id = d.tx.id,
-                                category = fallback?.name,
+                                category = fallback,
                                 isOverridden = false,
                             )
                         }
                         refreshTick++
                     }
                 },
+                onSaveClassification = { selectedClassification ->
+                    scope.launch {
+                        val effective = selectedClassification
+                            ?: d.tx.classificationInferred
+                            ?: d.tx.classification
+                        val classificationEnum = runCatching {
+                            Classification.valueOf(effective)
+                        }.getOrNull() ?: return@launch
+                        val budgetEffect = Classifier.budgetEffectFor(classificationEnum).name
+                        transactionDao.updateClassification(
+                            id = d.tx.id,
+                            classification = effective,
+                            budgetEffect = budgetEffect,
+                            isOverridden = selectedClassification != null,
+                        )
+                        refreshTick++
+                    }
+                },
             )
         }
     }
+}
+
+private suspend fun recomputeCategory(
+    tx: TransactionEntity,
+    recipientRuleDao: com.yutori.database.dao.RecipientRuleDao,
+): String? {
+    val rules = recipientRuleDao.getEnabled().map(RecipientRuleMapper::toDomain)
+    val matchedRule = RecipientRuleMatching.firstMatch(tx.merchant, rules)
+    val classification = runCatching {
+        Classification.valueOf(tx.classification)
+    }.getOrNull() ?: return null
+    return Classifier.resolveCategory(
+        classification = classification,
+        parserAssignedCategory = null,
+        merchantKey = tx.merchantKey,
+        matchedRule = matchedRule,
+    )?.name
 }
 
 @Composable
@@ -174,9 +201,11 @@ private fun ReadyView(
     onBack: () -> Unit,
     onSaveNote: (String?) -> Unit,
     onSaveCategory: (String?) -> Unit,
+    onSaveClassification: (String?) -> Unit,
 ) {
     var editingNote by remember { mutableStateOf(false) }
     var editingCategory by remember { mutableStateOf(false) }
+    var editingClassification by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -208,6 +237,7 @@ private fun ReadyView(
                 onEditNote = { editingNote = true },
                 canEditCategory = details.tx.budgetEffect == "SPEND" || details.tx.budgetEffect == "REFUND",
                 onEditCategory = { editingCategory = true },
+                onEditClassification = { editingClassification = true },
             )
             Spacer(Modifier.height(24.dp))
             if (details.sources.isNotEmpty()) {
@@ -235,6 +265,17 @@ private fun ReadyView(
             onSave = { selected ->
                 onSaveCategory(selected)
                 editingCategory = false
+            },
+        )
+    }
+    if (editingClassification) {
+        EditClassificationSheet(
+            initialClassification = details.tx.classification,
+            initiallyOverridden = details.tx.classificationOverride,
+            onDismiss = { editingClassification = false },
+            onSave = { selected ->
+                onSaveClassification(selected)
+                editingClassification = false
             },
         )
     }
@@ -486,7 +527,9 @@ private fun NotesCard(note: String, onEdit: () -> Unit) {
 }
 
 /**
- * Action row for detail-level edits.
+ * Action row for detail-level edits. 2x2 grid since the v16 mockup
+ * (#132) added Edit classification alongside Edit category — four
+ * buttons no longer fit in a single row at 380dp.
  */
 @Composable
 private fun ActionRow(
@@ -494,6 +537,7 @@ private fun ActionRow(
     onEditNote: () -> Unit,
     canEditCategory: Boolean,
     onEditCategory: () -> Unit,
+    onEditClassification: () -> Unit,
 ) {
     val context = LocalContext.current
     val showSoonToast: () -> Unit = {
@@ -508,6 +552,15 @@ private fun ActionRow(
                 onClick = onEditNote,
                 modifier = Modifier.weight(1f),
             )
+            ActionButton(
+                label = "Edit classification",
+                onClick = if (canEditCategory) onEditClassification else showSoonToast,
+                ghost = !canEditCategory,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ActionButton(
                 label = "Edit category",
                 onClick = if (canEditCategory) onEditCategory else showSoonToast,
@@ -737,6 +790,115 @@ private fun EditCategorySheet(
             ) {
                 options.forEach { option ->
                     val label = option?.let(::prettyCategory) ?: "Use automatic category"
+                    val selectedNow = selected == option
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { selected = option },
+                        color = if (selectedNow) colors.surfaceElevated2 else Color.Transparent,
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (selectedNow) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(18.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                SecondaryButton(
+                    text = "Cancel",
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                )
+                PrimaryActionButton(
+                    text = "Save",
+                    enabled = saveEnabled,
+                    onClick = { onSave(selected) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Mirrors [EditCategorySheet]. The list of choices is the full
+ * [Classification] enum (minus UNMATCHED, which is parser-failure
+ * sentinel territory and not a useful manual label).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditClassificationSheet(
+    initialClassification: String,
+    initiallyOverridden: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (String?) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val colors = YutoriTheme.colors
+    val options: List<String?> = remember {
+        listOf(null) + Classification.entries
+            .filter { it != Classification.UNMATCHED }
+            .map { it.name }
+    }
+    val initiallySelected = if (initiallyOverridden) initialClassification else null
+    var selected by remember { mutableStateOf<String?>(initiallySelected) }
+    val saveEnabled = selected != initiallySelected
+    val currentModeLabel = if (initiallyOverridden) {
+        "Currently: overridden"
+    } else {
+        "Currently: automatic"
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = colors.surfaceElevated,
+        dragHandle = null,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .imePadding()
+                .padding(horizontal = 20.dp)
+                .padding(top = 8.dp, bottom = 20.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .size(width = 36.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(colors.divider),
+            )
+            Spacer(Modifier.height(14.dp))
+            Text(
+                text = "Edit classification",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = currentModeLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.onFaint,
+            )
+            Spacer(Modifier.height(10.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(320.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                options.forEach { option ->
+                    val label = option?.let(::prettyClassification)
+                        ?: "Use automatic classification"
                     val selectedNow = selected == option
                     Surface(
                         modifier = Modifier

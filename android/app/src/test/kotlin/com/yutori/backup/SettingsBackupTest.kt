@@ -202,6 +202,52 @@ class SettingsBackupTest {
     }
 
     @Test
+    fun `category-only rule round-trips with null reclassifyAs`() = runTest {
+        val srcAcc = FakeAccountDao()
+        val srcRule = FakeRecipientRuleDao().apply {
+            insert(
+                rule(
+                    pattern = "swiggy-newbrand@paytm",
+                    accountId = null,
+                    source = "USER",
+                    reclassifyAs = null,
+                    assignedCategory = "FOOD_DINING",
+                ),
+            )
+        }
+        val json = SettingsBackup.exportToJson(srcAcc, srcRule, nowMs = 0L)
+        // The exporter must omit reclassifyAs (not write "null" or the
+        // default fallback) so the import side knows it was meant to be
+        // a category-only rule.
+        json.lowercase() shouldContain "swiggy"
+        (json.contains("\"reclassifyAs\"")) shouldBe false
+
+        val dstAcc = FakeAccountDao()
+        val dstRule = FakeRecipientRuleDao()
+        val summary = SettingsBackup.importFromJson(json, dstAcc, dstRule, nowMs = 0L)
+        summary.rulesInserted shouldBe 1
+        val r = dstRule.all.single()
+        r.reclassifyAs shouldBe null
+        r.assignedCategory shouldBe "FOOD_DINING"
+    }
+
+    @Test
+    fun `rule with neither reclassifyAs nor assignedCategory is skipped`() = runTest {
+        val dstAcc = FakeAccountDao()
+        val dstRule = FakeRecipientRuleDao()
+        val backup = """
+          {"version":1,"accounts":[],
+           "recipientRules":[
+             {"pattern":"noop@upi","patternKind":"LITERAL","source":"USER","isEnabled":true}
+           ]}
+        """.trimIndent()
+        val summary = SettingsBackup.importFromJson(backup, dstAcc, dstRule, nowMs = 0L)
+        summary.rulesInserted shouldBe 0
+        summary.rulesSkipped shouldBe 1
+        summary.warnings.any { "skipped" in it.lowercase() } shouldBe true
+    }
+
+    @Test
     fun `rule pattern missing is skipped with warning`() = runTest {
         val dstAcc = FakeAccountDao()
         val dstRule = FakeRecipientRuleDao()
@@ -237,11 +283,12 @@ class SettingsBackupTest {
         pattern: String,
         accountId: Long?,
         source: String,
+        reclassifyAs: String? = "SELF_TRANSFER",
         assignedCategory: String? = null,
     ) = RecipientRuleEntity(
         pattern = pattern,
         patternKind = "LITERAL",
-        reclassifyAs = "SELF_TRANSFER",
+        reclassifyAs = reclassifyAs,
         assignedCategory = assignedCategory,
         accountId = accountId,
         source = source,

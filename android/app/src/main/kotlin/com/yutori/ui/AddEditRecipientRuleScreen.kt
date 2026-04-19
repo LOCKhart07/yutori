@@ -59,9 +59,12 @@ import kotlinx.coroutines.launch
 
 /**
  * Classifications that a recipient rule can target. Matches settings-spec §3.5
- * — subset of [Classification] that's "rule-addressable".
+ * — subset of [Classification] that's "rule-addressable". `null` is the
+ * "Don't change" entry: the rule keeps the parser's classification and is
+ * effectively category-only (must then carry an assignedCategory).
  */
-private val RECLASSIFY_OPTIONS = listOf(
+private val RECLASSIFY_OPTIONS: List<Classification?> = listOf(
+    null,
     Classification.CC_BILL_PAYMENT,
     Classification.SELF_TRANSFER,
     Classification.REFUND,
@@ -72,6 +75,14 @@ private val RECLASSIFY_OPTIONS = listOf(
 private const val TEST_MERCHANT_LIMIT = 100
 private const val TEST_MAX_SHOWN = 20
 private val CATEGORY_OPTIONS: List<Category?> = listOf(null) + Category.entries
+
+/**
+ * Reclassify targets that produce a SPEND/REFUND budget effect — i.e.
+ * categories will actually be honored downstream. `null` (Don't change)
+ * is also category-assignable because it preserves the parser's
+ * classification, which for the rule-addressable cases (UPI_PAYMENT,
+ * CC_TRANSACTION, DEBIT_CARD, ATM_WITHDRAWAL) is SPEND-effect.
+ */
 private val CATEGORY_ASSIGNABLE_CLASSIFICATIONS: Set<Classification> = setOf(
     Classification.CC_TRANSACTION,
     Classification.UPI_PAYMENT,
@@ -129,7 +140,9 @@ fun AddEditRecipientRuleScreen(
             pattern = r.pattern
             patternKind = runCatching { PatternKind.valueOf(r.patternKind) }
                 .getOrDefault(PatternKind.LITERAL)
-            reclassifyAs = runCatching { Classification.valueOf(r.reclassifyAs) }.getOrNull()
+            reclassifyAs = r.reclassifyAs?.let {
+                runCatching { Classification.valueOf(it) }.getOrNull()
+            }
             assignedCategory = r.assignedCategory?.let {
                 runCatching { Category.valueOf(it) }.getOrNull()
             }
@@ -157,10 +170,15 @@ fun AddEditRecipientRuleScreen(
     val regexError = (draftEval as? RecipientRuleMatching.DraftEval.Invalid)?.error
 
     val needsAccount = reclassifyAs == Classification.SELF_TRANSFER
-    val canAssignCategory = reclassifyAs in CATEGORY_ASSIGNABLE_CLASSIFICATIONS
+    // Category picker is shown when the chosen target carries categories
+    // OR when the user picked Don't change (null) — which preserves the
+    // parser's SPEND-effect classification.
+    val canAssignCategory =
+        reclassifyAs == null || reclassifyAs in CATEGORY_ASSIGNABLE_CLASSIFICATIONS
+    val isNoOpRule = reclassifyAs == null && assignedCategory == null
     val canSave = patternTrimmed.isNotEmpty() &&
-        reclassifyAs != null &&
         regexError == null &&
+        !isNoOpRule &&
         (!needsAccount || linkedAccountId != null) &&
         !isReadOnly &&
         !duplicateError
@@ -232,17 +250,24 @@ fun AddEditRecipientRuleScreen(
             Spacer(Modifier.height(14.dp))
             FieldLabel("Reclassify as")
             EnumDropdown(
-                value = reclassifyAs?.let(::classificationLabel) ?: "Pick a classification",
-                placeholder = reclassifyAs == null,
+                value = reclassifyAs?.let(::classificationLabel) ?: "Don't change",
                 options = RECLASSIFY_OPTIONS,
-                optionLabel = ::classificationLabel,
+                optionLabel = ::reclassifyOptionLabel,
                 onPick = {
                     reclassifyAs = it
                     if (it != Classification.SELF_TRANSFER) linkedAccountId = null
-                    if (it !in CATEGORY_ASSIGNABLE_CLASSIFICATIONS) assignedCategory = null
+                    if (it != null && it !in CATEGORY_ASSIGNABLE_CLASSIFICATIONS) {
+                        assignedCategory = null
+                    }
                 },
                 enabled = !isReadOnly,
             )
+            if (reclassifyAs == null) {
+                InlineHelp(
+                    "Keeps the parser's classification. Use this with Assigned category " +
+                        "to tag a merchant without reclassifying it.",
+                )
+            }
 
             Spacer(Modifier.height(14.dp))
             FieldLabel("Assigned category (optional)")
@@ -267,11 +292,7 @@ fun AddEditRecipientRuleScreen(
                     border = BorderStroke(1.dp, colors.divider),
                 ) {
                     Text(
-                        text = if (reclassifyAs == null) {
-                            "Pick a reclassify target first"
-                        } else {
-                            "Unavailable for ${classificationLabel(reclassifyAs)}"
-                        },
+                        text = "Unavailable for ${classificationLabel(reclassifyAs!!)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.onFaint,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
@@ -279,6 +300,11 @@ fun AddEditRecipientRuleScreen(
                 }
                 InlineHelp(
                     "This classification doesn't carry categories in dashboard totals.",
+                )
+            }
+            if (isNoOpRule) {
+                InlineError(
+                    "Pick a category, or pick a Reclassify target — otherwise this rule does nothing.",
                 )
             }
 
@@ -334,12 +360,12 @@ fun AddEditRecipientRuleScreen(
                 },
                 onSave = {
                     scope.launch {
-                        val target = reclassifyAs ?: return@launch
+                        if (isNoOpRule) return@launch
                         val draft = RecipientRuleEntity(
                             id = existingRule?.id ?: 0L,
                             pattern = patternTrimmed,
                             patternKind = patternKind.name,
-                            reclassifyAs = target.name,
+                            reclassifyAs = reclassifyAs?.name,
                             assignedCategory = assignedCategory?.takeIf { canAssignCategory }?.name,
                             accountId = linkedAccountId?.takeIf { needsAccount },
                             source = existingRule?.source
@@ -751,6 +777,9 @@ private fun classificationLabel(c: Classification): String = when (c) {
     Classification.NON_FINANCIAL -> "Non-financial (drop)"
     else -> c.name
 }
+
+private fun reclassifyOptionLabel(c: Classification?): String =
+    c?.let(::classificationLabel) ?: "Don't change"
 
 private fun accountLabel(a: AccountEntity): String {
     val last4 = a.last4?.let { " ••$it" } ?: ""

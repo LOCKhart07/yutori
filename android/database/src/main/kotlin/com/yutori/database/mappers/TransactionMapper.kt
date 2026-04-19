@@ -30,6 +30,11 @@ object TransactionMapper {
         monthKey = entity.monthKey,
         manuallyAdjusted = entity.manuallyAdjusted,
         categoryOverride = entity.categoryOverride,
+        classificationOverride = entity.classificationOverride,
+        classificationInferred = entity.classificationInferred?.let {
+            Classification.valueOf(it)
+        },
+        categoryInferred = entity.categoryInferred?.let { Category.valueOf(it) },
     )
 
     fun toEntity(row: TransactionRow): TransactionEntity = TransactionEntity(
@@ -52,5 +57,8 @@ object TransactionMapper {
         monthKey = row.monthKey,
         manuallyAdjusted = row.manuallyAdjusted,
         categoryOverride = row.categoryOverride,
+        classificationOverride = row.classificationOverride,
+        classificationInferred = row.classificationInferred?.name,
+        categoryInferred = row.categoryInferred?.name,
     )
 }

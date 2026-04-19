@@ -299,12 +299,12 @@ class ClassifierPipelineTest {
     }
 
     @Test
-    fun `rule assigned category overrides Categorizer bucket`() {
+    fun `category-only rule (null reclassify) preserves classification and tags category`() {
         val rule = RecipientRule(
             id = 300,
             pattern = "swiggy-newbrand@paytm",
             patternKind = PatternKind.LITERAL,
-            reclassifyAs = Classification.UPI_PAYMENT,
+            reclassifyAs = null,
             assignedCategory = Category.FOOD_DINING,
         )
         val outcome = Classifier.classify(
@@ -319,7 +319,15 @@ class ClassifierPipelineTest {
         )
 
         outcome.finalClassification shouldBe Classification.UPI_PAYMENT
+        outcome.budgetEffect shouldBe BudgetEffect.SPEND
         outcome.category shouldBe Category.FOOD_DINING
+        // No reclassification happened, so classification_original stays
+        // null per Classifier.classify().
+        outcome.classificationOriginal shouldBe null
+        outcome.matchedRuleId shouldBe rule.id
+        // Inferred snapshot mirrors the live values at ingest.
+        outcome.classificationInferred shouldBe Classification.UPI_PAYMENT
+        outcome.categoryInferred shouldBe Category.FOOD_DINING
     }
 
     @Test

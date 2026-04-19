@@ -98,6 +98,8 @@ object TransactionBuilder {
             issuer = event.issuer,
             occurredAtMs = event.occurredAtMs,
             monthKey = event.monthKey,
+            classificationInferred = outcome.classificationInferred,
+            categoryInferred = outcome.categoryInferred,
         )
     }
 
