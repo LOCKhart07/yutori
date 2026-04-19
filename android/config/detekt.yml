@@ -26,15 +26,15 @@ complexity:
 
 style:
   UnusedPrivateMember:
-    active: false
+    active: true
   UnusedParameter:
     active: true
   ReturnCount:
     active: true
-    max: 10
+    max: 9
   MaxLineLength:
     active: true
-    maxLineLength: 240
+    maxLineLength: 200
     excludeCommentStatements: true
     excludeRawStrings: true
   MagicNumber:
