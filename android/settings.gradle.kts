@@ -16,6 +16,7 @@ include(":database")
 include(":ingestion")
 include(":app")
 include(":macrobenchmark")
+include(":ai-spike")
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
