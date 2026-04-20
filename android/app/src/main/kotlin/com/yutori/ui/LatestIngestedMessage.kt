@@ -1,5 +1,7 @@
 package com.yutori.ui
 
+import com.yutori.classifier.BudgetEffect
+import com.yutori.classifier.Classifier
 import com.yutori.database.entities.SmsLogEntity
 import com.yutori.parser.Classification
 
@@ -18,8 +20,7 @@ enum class IngestedMessageOutcome {
 }
 
 internal fun SmsLogEntity.toLatestIngestedMessage(): LatestIngestedMessage {
-    val normalized = body.replace(Regex("\\s+"), " ").trim()
-    val preview = normalized.take(BODY_PREVIEW_MAX_CHARS)
+    val preview = body.replace(Regex("\\s+"), " ").trim()
     val classification = runCatching { Classification.valueOf(classification) }.getOrNull()
     return LatestIngestedMessage(
         id = id,
@@ -30,28 +31,17 @@ internal fun SmsLogEntity.toLatestIngestedMessage(): LatestIngestedMessage {
 }
 
 private fun Classification?.toIngestedMessageOutcome(): IngestedMessageOutcome =
-    when (this) {
-        Classification.UNMATCHED,
-        null,
-        -> IngestedMessageOutcome.NEEDS_REVIEW
-
-        Classification.CC_BILL_PAYMENT,
-        Classification.CASHBACK,
-        Classification.SELF_TRANSFER,
-        Classification.OTP,
-        Classification.BALANCE_ALERT,
-        Classification.NON_FINANCIAL,
-        -> IngestedMessageOutcome.IGNORED
-
-        Classification.CC_TRANSACTION,
-        Classification.UPI_PAYMENT,
-        Classification.DEBIT_CARD,
-        Classification.ATM_WITHDRAWAL,
-        Classification.REFUND,
-        -> IngestedMessageOutcome.AFFECTS_BUDGET
-
-        Classification.INCOMING_CREDIT,
-        -> IngestedMessageOutcome.TRACKED_AS_INCOME
+    when {
+        this == null || this == Classification.UNMATCHED -> IngestedMessageOutcome.NEEDS_REVIEW
+        else -> this.toBudgetEffectOutcome()
     }
 
-private const val BODY_PREVIEW_MAX_CHARS = 80
+private fun Classification.toBudgetEffectOutcome(): IngestedMessageOutcome =
+    when (Classifier.budgetEffectFor(this)) {
+        BudgetEffect.SPEND,
+        BudgetEffect.REFUND,
+        -> IngestedMessageOutcome.AFFECTS_BUDGET
+
+        BudgetEffect.INCOME -> IngestedMessageOutcome.TRACKED_AS_INCOME
+        BudgetEffect.DROP -> IngestedMessageOutcome.IGNORED
+    }

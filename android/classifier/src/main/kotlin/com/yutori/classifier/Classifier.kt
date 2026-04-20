@@ -31,6 +31,10 @@ import com.yutori.parser.ParseResult
  */
 object Classifier {
 
+    /** Exposes the canonical classification→budget-effect mapping. */
+    fun budgetEffectFor(classification: Classification): BudgetEffect =
+        BudgetEffectMapper.effectFor(classification)
+
     fun classify(
         parseResult: ParseResult,
         accounts: List<Account>,
@@ -67,7 +71,7 @@ object Classifier {
         )
 
         val finalClassification = SelfTransferHeuristic.apply(raw, matchedRule)
-        val budgetEffect = BudgetEffectMapper.effectFor(finalClassification)
+        val budgetEffect = budgetEffectFor(finalClassification)
         val merchantKey = MerchantKeyNormalizer.normalize(parseResult.merchant)
 
         val category = Categorizer.categoryFor(

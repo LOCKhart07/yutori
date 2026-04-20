@@ -48,6 +48,14 @@ class LatestIngestedMessageTest {
             .bodyPreview shouldBe "Line1 Line2"
     }
 
+    @Test
+    fun `body preview is not hard-capped and relies on UI ellipsis`() {
+        val longBody = "a".repeat(200)
+        smsLog(body = longBody)
+            .toLatestIngestedMessage()
+            .bodyPreview shouldBe longBody
+    }
+
     private fun smsLog(
         classification: String = "UPI_PAYMENT",
         body: String = "test",

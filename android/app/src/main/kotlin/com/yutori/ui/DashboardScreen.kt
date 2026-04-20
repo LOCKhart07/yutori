@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -1257,11 +1258,15 @@ private fun LatestIngestedRow(
     message: LatestIngestedMessage,
 ) {
     val colors = YutoriTheme.colors
-    val (label, tone) = when (message.outcome) {
-        IngestedMessageOutcome.AFFECTS_BUDGET -> "Affects budget" to colors.positive
-        IngestedMessageOutcome.TRACKED_AS_INCOME -> "Tracked as income" to colors.info
-        IngestedMessageOutcome.IGNORED -> "Ignored" to colors.onMuted
-        IngestedMessageOutcome.NEEDS_REVIEW -> "Needs review" to colors.warn
+    val (label, textTone, pillTone) = when (message.outcome) {
+        IngestedMessageOutcome.AFFECTS_BUDGET ->
+            Triple("Affects budget", colors.positive, colors.positive.copy(alpha = 0.2f))
+        IngestedMessageOutcome.TRACKED_AS_INCOME ->
+            Triple("Tracked as income", colors.info, colors.info.copy(alpha = 0.2f))
+        IngestedMessageOutcome.IGNORED ->
+            Triple("Ignored", colors.onMuted, colors.surfaceElevated2)
+        IngestedMessageOutcome.NEEDS_REVIEW ->
+            Triple("Needs review", colors.warn, colors.warn.copy(alpha = 0.2f))
     }
     Column(
         modifier = Modifier
@@ -1276,15 +1281,19 @@ private fun LatestIngestedRow(
             Text(
                 text = message.sender,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
             )
+            Spacer(Modifier.width(8.dp))
             Surface(
                 shape = RoundedCornerShape(999.dp),
-                color = tone.copy(alpha = 0.2f),
+                color = pillTone,
             ) {
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelSmall,
-                    color = tone,
+                    color = textTone,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                 )
             }
@@ -1294,6 +1303,8 @@ private fun LatestIngestedRow(
             style = MaterialTheme.typography.bodySmall,
             color = colors.onMuted,
             modifier = Modifier.padding(top = 2.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
