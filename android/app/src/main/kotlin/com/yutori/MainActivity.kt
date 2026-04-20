@@ -42,7 +42,6 @@ import com.yutori.ui.DashboardViewModel
 import com.yutori.ui.DashboardViewModelFactory
 import com.yutori.ui.ImportDialog
 import com.yutori.ui.ImportStatus
-import com.yutori.ui.LatestIngestedMessage
 import com.yutori.ui.PermissionScreen
 import com.yutori.ui.Permissions
 import com.yutori.ui.AddEditRecipientRuleScreen
@@ -104,6 +103,7 @@ private sealed interface Screen {
     data object About : Screen
     data object OpenSourceLicenses : Screen
     data object AiSettings : Screen
+    data object MessageLog : Screen
 }
 
 @Composable
@@ -170,10 +170,6 @@ private fun AppContent() {
             )
             val importStatus: ImportStatus by importStatusFlow(app)
                 .collectAsStateWithLifecycle(initialValue = ImportStatus.Idle)
-            val latestIngested: List<LatestIngestedMessage> by database.smsLogDao()
-                .observeLatest(limit = 5)
-                .map { rows -> rows.map { it.toLatestIngestedMessage() } }
-                .collectAsStateWithLifecycle(initialValue = emptyList())
             val suggestedCount: Int by database.accountDao()
                 .observeCountByStatus("SUGGESTED")
                 .collectAsStateWithLifecycle(initialValue = 0)
@@ -210,7 +206,6 @@ private fun AppContent() {
                 currentMonthKey = currentMonthKey,
                 observeMonth = viewModel::observeMonth,
                 importStatus = importStatus,
-                latestIngestedMessages = latestIngested,
                 onSetBudget = { goTo(Screen.BudgetSetup(viewedMonthKey)) },
                 onImport = { importDialogOpen = true },
                 onSettings = { goTo(Screen.Settings) },
@@ -373,6 +368,7 @@ private fun AppContent() {
                 onSendFeedback = { goTo(Screen.SendFeedback) },
                 onAbout = { goTo(Screen.About) },
                 onAiSettings = { goTo(Screen.AiSettings) },
+                onMessageLog = { goTo(Screen.MessageLog) },
                 accountSuggestionCount = suggestedCount,
                 updateState = updateState,
                 onCheckForUpdates = { app.updateViewModel.onCheckNow() },
@@ -593,6 +589,22 @@ private fun AppContent() {
 
         is Screen.OpenSourceLicenses -> {
             com.yutori.ui.about.OpenSourceLicensesScreen(onBack = { goBack() })
+        }
+
+        is Screen.MessageLog -> {
+            val messagesFlow = remember(database) {
+                database.smsLogDao()
+                    .observeLatest(limit = 50)
+                    .map { rows -> rows.map { it.toLatestIngestedMessage() } }
+            }
+            val totalCountFlow = remember(database) {
+                database.smsLogDao().observeTotalCount()
+            }
+            com.yutori.ui.MessageLogScreen(
+                messagesFlow = messagesFlow,
+                totalCountFlow = totalCountFlow,
+                onBack = { goBack() },
+            )
         }
 
         is Screen.AiSettings -> {

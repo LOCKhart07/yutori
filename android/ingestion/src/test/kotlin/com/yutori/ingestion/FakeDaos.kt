@@ -71,6 +71,9 @@ class FakeSmsLogDao : SmsLogDao {
             all.sortedByDescending { it.receivedAtMs }.take(limit),
         ).asStateFlow()
 
+    override fun observeTotalCount(): Flow<Int> =
+        MutableStateFlow(all.size).asStateFlow()
+
     override suspend fun findInRange(startMs: Long, endMs: Long): List<SmsLogEntity> =
         all.filter { it.receivedAtMs in startMs..endMs }
 

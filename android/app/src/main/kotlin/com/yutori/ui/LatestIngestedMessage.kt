@@ -9,6 +9,7 @@ data class LatestIngestedMessage(
     val id: Long,
     val sender: String,
     val bodyPreview: String,
+    val receivedAtMs: Long,
     val outcome: IngestedMessageOutcome,
 )
 
@@ -26,6 +27,7 @@ internal fun SmsLogEntity.toLatestIngestedMessage(): LatestIngestedMessage {
         id = id,
         sender = sender,
         bodyPreview = preview,
+        receivedAtMs = receivedAtMs,
         outcome = classification.toIngestedMessageOutcome(),
     )
 }

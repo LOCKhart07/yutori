@@ -77,6 +77,9 @@ interface SmsLogDao {
     )
     fun observeLatest(limit: Int): Flow<List<SmsLogEntity>>
 
+    @Query("SELECT COUNT(*) FROM sms_log")
+    fun observeTotalCount(): Flow<Int>
+
     @Query(
         """
         SELECT * FROM sms_log

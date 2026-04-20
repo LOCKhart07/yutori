@@ -59,7 +59,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -104,7 +103,6 @@ fun DashboardScreen(
     currentMonthKey: String,
     observeMonth: (String) -> Flow<DashboardUiState>,
     importStatus: ImportStatus = ImportStatus.Idle,
-    latestIngestedMessages: List<LatestIngestedMessage> = emptyList(),
     onSetBudget: () -> Unit = {},
     onImport: () -> Unit = {},
     onSettings: () -> Unit = {},
@@ -296,7 +294,6 @@ fun DashboardScreen(
                 MonthPage(
                     state = state,
                     importStatus = importStatus,
-                    latestIngestedMessages = latestIngestedMessages,
                     onSetBudget = onSetBudget,
                     onCategoryClick = onCategoryClick,
                     onCardClick = onCardClick,
@@ -313,7 +310,6 @@ fun DashboardScreen(
 private fun MonthPage(
     state: DashboardUiState,
     importStatus: ImportStatus,
-    latestIngestedMessages: List<LatestIngestedMessage>,
     onSetBudget: () -> Unit,
     onCategoryClick: (String) -> Unit,
     onCardClick: (accountId: Long?, last4: String?) -> Unit,
@@ -325,14 +321,14 @@ private fun MonthPage(
         is DashboardUiState.Loading -> LoadingView()
         is DashboardUiState.NeedsPermission -> NeedsPermissionView()
         is DashboardUiState.Empty -> EmptyView(
-            state, onSetBudget, importStatus, latestIngestedMessages, isCurrentMonth,
+            state, onSetBudget, importStatus, isCurrentMonth,
             pageMonthKey, onJumpToMonth,
         )
         is DashboardUiState.Ready ->
             ReadyView(
-                state, importStatus, latestIngestedMessages,
+                state, importStatus,
                 onSetBudget, onCategoryClick, onCardClick,
-                isCurrentMonth, pageMonthKey, onJumpToMonth,
+                pageMonthKey, onJumpToMonth,
             )
     }
 }
@@ -358,7 +354,6 @@ private fun EmptyView(
     state: DashboardUiState.Empty,
     onSetBudget: () -> Unit,
     importStatus: ImportStatus,
-    latestIngestedMessages: List<LatestIngestedMessage>,
     isCurrentMonth: Boolean,
     pageMonthKey: String,
     onJumpToMonth: (String) -> Unit,
@@ -410,9 +405,6 @@ private fun EmptyView(
         }
         Spacer(Modifier.height(24.dp))
         ImportStatusBlock(importStatus, pageMonthKey, onJumpToMonth)
-        if (isCurrentMonth) {
-            LatestIngestedMessagesBlock(latestIngestedMessages)
-        }
     }
 }
 
@@ -420,11 +412,9 @@ private fun EmptyView(
 private fun ReadyView(
     state: DashboardUiState.Ready,
     importStatus: ImportStatus,
-    latestIngestedMessages: List<LatestIngestedMessage>,
     onSetBudget: () -> Unit,
     onCategoryClick: (String) -> Unit,
     onCardClick: (accountId: Long?, last4: String?) -> Unit,
-    isCurrentMonth: Boolean,
     pageMonthKey: String,
     onJumpToMonth: (String) -> Unit,
 ) {
@@ -516,9 +506,6 @@ private fun ReadyView(
         }
 
         ImportStatusBlock(importStatus, pageMonthKey, onJumpToMonth)
-        if (isCurrentMonth) {
-            LatestIngestedMessagesBlock(latestIngestedMessages)
-        }
 
         // By category
         Spacer(Modifier.height(24.dp))
@@ -1271,88 +1258,6 @@ private fun ImportStatusBlock(
                 color = YutoriTheme.colors.negative,
             )
         }
-    }
-}
-
-@Composable
-private fun LatestIngestedMessagesBlock(
-    messages: List<LatestIngestedMessage>,
-) {
-    if (messages.isEmpty()) return
-
-    Spacer(Modifier.height(16.dp))
-    SectionHead(title = "Latest ingested messages", meta = null)
-    Spacer(Modifier.height(10.dp))
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp)),
-        color = YutoriTheme.colors.surfaceElevated,
-    ) {
-        Column {
-            messages.forEachIndexed { index, msg ->
-                LatestIngestedRow(msg)
-                if (index < messages.lastIndex) {
-                    HorizontalDivider(color = YutoriTheme.colors.divider)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LatestIngestedRow(
-    message: LatestIngestedMessage,
-) {
-    val colors = YutoriTheme.colors
-    val (label, textTone, pillTone) = when (message.outcome) {
-        IngestedMessageOutcome.AFFECTS_BUDGET ->
-            Triple("Affects budget", colors.positive, colors.positive.copy(alpha = 0.2f))
-        IngestedMessageOutcome.TRACKED_AS_INCOME ->
-            Triple("Tracked as income", colors.info, colors.info.copy(alpha = 0.2f))
-        IngestedMessageOutcome.IGNORED ->
-            Triple("Ignored", colors.onMuted, colors.surfaceElevated2)
-        IngestedMessageOutcome.NEEDS_REVIEW ->
-            Triple("Needs review", colors.warn, colors.warn.copy(alpha = 0.2f))
-    }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = message.sender,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            Spacer(Modifier.width(8.dp))
-            Surface(
-                shape = RoundedCornerShape(999.dp),
-                color = pillTone,
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = textTone,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                )
-            }
-        }
-        Text(
-            text = message.bodyPreview,
-            style = MaterialTheme.typography.bodySmall,
-            color = colors.onMuted,
-            modifier = Modifier.padding(top = 2.dp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 

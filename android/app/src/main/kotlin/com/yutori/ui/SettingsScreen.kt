@@ -48,6 +48,7 @@ fun SettingsScreen(
     onSendFeedback: () -> Unit = {},
     onAbout: () -> Unit = {},
     onAiSettings: () -> Unit = {},
+    onMessageLog: () -> Unit = {},
     accountSuggestionCount: Int = 0,
     updateState: UpdateScreenState? = null,
     onCheckForUpdates: () -> Unit = {},
@@ -110,6 +111,12 @@ fun SettingsScreen(
                         subtitle = "Describe a rule in plain English; AI suggests " +
                             "a merchant pattern. Runs on your phone, model is an opt-in download.",
                         onClick = onAiSettings,
+                    )
+                    SettingsItem(
+                        title = "Message log",
+                        subtitle = "Recent SMS Yutori has processed, with their " +
+                            "classification outcome.",
+                        onClick = onMessageLog,
                     )
                 }
 
