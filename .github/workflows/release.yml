@@ -23,16 +23,16 @@ jobs:
         working-directory: android
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  # v5.2.0
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Set up Gradle (with cache)
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e  # v6.1.0
         with:
           cache-read-only: false
 
@@ -41,7 +41,7 @@ jobs:
 
       - name: Upload detekt reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: detekt-reports
           path: android/**/build/reports/detekt/*
@@ -55,7 +55,7 @@ jobs:
         working-directory: android
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           # Full history — the versionCode is derived from `git rev-list
           # --count HEAD` at build time, so a shallow clone (depth 1)
@@ -64,13 +64,13 @@ jobs:
           fetch-depth: 0
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  # v5.2.0
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Set up Gradle (with cache)
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e  # v6.1.0
         with:
           cache-read-only: false
 
@@ -138,7 +138,7 @@ jobs:
 
       - name: Generate changelog
         id: cliff
-        uses: orhun/git-cliff-action@v4
+        uses: orhun/git-cliff-action@c93ef52f3d0ddcdcc9bd5447d98d458a11cd4f72  # v4.7.1
         with:
           config: cliff.toml
           # --current picks only the commits between the previous tag
@@ -164,7 +164,7 @@ jobs:
           echo "body_path=$RUNNER_TEMP/release-body.md" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release & upload APK
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda  # v3.0.0
         with:
           name: ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
