@@ -16,8 +16,8 @@ Companion docs: [schema.md](./schema.md) §`recipient_rules`,
 [suggestions-spec.md](./suggestions-spec.md) §6.4 (integration point),
 [ui-spec.md](./ui-spec.md) (edit-form conventions).
 
-Reference mockup: `mockups/v15-ai-rules.html` *(to be drafted alongside
-this spec; user approval required before any Stage C code — see CLAUDE.md
+Reference mockup: `mockups/v17-ai-rules.html` *(drafted alongside this
+spec; user approval required before any Stage C code — see CLAUDE.md
 workflow rules).*
 
 Related issues: **#64** (parent), **#28** (manual edit form — target

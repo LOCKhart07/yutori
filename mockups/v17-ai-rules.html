@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v17 mockup: AI-assisted rule creation (#64 part 2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --divider-strong:rgba(237,238,240,0.14);
+    --accent:        #C6E3A3;
+    --accent-soft:   rgba(198,227,163,0.10);
+    --negative:      #E27A7A;
+    --negative-soft: rgba(226,122,122,0.10);
+    --info:          #9EC3E6;
+    --info-soft:     rgba(158,195,230,0.10);
+    --warning:       #E6C67A;
+    --warning-soft:  rgba(230,198,122,0.10);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 96px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 52px 0 10px; font-size: 17px; color: #C9CACD; }
+  h3 { font-weight: 500; margin: 24px 0 10px; font-size: 12px; color: var(--on-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 18px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: #8A8E96; font-size: 12px; max-width: 620px; margin: 12px 0 0; line-height: 1.55; }
+  .note strong { color: #C9CACD; }
+  .note code { background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  .phone {
+    width: 380px;
+    background: var(--surface);
+    border-radius: 28px;
+    padding: 20px 24px 26px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .phones { display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start; }
+  .phone-label {
+    font-size: 11px; color: var(--on-faint); text-transform: uppercase;
+    letter-spacing: 0.08em; font-weight: 600;
+    max-width: 380px; margin: 12px 0 28px;
+  }
+  .phone-label strong { color: var(--on-muted); }
+
+  .back {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--on-muted); font-size: 13px; margin: 2px 0 18px;
+  }
+  .back svg { width: 18px; height: 18px; }
+  .screen-title { font-size: 20px; font-weight: 600; color: var(--on); margin: 0 0 16px; }
+
+  .section-label {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 600;
+    margin: 22px 0 8px;
+  }
+
+  /* --- Settings row primitives --- */
+  .set-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 14px;
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    margin-bottom: 8px;
+  }
+  .set-row .label { font-size: 14px; color: var(--on); }
+  .set-row .caption { font-size: 11px; color: var(--on-muted); margin-top: 3px; line-height: 1.4; max-width: 260px; }
+
+  /* Toggle switch */
+  .toggle {
+    width: 38px; height: 22px; background: var(--surface-el2);
+    border-radius: 11px; position: relative;
+    border: 1px solid var(--divider-strong);
+  }
+  .toggle .knob {
+    position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--on-muted); transition: left 0.2s;
+  }
+  .toggle.on { background: var(--accent-soft); border-color: var(--accent); }
+  .toggle.on .knob { left: 18px; background: var(--accent); }
+
+  /* Model info card */
+  .model-card {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    padding: 14px 14px 12px;
+    margin-bottom: 8px;
+  }
+  .model-card .tier-name {
+    font-size: 15px; color: var(--on); font-weight: 600;
+  }
+  .model-card .tier-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--on-faint);
+    margin-top: 4px; letter-spacing: 0.02em;
+  }
+  .model-card .state-line {
+    font-size: 12px; color: var(--on-muted); margin-top: 10px;
+  }
+  .model-card .state-line.ready { color: var(--accent); }
+  .model-card .progress {
+    margin-top: 10px;
+    height: 4px; background: var(--surface-el2); border-radius: 2px;
+    overflow: hidden;
+  }
+  .model-card .progress .fill {
+    height: 100%; background: var(--accent); width: 62%;
+  }
+  .model-card .actions {
+    display: flex; gap: 8px; margin-top: 12px;
+  }
+  .btn {
+    padding: 8px 14px;
+    border-radius: 8px; font-size: 12px; font-weight: 600;
+    border: 1px solid transparent; cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); color: #0B1206; }
+  .btn.ghost { background: transparent; color: var(--on-muted); border-color: var(--divider-strong); }
+  .btn.destructive { background: transparent; color: var(--negative); border-color: rgba(226,122,122,0.25); }
+  .btn.info { background: var(--info-soft); color: var(--info); border: 1px solid rgba(158,195,230,0.25); }
+  .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+  /* Existing suggestion-card styling from v14, reused here with + Describe button */
+  .suggest-card {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-left: 2px solid var(--info);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .suggest-card .row1 {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--on); font-weight: 500;
+  }
+  .suggest-card .row1 .freq {
+    font-family: 'Inter', sans-serif; font-size: 11px;
+    color: var(--on-muted); font-weight: 400;
+  }
+  .suggest-card .row2 {
+    margin-top: 6px; font-size: 12px;
+    color: var(--info); font-style: italic;
+  }
+  .suggest-card .actions {
+    display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+    padding-top: 10px; border-top: 1px solid var(--divider);
+  }
+  .suggest-card .actions .btn {
+    flex: 1 1 auto; padding: 7px 10px; font-size: 11px;
+  }
+  .suggest-card .actions .btn.describe {
+    background: var(--accent-soft); color: var(--accent);
+    border: 1px solid rgba(198,227,163,0.25);
+    font-weight: 600;
+  }
+  .suggest-card .actions .btn.describe .sparkle {
+    margin-right: 4px; font-size: 10px;
+  }
+
+  /* --- Describe-this-rule sheet --- */
+  .sheet-host {
+    width: 380px; height: 700px; border-radius: 28px; overflow: hidden;
+    background: var(--surface); position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+    margin-bottom: 6px;
+  }
+  .sheet-host .scrim {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.55);
+  }
+  .sheet-host .bg-ghost {
+    padding: 20px 24px; opacity: 0.35; pointer-events: none;
+  }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--surface-el);
+    border-top-left-radius: 24px; border-top-right-radius: 24px;
+    padding: 16px 20px 22px;
+    box-shadow: 0 -1px 0 rgba(255,255,255,0.06);
+    max-height: 88%;
+  }
+  .sheet-handle {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: var(--divider-strong);
+    margin: 0 auto 14px;
+  }
+  .sheet-title {
+    font-size: 15px; font-weight: 600; color: var(--on); margin-bottom: 4px;
+  }
+  .sheet-sub {
+    font-size: 12px; color: var(--on-muted); margin-bottom: 14px;
+    line-height: 1.5;
+  }
+
+  .textarea {
+    background: var(--surface); border: 1px solid var(--divider-strong);
+    border-radius: 10px; padding: 12px 14px;
+    min-height: 78px; font-size: 13px; color: var(--on);
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 10px;
+  }
+  .textarea.placeholder { color: var(--on-faint); font-style: italic; }
+  .textarea:focus-within { border-color: var(--accent); }
+  .caret {
+    display: inline-block; width: 1px; height: 14px;
+    background: var(--accent); margin-left: 1px;
+    animation: blink 1s steps(2) infinite; vertical-align: middle;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .hint-line {
+    font-size: 11px; color: var(--on-faint);
+    margin-bottom: 14px; line-height: 1.5;
+  }
+
+  .sheet-actions {
+    display: flex; gap: 10px;
+  }
+  .sheet-actions .btn { flex: 1; padding: 11px 10px; font-size: 13px; }
+  .sheet-actions .btn.primary.busy {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(11,18,6,0.3);
+    border-top-color: #0B1206; border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Inline banners inside the sheet */
+  .banner {
+    padding: 10px 12px; border-radius: 8px;
+    font-size: 12px; color: var(--on-muted);
+    margin: 0 0 12px; line-height: 1.5;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .banner svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; }
+  .banner strong { color: var(--on); display: block; margin-bottom: 2px; font-weight: 600; }
+  .banner.error {
+    background: var(--negative-soft);
+    border: 1px solid rgba(226,122,122,0.22);
+    color: #e5a9a9;
+  }
+  .banner.error strong { color: var(--negative); }
+  .banner.warn {
+    background: var(--warning-soft);
+    border: 1px solid rgba(230,198,122,0.22);
+  }
+  .banner.warn strong { color: var(--warning); }
+  .banner.info {
+    background: var(--info-soft);
+    border: 1px solid rgba(158,195,230,0.22);
+  }
+  .banner.info strong { color: var(--info); }
+
+  /* Disclosure expander in the AI-unavailable case */
+  .disclosure {
+    margin-top: 8px; font-size: 11px; color: var(--on-faint);
+    font-family: 'JetBrains Mono', monospace; line-height: 1.5;
+    border-top: 1px dashed var(--divider);
+    padding-top: 6px;
+  }
+
+  /* --- Pre-fill edit-form preview (reuse manual form shape from v15) --- */
+  .form-row { margin-bottom: 14px; }
+  .form-row .label {
+    font-size: 10px; color: var(--on-faint);
+    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .form-row .input {
+    background: var(--surface-el); border: 1px solid var(--divider-strong);
+    border-radius: 10px; padding: 11px 12px;
+    font-size: 13px; color: var(--on);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .form-row .input.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .form-row .input.prefilled { border-color: rgba(198,227,163,0.35); background: rgba(198,227,163,0.05); }
+  .form-row .input.required {
+    border: 1px dashed rgba(226,122,122,0.35); color: var(--on-faint); font-style: italic;
+  }
+  .form-row .chev { color: var(--on-faint); }
+  .form-row .hint {
+    font-size: 10px; color: var(--on-muted); margin-top: 4px;
+    font-family: 'Inter', sans-serif; font-style: italic;
+  }
+  .form-row .hint.ai { color: var(--accent); }
+
+  .callout {
+    margin-top: 24px;
+    padding: 12px 14px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--on-muted); font-size: 12px; line-height: 1.55;
+    border-radius: 0 8px 8px 0;
+    max-width: 820px;
+  }
+  .callout strong { color: var(--on); }
+  .callout code { background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  /* Chip for the "AI" provenance badge on saved rules */
+  .src-badge {
+    font-size: 9px; color: var(--on-faint); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 2px 6px; border-radius: 4px; background: var(--surface-el2);
+  }
+  .src-badge.ai { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<h1>v17 — AI-assisted rule creation (#64 part 2, Stage B)</h1>
+<p class="blurb">
+  Companion to <code>plans/ai-rules-spec.md</code>. The feature is opt-in via a Settings toggle; on
+  first enable the user downloads a ~2.58 GB on-device model (Gemma 4 E2B via LiteRT-LM, shipped as
+  "Deep"). Stage A confirmed that narrower scope (extract <em>pattern</em> and <em>category</em>,
+  not classification) + a strict JSON output contract scores 8–10/10 on a 10-prompt fixture at the
+  Deep tier. Classification stays with the user's manual dropdown pick in
+  <code>AddEditRecipientRule</code> (#28). No weights ship in the APK. No cloud call. No token.
+</p>
+
+<!--════════════════════════════════════════════════════════════════
+  A. Settings lifecycle
+  ════════════════════════════════════════════════════════════════-->
+<h2>A — Settings → AI-assisted rules · lifecycle</h2>
+<p class="blurb">
+  New section on the Settings screen, directly under <em>Recipient rules</em> (#28 surface). The
+  toggle is <strong>off</strong> by default; tapping it opens a confirmation sheet that states the
+  download size + network recommendation + privacy posture before we commit the user to anything.
+</p>
+
+<div class="phones">
+
+  <!-- A1 — off -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">AI-assisted rules</div>
+
+      <div class="set-row">
+        <div>
+          <div class="label">AI-assisted rules</div>
+          <div class="caption">Describe a rule in plain English; AI suggests a merchant pattern. Runs entirely on your phone.</div>
+        </div>
+        <div class="toggle"><span class="knob"></span></div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>A1</strong> · toggle off (default). Nothing on disk.</div>
+  </div>
+
+  <!-- A2 — confirmation sheet -->
+  <div>
+    <div class="sheet-host">
+      <div class="bg-ghost">
+        <div class="back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          Settings
+        </div>
+        <div class="screen-title">AI-assisted rules</div>
+        <div class="set-row">
+          <div>
+            <div class="label">AI-assisted rules</div>
+            <div class="caption">Describe a rule in plain English…</div>
+          </div>
+          <div class="toggle on"><span class="knob"></span></div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Enable AI-assisted rules?</div>
+        <div class="sheet-sub">
+          We'll download the Deep model (~2.58 GB) once. It runs entirely on your phone — no data
+          leaves the device. Wi-Fi is recommended.
+        </div>
+        <div class="banner info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+          <div>
+            <strong>On-device only</strong>
+            Your rule descriptions are never sent anywhere. The model runs locally after the
+            one-time download.
+          </div>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn ghost">Cancel</button>
+          <button class="btn primary">Continue</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>A2</strong> · opt-in sheet surfaces the download cost and privacy posture before any network traffic.</div>
+  </div>
+
+  <!-- A3 — downloading -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">AI-assisted rules</div>
+
+      <div class="set-row">
+        <div>
+          <div class="label">AI-assisted rules</div>
+          <div class="caption">Describe a rule in plain English…</div>
+        </div>
+        <div class="toggle on"><span class="knob"></span></div>
+      </div>
+
+      <div class="model-card">
+        <div class="tier-name">Deep</div>
+        <div class="tier-sub">gemma-4-E2B · 2.58 GB</div>
+        <div class="state-line">Downloading · 1.60 GB of 2.58 GB</div>
+        <div class="progress"><div class="fill"></div></div>
+        <div class="actions">
+          <button class="btn ghost" style="flex: 1;">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>A3</strong> · download state. Progress also appears in a foreground-service notification so it survives app backgrounding.</div>
+  </div>
+
+</div>
+
+<div class="phones">
+
+  <!-- A4 — installed -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">AI-assisted rules</div>
+
+      <div class="set-row">
+        <div>
+          <div class="label">AI-assisted rules</div>
+          <div class="caption">Describe a rule in plain English…</div>
+        </div>
+        <div class="toggle on"><span class="knob"></span></div>
+      </div>
+
+      <div class="model-card">
+        <div class="tier-name">Deep</div>
+        <div class="tier-sub">gemma-4-E2B · 2.58 GB</div>
+        <div class="state-line ready">Ready · Installed 3 days ago</div>
+        <div class="actions">
+          <button class="btn destructive">Delete model</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>A4</strong> · installed state. Feature is fully live — Describe entry points are unlocked.</div>
+  </div>
+
+  <!-- A5 — toggle on but model missing (post-delete) -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">AI-assisted rules</div>
+
+      <div class="set-row">
+        <div>
+          <div class="label">AI-assisted rules</div>
+          <div class="caption">Describe a rule in plain English…</div>
+        </div>
+        <div class="toggle on"><span class="knob"></span></div>
+      </div>
+
+      <div class="model-card">
+        <div class="tier-name">Deep</div>
+        <div class="tier-sub">gemma-4-E2B · 2.58 GB</div>
+        <div class="state-line">Not downloaded yet</div>
+        <div class="actions">
+          <button class="btn primary">Download model</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>A5</strong> · toggle is on but the model has been deleted (or the download was cancelled). Toggling the feature <em>off</em> does not delete the file; deletion is an explicit action.</div>
+  </div>
+
+  <!-- A6 — download checksum mismatch (rare, but spec'd) -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">AI-assisted rules</div>
+
+      <div class="set-row">
+        <div>
+          <div class="label">AI-assisted rules</div>
+          <div class="caption">Describe a rule in plain English…</div>
+        </div>
+        <div class="toggle on"><span class="knob"></span></div>
+      </div>
+
+      <div class="model-card">
+        <div class="tier-name">Deep</div>
+        <div class="tier-sub">gemma-4-E2B · 2.58 GB</div>
+        <div class="state-line" style="color: var(--negative);">Download failed · checksum mismatch</div>
+        <div class="actions">
+          <button class="btn primary">Retry</button>
+          <button class="btn ghost">Details</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>A6</strong> · SHA-256 verify failed. The <code>.tmp</code> file is deleted; the feature is unusable until a clean re-download.</div>
+  </div>
+
+</div>
+
+<!--════════════════════════════════════════════════════════════════
+  B. Entry point
+  ════════════════════════════════════════════════════════════════-->
+<h2>B — Entry points from the existing surfaces</h2>
+<p class="blurb">
+  The AI path is accessed from places the user already has rule-writing context — <strong>unsure</strong>
+  heuristic suggestions from Part 1 (`reason_code = REPEAT_NO_DEFAULT` cards) and #29's per-tx
+  "Add rule" entry point. We never add a top-level "AI" tab or a floating button — the feature
+  surfaces <em>where the user is already trying to do the thing</em>.
+</p>
+
+<div class="phones">
+
+  <!-- B1 — unsure suggestion card with Describe button -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">Recipient rules</div>
+
+      <div class="section-label"><span>Suggested · 1 new</span></div>
+
+      <div class="suggest-card">
+        <div class="row1">
+          <span>swiggy-payments@paytm</span>
+          <span class="freq">9 txs · ₹6,420</span>
+        </div>
+        <div class="row2">No default — pick a type</div>
+        <div class="actions">
+          <button class="btn info" style="flex: 1;">Pick type…</button>
+          <button class="btn describe">
+            <span class="sparkle">✦</span>Describe this rule…
+          </button>
+          <button class="btn ghost">Review</button>
+          <button class="btn ghost" style="color: var(--on-faint); border: none;">Dismiss</button>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top: 28px;"><span>Active rules · 2</span></div>
+      <div class="set-row">
+        <div>
+          <div class="label" style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">cred.club@axisb</div>
+          <div class="caption" style="margin-top: 2px;">→ CC bill payment</div>
+        </div>
+        <span class="src-badge">SEED</span>
+      </div>
+    </div>
+    <div class="phone-label"><strong>B1</strong> · <em>unsure</em> suggestion card with the new <strong>Describe this rule…</strong> ghost button. Button is only shown when AI is enabled + installed; otherwise it hides and only "Pick type…" remains.</div>
+  </div>
+
+  <!-- B2 — feature-off deep link -->
+  <div>
+    <div class="sheet-host">
+      <div class="bg-ghost">
+        <div class="back">Settings</div>
+        <div class="screen-title">Recipient rules</div>
+        <div class="suggest-card">
+          <div class="row1"><span>swiggy-payments@paytm</span><span class="freq">9 txs</span></div>
+          <div class="row2">No default — pick a type</div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">AI-assisted rules isn't on yet</div>
+        <div class="sheet-sub">
+          Turn it on in Settings to describe rules in plain English. You'll be asked to download a
+          one-time 2.58 GB model.
+        </div>
+        <div class="sheet-actions">
+          <button class="btn ghost">Not now</button>
+          <button class="btn primary">Go to Settings</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>B2</strong> · feature-off deep link. No nag loop — one tap deep-links to the Settings toggle row. If the user backs out, they're right where they started.</div>
+  </div>
+
+</div>
+
+<!--════════════════════════════════════════════════════════════════
+  C. Describe sheet
+  ════════════════════════════════════════════════════════════════-->
+<h2>C — The Describe-this-rule sheet · four states</h2>
+<p class="blurb">
+  Modal bottom sheet. Single-purpose. Free-text in, extracted draft out. Inference takes ~10 s on
+  the Nord's Snapdragon 7+ Gen 3; the sheet shows a spinner, the text field stays visible, and the
+  primary button disables. On success the sheet dismisses and the user lands on #28's edit form
+  with the extracted values pre-filled (screen D).
+</p>
+
+<div class="phones">
+
+  <!-- C1 — idle -->
+  <div>
+    <div class="sheet-host">
+      <div class="bg-ghost">
+        <div class="back">Settings</div>
+        <div class="screen-title">Recipient rules</div>
+        <div class="suggest-card"><div class="row1"><span>swiggy-payments@paytm</span><span class="freq">9 txs</span></div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Describe a rule</div>
+        <div class="sheet-sub">
+          Type what the rule should do. The AI will suggest a merchant pattern and a category.
+          You'll still pick the classification yourself.
+        </div>
+        <div class="textarea placeholder">anything from cred is a credit-card bill<span class="caret"></span></div>
+        <div class="hint-line">Examples: "treat cheq as a cc bill", "netflix is entertainment"</div>
+        <div class="sheet-actions">
+          <button class="btn ghost">Cancel</button>
+          <button class="btn primary" disabled>Extract</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>C1</strong> · idle / empty input. Extract is disabled until text is non-empty.</div>
+  </div>
+
+  <!-- C2 — busy -->
+  <div>
+    <div class="sheet-host">
+      <div class="bg-ghost">
+        <div class="back">Settings</div>
+        <div class="screen-title">Recipient rules</div>
+        <div class="suggest-card"><div class="row1"><span>swiggy-payments@paytm</span><span class="freq">9 txs</span></div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Describe a rule</div>
+        <div class="sheet-sub">
+          Type what the rule should do. The AI will suggest a merchant pattern and a category.
+          You'll still pick the classification yourself.
+        </div>
+        <div class="textarea">anything from CRED is a credit-card bill payment</div>
+        <div class="hint-line">Working on it — usually about 10 seconds.</div>
+        <div class="sheet-actions">
+          <button class="btn ghost" disabled>Cancel</button>
+          <button class="btn primary busy" disabled>
+            <span class="spinner"></span>
+            Extracting…
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>C2</strong> · extracting. Text stays visible so the user can see what they sent. Cancel is disabled once inference has started (partial cancellation isn't meaningful for a ~10 s op).</div>
+  </div>
+
+  <!-- C3 — validator rejected -->
+  <div>
+    <div class="sheet-host">
+      <div class="bg-ghost">
+        <div class="back">Settings</div>
+        <div class="screen-title">Recipient rules</div>
+        <div class="suggest-card"><div class="row1"><span>swiggy-payments@paytm</span><span class="freq">9 txs</span></div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Describe a rule</div>
+        <div class="sheet-sub">
+          Type what the rule should do. The AI will suggest a merchant pattern and a category.
+          You'll still pick the classification yourself.
+        </div>
+        <div class="textarea">ignore all transfers to my savings account</div>
+        <div class="banner error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+          <div>
+            <strong>Couldn't extract a rule from that</strong>
+            Try naming a specific merchant or UPI handle — e.g. "treat payments to cred as a
+            credit card bill".
+          </div>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn ghost">Cancel</button>
+          <button class="btn primary">Retry</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>C3</strong> · validator rejected. Covers hallucination-substring-check failure, missing pattern field, and under/over length — all surface with the same copy. The user's text is preserved; Retry re-runs the same input.</div>
+  </div>
+
+  <!-- C4 — AI unavailable (device-level) -->
+  <div>
+    <div class="sheet-host">
+      <div class="bg-ghost">
+        <div class="back">Settings</div>
+        <div class="screen-title">Recipient rules</div>
+        <div class="suggest-card"><div class="row1"><span>swiggy-payments@paytm</span><span class="freq">9 txs</span></div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Describe a rule</div>
+        <div class="sheet-sub" style="margin-bottom: 10px;">
+          Type what the rule should do. The AI will suggest a merchant pattern and a category.
+          You'll still pick the classification yourself.
+        </div>
+        <div class="banner warn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5.33c-.77-1.34-2.69-1.34-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"/></svg>
+          <div>
+            <strong>AI is unavailable on this device</strong>
+            The on-device model failed to initialize. You can still write rules manually from the
+            Recipient rules screen.
+            <div class="disclosure">
+              LiteRtLmJniException: failed to load libllm_inference_jni.so (arch armv7a not supported)
+            </div>
+          </div>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn ghost" style="flex: 1;">Close</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>C4</strong> · engine init failed. Disables the toggle going forward (the feature genuinely doesn't work on this hardware). Technical details live in a disclosure so a bug report can include them.</div>
+  </div>
+
+</div>
+
+<!--════════════════════════════════════════════════════════════════
+  D. Post-extraction pre-fill
+  ════════════════════════════════════════════════════════════════-->
+<h2>D — Landing on AddEditRecipientRule with the AI pre-fill</h2>
+<p class="blurb">
+  The extraction sheet dismisses and navigates to the existing rule-edit form (#28) with <code>pattern</code> and
+  <code>note</code> populated from the LLM output, <code>patternKind</code> defaulted to <code>LITERAL</code>,
+  and the <strong>classification dropdown left blank — the user picks it themselves</strong>. AI-prefilled
+  fields have a subtle accent-bordered background so the user knows what came from where. On save, the row
+  writes <code>source = AI</code>.
+</p>
+
+<div class="phones">
+
+  <!-- D1 — pre-filled form -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Recipient rules
+      </div>
+      <div class="screen-title">New rule</div>
+
+      <div class="form-row">
+        <div class="label">Pattern</div>
+        <div class="input mono prefilled">CRED</div>
+        <div class="hint ai">Suggested by AI · edit if it's wrong</div>
+      </div>
+
+      <div class="form-row">
+        <div class="label">Match as</div>
+        <div class="input">LITERAL <span class="chev">›</span></div>
+      </div>
+
+      <div class="form-row">
+        <div class="label">Classification</div>
+        <div class="input required">Pick a classification <span class="chev">›</span></div>
+        <div class="hint">Required. AI leaves this for you to decide.</div>
+      </div>
+
+      <div class="form-row">
+        <div class="label">Note</div>
+        <div class="input prefilled" style="font-family: 'Inter';">credit-card bill payment</div>
+        <div class="hint ai">Suggested by AI · edit or remove</div>
+      </div>
+
+      <div class="form-row">
+        <div class="label">Account</div>
+        <div class="input" style="color: var(--on-faint);">— none — <span class="chev">›</span></div>
+      </div>
+
+      <div class="form-row" style="margin-top: 20px;">
+        <div style="display: flex; gap: 10px;">
+          <button class="btn ghost" style="flex: 1;">Cancel</button>
+          <button class="btn primary" style="flex: 1;" disabled>Save</button>
+        </div>
+        <div class="hint" style="margin-top: 10px;">Save is disabled until the classification is picked.</div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>D1</strong> · post-extraction edit form. Accent-tinted inputs = AI-prefilled. Classification dropdown is blank and dashed-outlined to flag it as still-required.</div>
+  </div>
+
+  <!-- D2 — after user picked classification + saved -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">Recipient rules</div>
+
+      <div class="section-label"><span>Active rules · 3</span></div>
+
+      <div class="set-row">
+        <div>
+          <div class="label" style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">CRED</div>
+          <div class="caption" style="margin-top: 2px;">→ CC bill payment · credit-card bill payment</div>
+        </div>
+        <span class="src-badge ai">AI</span>
+      </div>
+
+      <div class="set-row">
+        <div>
+          <div class="label" style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">cred.club@axisb</div>
+          <div class="caption" style="margin-top: 2px;">→ CC bill payment</div>
+        </div>
+        <span class="src-badge">SEED</span>
+      </div>
+
+      <div class="set-row">
+        <div>
+          <div class="label" style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">owner.alias-*@oksbi</div>
+          <div class="caption" style="margin-top: 2px;">→ Self-transfer · Axis ••2222</div>
+        </div>
+        <span class="src-badge">USER</span>
+      </div>
+    </div>
+    <div class="phone-label"><strong>D2</strong> · after save. A new row lands with the <code>AI</code> source badge. Badge is accent-coloured so the user can scan the list for "what did the model contribute?"</div>
+  </div>
+
+</div>
+
+<div class="callout">
+  <strong>What's deliberately missing.</strong>
+  No onboarding nag, no home-screen "Try AI rules" banner, no first-run promotion. Discovery
+  happens only where the user is already trying to write a rule. If the user never hits an
+  unsure suggestion and never uses #29's per-tx menu, they never see the feature — which is
+  fine. The Part-1 heuristic path already covers the common case.
+</div>
+
+<div class="callout" style="margin-top: 8px;">
+  <strong>No v1 picker.</strong>
+  The Settings card shows only "Deep". Multi-tier ("Quick" 270M / "Balanced" 1B) is deferred
+  pending non-gated smaller Gemma 4 variants — Gemma 3 270M/1B are license-gated on HF and
+  would require a browser-and-file-picker detour per tier that we're not willing to ship. The
+  tier infrastructure (download flow, atomic swap, per-model SHA pin) is still designed
+  tier-agnostic so a future "Change model" row can be added without churn.
+</div>
+
+</body>
+</html>
