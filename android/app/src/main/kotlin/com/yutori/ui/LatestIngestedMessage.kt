@@ -4,6 +4,7 @@ import com.yutori.classifier.BudgetEffect
 import com.yutori.classifier.Classifier
 import com.yutori.database.entities.SmsLogEntity
 import com.yutori.parser.Classification
+import com.yutori.parser.ParseResult
 
 data class LatestIngestedMessage(
     val id: Long,
@@ -37,7 +38,7 @@ private fun Classification?.toIngestedMessageOutcome(): IngestedMessageOutcome =
     }
 
 private fun Classification.toBudgetEffectOutcome(): IngestedMessageOutcome =
-    when (Classifier.budgetEffectFor(this)) {
+    when (classifierBudgetEffectFor(this)) {
         BudgetEffect.SPEND,
         BudgetEffect.REFUND,
         -> IngestedMessageOutcome.AFFECTS_BUDGET
@@ -45,3 +46,13 @@ private fun Classification.toBudgetEffectOutcome(): IngestedMessageOutcome =
         BudgetEffect.INCOME -> IngestedMessageOutcome.TRACKED_AS_INCOME
         BudgetEffect.DROP -> IngestedMessageOutcome.IGNORED
     }
+
+private fun classifierBudgetEffectFor(classification: Classification): BudgetEffect =
+    Classifier.classify(
+        parseResult = ParseResult(
+            classification = classification,
+            pattern = "latest_ingested_message_outcome",
+        ),
+        accounts = emptyList(),
+        recipientRules = emptyList(),
+    ).budgetEffect
