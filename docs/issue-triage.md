@@ -36,9 +36,14 @@ triggers are out of scope for v1 (see *Open decisions §1*).
    `$RUNNER_TEMP/open-issues.json` — `[{number, title, labels[]}]` —
    fetched via `gh api /repos/{repo}/issues?state=open&per_page=100`.
    This is the only data Copilot sees for duplicate detection.
-5. `npm install -g @github/copilot@<pinned-version>` installs the CLI.
-6. Copilot runs with the **static prompt** at
-   `.github/triage-prompt.md` and the two data files, with tools
+5. A third bash step writes **recent release context** to
+   `$RUNNER_TEMP/recent-releases.json` — `[{tag_name, name, body}]` —
+   fetched via `gh api /repos/{repo}/releases?per_page=5`, with
+   release `body` truncated before prompt assembly to keep context
+   bounded.
+6. `npm install -g @github/copilot@<pinned-version>` installs the CLI.
+7. Copilot runs with the **static prompt** at
+   `.github/triage-prompt.md` and the three data files, with tools
    gated to the minimum:
    ```
    copilot -p "$(cat .github/triage-prompt.md)" \
@@ -49,18 +54,18 @@ triggers are out of scope for v1 (see *Open decisions §1*).
    Output goes to `$RUNNER_TEMP/triage.json`. No shell, no network,
    no `gh` tool exposure. Copilot is a text transformer in this
    pipeline — nothing more.
-7. A `jq`-based validator rejects the run if:
+8. A `jq`-based validator rejects the run if:
    - output is not valid JSON,
    - required fields are missing,
    - any enum value is outside its allow-list,
    - `duplicate_of` points to an issue that doesn't exist.
    Unknown fields are ignored; unknown enum values blank the field
    rather than fail the whole run.
-8. A bash step applies labels and posts the comment using `gh api`,
+9. A bash step applies labels and posts the comment using `gh api`,
    hard-coded to `github.event.issue.number`. Each label is added
    only if it already exists in the repo (see *Label taxonomy*) —
    unknown labels are never auto-created from Copilot output.
-9. The comment carries a hidden marker:
+10. The comment carries a hidden marker:
    ```
    <!-- yutori-triage:v1 -->
    ```
