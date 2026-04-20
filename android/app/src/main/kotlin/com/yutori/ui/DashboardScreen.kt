@@ -1,5 +1,6 @@
 package com.yutori.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -48,8 +50,13 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -83,6 +90,10 @@ import java.util.Locale
  * realistic pre-setting horizon.
  */
 private const val MAX_FORWARD_MONTHS = 24
+
+// Minimum gap between back-boundary toasts so a sustained drag or
+// rapid repeat taps don't stack (#134).
+private const val BOUNDARY_TOAST_COOLDOWN_MS = 800L
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -157,6 +168,46 @@ fun DashboardScreen(
     }
     val scope = rememberCoroutineScope()
 
+    // Feedback for attempts to navigate past the earliest month with
+    // data (#134). Fires on tap-when-disabled and on overscroll drag
+    // at page 0. Rate-limited so a sustained drag or rapid taps don't
+    // queue up a stack of toasts.
+    val context = LocalContext.current
+    val lastBoundaryToastAt = remember { mutableLongStateOf(0L) }
+    val showBoundaryToast: () -> Unit = {
+        val now = System.currentTimeMillis()
+        if (now - lastBoundaryToastAt.longValue > BOUNDARY_TOAST_COOLDOWN_MS) {
+            Toast.makeText(
+                context,
+                "No earlier months with data",
+                Toast.LENGTH_SHORT,
+            ).show()
+            lastBoundaryToastAt.longValue = now
+        }
+    }
+    val boundaryScrollConnection = remember(pagerState) {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset {
+                // At page 0 the Pager can't consume a backward drag,
+                // so any unconsumed x-delta from active finger input
+                // means the user is trying to go further back.
+                // Filter SideEffect (fling residue) to avoid spurious
+                // toasts at the end of a settle-to-page-0 fling.
+                if (source == NestedScrollSource.UserInput &&
+                    !pagerState.canScrollBackward &&
+                    available.x != 0f
+                ) {
+                    showBoundaryToast()
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -173,9 +224,12 @@ fun DashboardScreen(
                 onSettings = onSettings,
                 hasSettingsBadge = hasSettingsBadge,
                 onMonthPrev = {
-                    scope.launch {
-                        val target = (pagerState.currentPage - 1).coerceAtLeast(0)
-                        pagerState.animateScrollToPage(target)
+                    if (pagerState.currentPage == 0) {
+                        showBoundaryToast()
+                    } else {
+                        scope.launch {
+                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                        }
                     }
                 },
                 onMonthNext = {
@@ -220,7 +274,9 @@ fun DashboardScreen(
             }
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(boundaryScrollConnection),
                 // 12dp peek on each edge — lets the user see a sliver
                 // of the neighbor month, hinting the dashboard is
                 // horizontally pageable (#21 decision).
@@ -532,12 +588,14 @@ private fun TopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Past chevron dims at the past-edge (earliest sms_log month).
+            // Past chevron dims at the past-edge (earliest sms_log
+            // month) but stays clickable so onMonthPrev can surface a
+            // toast explaining the no-op — see #134.
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                 contentDescription = "Previous month",
                 modifier = Modifier
-                    .clickable(enabled = canGoPrev, onClick = onMonthPrev)
+                    .clickable(onClick = onMonthPrev)
                     .padding(horizontal = 6.dp, vertical = 4.dp)
                     .size(24.dp),
                 tint = if (canGoPrev) {
