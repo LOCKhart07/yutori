@@ -94,18 +94,22 @@ No migration — existing rows retain their current value. Downstream
 consumers treating the column as a string continue to work; anything
 switching on the enum must widen to the new value.
 
-### 3.2 `recipient_rules.note` — carries the category
+### 3.2 `recipient_rules.assigned_category` — carries the category
 
 The LLM-extracted `category` string (e.g. `"food"`, `"credit card bill"`,
-`"self-transfer"`) lands in the existing `note` column. The user can
-freely edit it in the form before save. No new column.
+`"self-transfer"`) lands in the existing `assigned_category` column
+already present in schema v5. The user can freely edit it in the form
+before save. No new column, no migration.
 
-Rationale for not introducing a dedicated `category` column: the note
-field is already user-facing free text, already editable, and already
-shown in suggestion cards per `suggestions-spec.md` §4.2. Adding a
-semantic `category` column is a future enhancement (for e.g. "filter
-transactions by user-assigned category") but is orthogonal to this
-spec and would land on its own migration.
+**`reclassify_as` is nullable in the existing schema** — a rule with
+`reclassify_as = NULL` and `assigned_category != NULL` is a valid
+"category-only" rule (`business-logic-spec.md` §3.4). This fits the AI
+path naturally: when the user does not pick a classification in
+`AddEditRecipientRule`, the saved row is category-only. When they do,
+both columns are populated.
+
+The `note` column stays for optional user-written free text ("my CRED
+bill rule from Apr 2026") — never used for LLM output.
 
 ### 3.3 No new tables
 
@@ -349,8 +353,9 @@ from it:
 |---|---|---|
 | `pattern` | yes | yes |
 | `pattern_kind` | forced to `LITERAL` | yes (user can switch to PREFIX / REGEX) |
-| `reclassify_as` | **NO — blank dropdown, user must pick** | yes |
-| `note` | yes (LLM-extracted `category` string) | yes |
+| `reclassify_as` | **NO — blank dropdown, user picks or leaves blank for a category-only rule** | yes |
+| `assigned_category` | yes (LLM-extracted `category` string) | yes |
+| `note` | null | yes |
 | `account_id` | null | yes |
 | `is_enabled` | `true` | n/a |
 
@@ -484,7 +489,7 @@ spec-vs-code diffs.
 6. **Fresh `Conversation` per extraction.** Engine kept warm; Conversation closed after every prompt. Stage A confirmed cross-prompt state bleed even with temperature=0.
 7. **Validator has 5 rules including substring check.** The substring check (pattern ∈ userInput) is what makes "out-of-schema prompt → hallucinated famous-example-from-the-prompt" failures impossible to ship. Non-negotiable.
 8. **`source = AI` on saved rules.** New enum value, additive migration, no existing row touched.
-9. **Category lives in `note`.** No new column in v1. Future categorization feature gets its own column and migration when it arrives.
+9. **Category lives in `assigned_category`** (column already exists in schema v5). `note` stays free for optional user-written free text. Category-only rules (`reclassify_as = NULL`, `assigned_category != NULL`) are a first-class existing shape the AI path uses when the user doesn't pick a classification.
 10. **User-facing model name is "Deep".** Technical caption visible but secondary. `Quick` / `Balanced` names are reserved for the multi-tier future — don't use them in v1 strings.
 
 ## 11. Open questions for Stage C
