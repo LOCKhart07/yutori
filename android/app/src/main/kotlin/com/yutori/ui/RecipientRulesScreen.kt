@@ -87,7 +87,9 @@ fun RecipientRulesScreen(
     val suggestions by suggestionsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val scanning by scanningFlow.collectAsStateWithLifecycle()
     val seed = rules.filter { it.source == "SEED" }
-    val user = rules.filter { it.source == "USER" || it.source == "LEARNED" }
+    val user = rules.filter {
+        it.source == "USER" || it.source == "LEARNED" || it.source == "AI"
+    }
     val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
     val colors = YutoriTheme.colors
 
@@ -183,7 +185,11 @@ fun RecipientRulesScreen(
                         RuleCard(
                             rule,
                             onToggle = onToggleEnabled,
-                            onDelete = if (rule.source == "USER" || rule.source == "LEARNED") {
+                            onDelete = if (
+                                rule.source == "USER" ||
+                                rule.source == "LEARNED" ||
+                                rule.source == "AI"
+                            ) {
                                 { onDeleteUserRule(rule) }
                             } else null,
                             onClick = { onEditRule(rule) },

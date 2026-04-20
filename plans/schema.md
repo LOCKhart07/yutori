@@ -121,7 +121,7 @@ any future "reclassify UPI by recipient" use case.
 | `pattern_kind`        | TEXT       | `LITERAL` / `REGEX` / `PREFIX` |
 | `reclassify_as`       | TEXT       | target classification (`CC_BILL_PAYMENT`, `SELF_TRANSFER`, …) |
 | `account_id`          | INTEGER?   | FK `accounts.id` if the rule ties a VPA to a specific own account |
-| `source`              | TEXT       | `SEED` (shipped with app) / `USER` / `LEARNED` |
+| `source`              | TEXT       | `SEED` (shipped with app) / `USER` / `LEARNED` (heuristic suggestion accepted, #64 part 1) / `AI` (AI-extracted then accepted, #64 part 2) |
 | `note`                | TEXT?      | human label: "CRED CC bill payments" |
 | `is_enabled`          | INTEGER    | 0/1 |
 
@@ -206,4 +206,5 @@ Explicitly listed here so they don't look like dead code in v1:
 - `transactions.is_manual_entry` (§9 ruled out for v1 but reserved)
 - `transactions.manually_adjusted` (§12.1 payback action, user overrides)
 - `accounts.is_default_spend` (disambiguation when SMS lacks last4)
-- `recipient_rules.source = LEARNED` (future: ML-suggested rules)
+- `recipient_rules.source = LEARNED` — heuristic suggestions accepted by the user (#64 part 1, shipped)
+- `recipient_rules.source = AI` — on-device LLM extraction accepted by the user (#64 part 2, `plans/ai-rules-spec.md`)

@@ -47,6 +47,16 @@ enum class RuleSource {
     /** Added by the user in Settings. */
     USER,
 
-    /** Inferred or suggested automatically (reserved; not used in v1). */
+    /**
+     * Inferred by the heuristic miner and accepted by the user. Part 1
+     * of issue #64; see `plans/suggestions-spec.md`.
+     */
     LEARNED,
+
+    /**
+     * Extracted from a free-text user description by the on-device LLM
+     * and accepted by the user via `AddEditRecipientRule`'s edit form.
+     * Part 2 of issue #64; see `plans/ai-rules-spec.md` §3.1.
+     */
+    AI,
 }

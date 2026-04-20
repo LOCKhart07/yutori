@@ -46,7 +46,12 @@ object SettingsBackup {
         // but v1 MVP Settings UI can only disable, not delete seed
         // rules, so the import filter `source == "USER"` covers
         // everything a user actually owns.
-        val rules = ruleDao.getEnabled().filter { it.source == "USER" }
+        //
+        // AI-extracted rules (source = "AI", #64 part 2) are user-
+        // confirmed — every AI row was saved through the same
+        // AddEditRecipientRule form that produces USER rows, just
+        // pre-filled. Treat them identically for backup purposes.
+        val rules = ruleDao.getEnabled().filter { it.source == "USER" || it.source == "AI" }
 
         val accountsArr = JSONArray().apply {
             for (a in accounts) put(a.toJson())

@@ -249,6 +249,15 @@ dependencies {
     implementation(libs.retrofit.converter.moshi)
     implementation(libs.moshi.kotlin)
 
+    // On-device LLM runtime for AI-assisted rule creation (#64 part 2,
+    // plans/ai-rules-spec.md). Model weights (~2.58 GB) do NOT ship in
+    // the APK — they're downloaded opt-in after the user enables the
+    // feature in Settings. This dependency is the runtime only, and
+    // adds ~75 MiB of native libs (arm64 JNI + LiteRT-LM JNI) to the
+    // base APK. See plans/ai-rules-spec.md §11.2 for the open question
+    // on release-APK-size impact.
+    implementation(libs.litertlm.android)
+
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)

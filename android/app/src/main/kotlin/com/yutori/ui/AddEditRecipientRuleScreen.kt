@@ -348,8 +348,11 @@ fun AddEditRecipientRuleScreen(
 
             Spacer(Modifier.height(22.dp))
             ActionRow(
-                showDelete = isEdit &&
-                    (existingRule?.source == "USER" || existingRule?.source == "LEARNED"),
+                showDelete = isEdit && (
+                    existingRule?.source == "USER" ||
+                        existingRule?.source == "LEARNED" ||
+                        existingRule?.source == "AI"
+                ),
                 canSave = canSave,
                 onCancel = onBack,
                 onDelete = {
