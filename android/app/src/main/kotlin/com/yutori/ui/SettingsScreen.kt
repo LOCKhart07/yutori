@@ -47,6 +47,7 @@ fun SettingsScreen(
     onAlertSettings: () -> Unit = {},
     onSendFeedback: () -> Unit = {},
     onAbout: () -> Unit = {},
+    onAiSettings: () -> Unit = {},
     accountSuggestionCount: Int = 0,
     updateState: UpdateScreenState? = null,
     onCheckForUpdates: () -> Unit = {},
@@ -103,6 +104,12 @@ fun SettingsScreen(
                         subtitle = "Reclassification rules for CC bill payments " +
                             "and self-transfers.",
                         onClick = onRecipientRules,
+                    )
+                    SettingsItem(
+                        title = "AI-assisted rules",
+                        subtitle = "Describe a rule in plain English; AI suggests " +
+                            "a merchant pattern. Runs on your phone, model is an opt-in download.",
+                        onClick = onAiSettings,
                     )
                 }
 

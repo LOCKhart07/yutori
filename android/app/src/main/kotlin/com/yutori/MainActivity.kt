@@ -102,6 +102,7 @@ private sealed interface Screen {
     data object SendFeedback : Screen
     data object About : Screen
     data object OpenSourceLicenses : Screen
+    data object AiSettings : Screen
 }
 
 @Composable
@@ -370,6 +371,7 @@ private fun AppContent() {
                 onAlertSettings = { goTo(Screen.AlertSettings) },
                 onSendFeedback = { goTo(Screen.SendFeedback) },
                 onAbout = { goTo(Screen.About) },
+                onAiSettings = { goTo(Screen.AiSettings) },
                 accountSuggestionCount = suggestedCount,
                 updateState = updateState,
                 onCheckForUpdates = { app.updateViewModel.onCheckNow() },
@@ -578,6 +580,28 @@ private fun AppContent() {
 
         is Screen.OpenSourceLicenses -> {
             com.yutori.ui.about.OpenSourceLicensesScreen(onBack = { goBack() })
+        }
+
+        is Screen.AiSettings -> {
+            val vm: com.yutori.ui.AiSettingsViewModel = viewModel(
+                factory = com.yutori.ui.AiSettingsViewModel.Factory(
+                    appContext = app.applicationContext,
+                    repository = app.aiSettingsRepository,
+                    engineHolder = app.llmEngineHolder,
+                ),
+            )
+            val state by vm.uiState.collectAsStateWithLifecycle()
+            com.yutori.ui.AiSettingsScreen(
+                state = state,
+                onBack = { goBack() },
+                onToggle = vm::onToggle,
+                onConfirmOptIn = vm::onConfirmOptIn,
+                onDismissOptIn = vm::onDismissOptIn,
+                onStartDownload = vm::onStartDownload,
+                onCancelDownload = vm::onCancelDownload,
+                onDeleteModel = vm::onDeleteModel,
+                onRetryDownload = vm::onRetryDownload,
+            )
         }
     }
 

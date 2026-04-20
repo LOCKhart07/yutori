@@ -86,8 +86,28 @@ class YutoriApp : Application() {
         database?.let { com.yutori.suggestions.SuggestionsController(applicationContext, it) }
     }
 
+    val aiSettingsRepository: com.yutori.ai.AiSettingsRepository by lazy {
+        com.yutori.ai.AiSettingsRepository(applicationContext)
+    }
+
+    val llmEngineHolder: com.yutori.ai.LlmEngineHolder by lazy {
+        com.yutori.ai.LlmEngineHolder(
+            modelFileProvider = {
+                val f = com.yutori.ai.ModelFiles.modelFile(applicationContext)
+                f.takeIf { it.exists() && it.length() > 0 }
+            },
+        )
+    }
+
     override fun onCreate() {
         super.onCreate()
+
+        // Register the AI settings repo so ModelDownloadWorker (which
+        // constructs via reflection and can't take a ctor arg) can reach
+        // the same instance via AiSettingsRepositoryProvider.get(). Must
+        // happen before WorkManager could plausibly run a pending worker,
+        // so kept before initDatabase().
+        com.yutori.ai.AiSettingsRepositoryProvider.register(aiSettingsRepository)
 
         initDatabase()
         val db = database ?: return  // short-circuit the rest of init; MainActivity shows recovery screen
