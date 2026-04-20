@@ -99,6 +99,28 @@ android {
             .orElse(providers.environmentVariable("GITHUB_ISSUES_TOKEN"))
             .orNull.orEmpty().trim()
         buildConfigField("String", "GITHUB_ISSUES_TOKEN", "\"$issuesToken\"")
+
+        // --- AI-assisted rule creation (#64 part 2) ------------------
+        // URL + SHA-256 for the one model we ship the download flow for
+        // ("Deep" tier — gemma-4-E2B-it, Apache-2.0, ~2.58 GB). Pinned
+        // to a specific HuggingFace commit hash so the URL is
+        // content-immutable: if litert-community updates the model, we
+        // bump the pin + cut a release, not silently serve new weights
+        // to users. SHA-256 captured 2026-04-21 against the resolved
+        // file; the download worker refuses to activate anything whose
+        // hash doesn't match. See plans/ai-rules-spec.md §5.1.
+        buildConfigField(
+            "String",
+            "AI_MODEL_URL",
+            "\"https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/" +
+                "resolve/2a101e00c47f942975ce8b493c2498311ed9900d/gemma-4-E2B-it.litertlm\"",
+        )
+        buildConfigField(
+            "String",
+            "AI_MODEL_SHA256",
+            "\"ab7838cdfc8f77e54d8ca45eadceb20452d9f01e4bfade03e5dce27911b27e42\"",
+        )
+        buildConfigField("long", "AI_MODEL_SIZE_BYTES", "2583085056L")
     }
 
     // Release signing config.
