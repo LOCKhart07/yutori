@@ -120,8 +120,11 @@ in `recipient_rules`. No "AI suggestion" queue.
 
 ### 3.4 Settings / preferences
 
-One new entry in the existing Settings key-value storage (Preferences
-DataStore in `:app`):
+Three keys in a new SharedPreferences file `yutori_ai_settings`,
+matching the pattern used by `com.yutori.settings.ImpactAlertSettings`.
+The rest of the app uses SharedPreferences (no `androidx.datastore`
+dependency is on the classpath); introducing DataStore just for three
+keys doesn't clear the cost-of-entry bar.
 
 | key | type | default | notes |
 |-----|------|---------|-------|
@@ -129,8 +132,10 @@ DataStore in `:app`):
 | `ai_model_installed_sha256` | String? | `null` | set once the downloaded model passes SHA-256 verify; `null` means no model on disk |
 | `ai_model_install_time_ms` | Long? | `null` | for the "installed N days ago" settings caption |
 
-Three keys, not a struct, because Preferences DataStore's Kotlin API is
-per-key and there's no merge benefit.
+Observability is provided by registering an
+`OnSharedPreferenceChangeListener` inside a `callbackFlow { … }`
+wrapper on the repository so the Settings UI can react to external
+changes (e.g. the download worker writing the SHA on success).
 
 ## 4. Extractor pipeline
 
