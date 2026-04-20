@@ -42,6 +42,7 @@ import com.yutori.ui.DashboardViewModel
 import com.yutori.ui.DashboardViewModelFactory
 import com.yutori.ui.ImportDialog
 import com.yutori.ui.ImportStatus
+import com.yutori.ui.LatestIngestedMessage
 import com.yutori.ui.PermissionScreen
 import com.yutori.ui.Permissions
 import com.yutori.ui.AddEditRecipientRuleScreen
@@ -49,6 +50,7 @@ import com.yutori.ui.RecipientRulesScreen
 import com.yutori.ui.SettingsScreen
 import com.yutori.ui.TransactionDetailScreen
 import com.yutori.ui.importStatusFlow
+import com.yutori.ui.toLatestIngestedMessage
 import com.yutori.ui.update.UpdateViewModel
 import com.yutori.update.UpdateModule
 import kotlinx.coroutines.flow.flowOf
@@ -166,6 +168,10 @@ private fun AppContent() {
             )
             val importStatus: ImportStatus by importStatusFlow(app)
                 .collectAsStateWithLifecycle(initialValue = ImportStatus.Idle)
+            val latestIngested: List<LatestIngestedMessage> by database.smsLogDao()
+                .observeLatest(limit = 5)
+                .map { rows -> rows.map { it.toLatestIngestedMessage() } }
+                .collectAsStateWithLifecycle(initialValue = emptyList())
             val suggestedCount: Int by database.accountDao()
                 .observeCountByStatus("SUGGESTED")
                 .collectAsStateWithLifecycle(initialValue = 0)
@@ -202,6 +208,7 @@ private fun AppContent() {
                 currentMonthKey = currentMonthKey,
                 observeMonth = viewModel::observeMonth,
                 importStatus = importStatus,
+                latestIngestedMessages = latestIngested,
                 onSetBudget = { goTo(Screen.BudgetSetup(viewedMonthKey)) },
                 onImport = { importDialogOpen = true },
                 onSettings = { goTo(Screen.Settings) },

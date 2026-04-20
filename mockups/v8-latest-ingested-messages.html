@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yutori mockup — latest ingested messages</title>
+  <style>
+    body { margin: 0; background: #0f1115; color: #edf0f6; font-family: Inter, system-ui, sans-serif; }
+    .frame { width: 390px; margin: 24px auto; border-radius: 24px; background: #151922; border: 1px solid #2c3240; overflow: hidden; }
+    .header { padding: 18px 20px; font-weight: 600; border-bottom: 1px solid #2c3240; }
+    .card { margin: 16px; border-radius: 14px; background: #1c2230; border: 1px solid #2f3647; }
+    .title { padding: 14px 14px 8px; font-size: 13px; letter-spacing: .4px; text-transform: uppercase; color: #99a2b8; }
+    .row { padding: 10px 14px; border-top: 1px solid #2a3040; }
+    .top { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+    .sender { font-size: 14px; font-weight: 600; }
+    .status { font-size: 11px; border-radius: 999px; padding: 4px 8px; }
+    .status.counted { background: #14351f; color: #7ae59f; }
+    .status.ignored { background: #303443; color: #b8bfce; }
+    .status.review { background: #3d3018; color: #f7c572; }
+    .body { margin-top: 4px; font-size: 12px; color: #a6aec0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .foot { padding: 10px 14px 14px; color: #8790a5; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div class="header">April 2026</div>
+    <div class="card">
+      <div class="title">Latest ingested messages</div>
+      <div class="row">
+        <div class="top"><div class="sender">VK-HDFCBK</div><div class="status counted">Counted in budget</div></div>
+        <div class="body">Rs.450.00 spent on card xx1234 at METRO MART...</div>
+      </div>
+      <div class="row">
+        <div class="top"><div class="sender">VM-KOTAKB</div><div class="status ignored">Ignored</div></div>
+        <div class="body">OTP 662241 for your card txn is valid for 5 mins.</div>
+      </div>
+      <div class="row">
+        <div class="top"><div class="sender">JD-AXISBK</div><div class="status review">Needs review</div></div>
+        <div class="body">Your account alert: INR 299 debited via UPI ref 723...</div>
+      </div>
+      <div class="foot">Shows most recent 5 ingested SMSes from live capture + import.</div>
+    </div>
+  </div>
+</body>
+</html>

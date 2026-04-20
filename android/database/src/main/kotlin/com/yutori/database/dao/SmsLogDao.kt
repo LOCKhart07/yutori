@@ -71,6 +71,15 @@ interface SmsLogDao {
     @Query(
         """
         SELECT * FROM sms_log
+         ORDER BY received_at_ms DESC
+         LIMIT :limit
+        """,
+    )
+    fun observeLatest(limit: Int): Flow<List<SmsLogEntity>>
+
+    @Query(
+        """
+        SELECT * FROM sms_log
          WHERE received_at_ms >= :startMs
            AND received_at_ms <= :endMs
          ORDER BY received_at_ms ASC
