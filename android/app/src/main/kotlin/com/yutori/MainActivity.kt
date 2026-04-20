@@ -547,6 +547,7 @@ private fun AppContent() {
                 accountDao = database.accountDao(),
                 onBack = { goBack() },
                 onSaved = { goBack() },
+                aiPrefill = s.aiPrefill,
             )
         }
 

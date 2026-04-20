@@ -94,22 +94,25 @@ No migration — existing rows retain their current value. Downstream
 consumers treating the column as a string continue to work; anything
 switching on the enum must widen to the new value.
 
-### 3.2 `recipient_rules.assigned_category` — carries the category
+### 3.2 `recipient_rules.note` — carries the LLM-extracted category
 
-The LLM-extracted `category` string (e.g. `"food"`, `"credit card bill"`,
-`"self-transfer"`) lands in the existing `assigned_category` column
-already present in schema v5. The user can freely edit it in the form
-before save. No new column, no migration.
+The LLM-extracted `category` string (e.g. `"food"`, `"credit card
+bill"`, `"self-transfer"`) lands in the existing `note` column. The
+user can freely edit it in the form before save.
 
-**`reclassify_as` is nullable in the existing schema** — a rule with
-`reclassify_as = NULL` and `assigned_category != NULL` is a valid
-"category-only" rule (`business-logic-spec.md` §3.4). This fits the AI
-path naturally: when the user does not pick a classification in
-`AddEditRecipientRule`, the saved row is category-only. When they do,
-both columns are populated.
+**Why `note` and not `assigned_category`:** `assigned_category` is
+typed to the closed `Category` enum (12 values: `FOOD_DINING`,
+`GROCERIES`, `TRAVEL_TRANSPORT`, `SHOPPING`, `BILLS_UTILITIES`,
+`HEALTH`, `ENTERTAINMENT`, `SUBSCRIPTIONS`, `UPI_TRANSFER`, `CASH`,
+`UNCATEGORIZED`, `OTHER`). The LLM emits natural language ("credit
+card bill", "income", "self-transfer") which doesn't map 1:1 onto
+that enum. `note` is the existing free-text column on
+`recipient_rules` and matches the user-editable text the mockup
+shows beneath the pattern. A future iteration can add a best-effort
+LLM → Category enum mapping alongside the note, but that's orthogonal
+and isn't a v1 requirement.
 
-The `note` column stays for optional user-written free text ("my CRED
-bill rule from Apr 2026") — never used for LLM output.
+No new column, no migration.
 
 ### 3.3 No new tables
 
@@ -358,9 +361,9 @@ from it:
 |---|---|---|
 | `pattern` | yes | yes |
 | `pattern_kind` | forced to `LITERAL` | yes (user can switch to PREFIX / REGEX) |
-| `reclassify_as` | **NO — blank dropdown, user picks or leaves blank for a category-only rule** | yes |
-| `assigned_category` | yes (LLM-extracted `category` string) | yes |
-| `note` | null | yes |
+| `reclassify_as` | **NO — blank dropdown, user picks or leaves blank (category-only rule)** | yes |
+| `assigned_category` | null (user picks from the enum dropdown if they want) | yes |
+| `note` | yes (LLM-extracted `category` string) | yes |
 | `account_id` | null | yes |
 | `is_enabled` | `true` | n/a |
 
@@ -494,7 +497,7 @@ spec-vs-code diffs.
 6. **Fresh `Conversation` per extraction.** Engine kept warm; Conversation closed after every prompt. Stage A confirmed cross-prompt state bleed even with temperature=0.
 7. **Validator has 5 rules including substring check.** The substring check (pattern ∈ userInput) is what makes "out-of-schema prompt → hallucinated famous-example-from-the-prompt" failures impossible to ship. Non-negotiable.
 8. **`source = AI` on saved rules.** New enum value, additive migration, no existing row touched.
-9. **Category lives in `assigned_category`** (column already exists in schema v5). `note` stays free for optional user-written free text. Category-only rules (`reclassify_as = NULL`, `assigned_category != NULL`) are a first-class existing shape the AI path uses when the user doesn't pick a classification.
+9. **Category lives in `note`.** `assigned_category` is a closed `Category` enum (12 values) — free-text LLM output doesn't fit cleanly. `note` is free-text and already shown under the pattern in rule cards. The user can fill in `assigned_category` separately from the dropdown if they want a Yutori-managed category label. A v2 enhancement could best-effort-map LLM output to `Category`, but v1 keeps the two paths separate.
 10. **User-facing model name is "Deep".** Technical caption visible but secondary. `Quick` / `Balanced` names are reserved for the multi-tier future — don't use them in v1 strings.
 
 ## 11. Open questions for Stage C

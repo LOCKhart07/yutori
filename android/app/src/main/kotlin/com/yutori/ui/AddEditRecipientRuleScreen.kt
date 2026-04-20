@@ -101,6 +101,7 @@ fun AddEditRecipientRuleScreen(
     accountDao: AccountDao,
     onBack: () -> Unit,
     onSaved: () -> Unit,
+    aiPrefill: com.yutori.ai.RulePrefill? = null,
 ) {
     val scope = rememberCoroutineScope()
     val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
@@ -134,7 +135,7 @@ fun AddEditRecipientRuleScreen(
     var duplicateError by remember { mutableStateOf(false) }
     var seededFromLoad by remember { mutableStateOf(false) }
 
-    LaunchedEffect(existingRule, prefillSuggestion) {
+    LaunchedEffect(existingRule, prefillSuggestion, aiPrefill) {
         if (seededFromLoad) return@LaunchedEffect
         existingRule?.let { r ->
             pattern = r.pattern
@@ -159,6 +160,19 @@ fun AddEditRecipientRuleScreen(
                 ?.let { runCatching { Classification.valueOf(it) }.getOrNull() }
             assignedCategory = null
             linkedAccountId = sg.inferredAccountId
+            seededFromLoad = true
+        }
+        aiPrefill?.let { ai ->
+            // Seed pattern + category-as-note. reclassifyAs stays null;
+            // the user picks it (or leaves blank for a category-only
+            // rule). See plans/ai-rules-spec.md §6.4.
+            pattern = ai.pattern
+            patternKind = PatternKind.LITERAL
+            reclassifyAs = null
+            assignedCategory = null
+            linkedAccountId = null
+            note = ai.category.orEmpty()
+            enabled = true
             seededFromLoad = true
         }
     }
@@ -201,6 +215,10 @@ fun AddEditRecipientRuleScreen(
 
             if (prefillSuggestion != null) {
                 PrefillBanner(prefillSuggestion!!)
+                Spacer(Modifier.height(12.dp))
+            }
+            if (aiPrefill != null && !isEdit) {
+                AiPrefillBanner()
                 Spacer(Modifier.height(12.dp))
             }
             if (isReadOnly) {
@@ -371,8 +389,11 @@ fun AddEditRecipientRuleScreen(
                             reclassifyAs = reclassifyAs?.name,
                             assignedCategory = assignedCategory?.takeIf { canAssignCategory }?.name,
                             accountId = linkedAccountId?.takeIf { needsAccount },
-                            source = existingRule?.source
-                                ?: if (prefillSuggestion != null) "LEARNED" else "USER",
+                            source = existingRule?.source ?: when {
+                                aiPrefill != null -> "AI"
+                                prefillSuggestion != null -> "LEARNED"
+                                else -> "USER"
+                            },
                             note = note.trim().ifEmpty { null },
                             isEnabled = enabled,
                         )
@@ -545,6 +566,33 @@ private fun PrefillBanner(suggestion: RuleSuggestionEntity) {
                         "${suggestion.matchCount} times in your last 60 days. " +
                         "Adjust anything, then save."
                 },
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onMuted,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AiPrefillBanner() {
+    val colors = YutoriTheme.colors
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        color = colors.surfaceElevated,
+        border = BorderStroke(1.dp, colors.divider),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = "✦ DRAFTED BY AI",
+                style = YutoriTextStyles.Caps,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "AI extracted the pattern and a category note from your " +
+                    "description. Edit anything, pick a classification (or leave " +
+                    "blank for a category-only rule), then save.",
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onMuted,
             )
