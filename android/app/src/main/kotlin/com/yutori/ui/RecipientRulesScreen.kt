@@ -49,6 +49,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.yutori.ai.AiSettingsRepository
+import com.yutori.ai.RulePrefill
+import com.yutori.ai.RuleExtractor
 import com.yutori.database.entities.RecipientRuleEntity
 import com.yutori.database.entities.RuleSuggestionEntity
 import com.yutori.ui.theme.YutoriTextStyles
@@ -82,10 +86,35 @@ fun RecipientRulesScreen(
     loadMatches: suspend (String) -> List<TxMatchRow>,
     onAddNewRule: () -> Unit,
     onEditRule: (RecipientRuleEntity) -> Unit,
+    // AI-assisted rules (#64 part 2). The describe-this-rule sheet
+    // lives inside this screen per plans/ai-rules-spec.md + 1a
+    // decision. Nulls short-circuit the feature for callers (tests,
+    // previews) that don't wire it.
+    aiState: StateFlow<AiSettingsRepository.State>? = null,
+    ruleExtractor: RuleExtractor? = null,
+    onOpenAiRuleEdit: (RulePrefill) -> Unit = {},
+    onGoToAiSettings: () -> Unit = {},
 ) {
     val rules by rulesFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val suggestions by suggestionsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val scanning by scanningFlow.collectAsStateWithLifecycle()
+
+    val currentAiState = aiState?.collectAsStateWithLifecycle()?.value
+    val aiReady = currentAiState?.enabled == true && currentAiState.modelInstalled
+    var describeSheetSeed by remember { mutableStateOf<String?>(null) }
+    var aiUnavailableSheetVisible by remember { mutableStateOf(false) }
+
+    val onDescribeFromUnsure: ((String) -> Unit)? = if (ruleExtractor != null) {
+        { merchantKey ->
+            if (aiReady) {
+                describeSheetSeed = "anything from $merchantKey is…"
+            } else {
+                aiUnavailableSheetVisible = true
+            }
+        }
+    } else {
+        null
+    }
     val seed = rules.filter { it.source == "SEED" }
     val user = rules.filter {
         it.source == "USER" || it.source == "LEARNED" || it.source == "AI"
@@ -146,6 +175,7 @@ fun RecipientRulesScreen(
                             onAccept = { onAcceptSuggestion(sg) },
                             onReview = { reviewTarget = sg },
                             onDismiss = { onDismissSuggestion(sg.id) },
+                            onDescribeThisRule = onDescribeFromUnsure,
                         )
                     }
                 }
@@ -210,6 +240,84 @@ fun RecipientRulesScreen(
                 reviewTarget = null
             },
         )
+    }
+
+    // AI "Describe this rule" sheet. ruleExtractor-nullability guards
+    // callers that don't opt into the feature from ever creating a VM.
+    if (ruleExtractor != null) {
+        describeSheetSeed?.let { seed ->
+            val vm: DescribeRuleViewModel = viewModel(
+                key = "describe-rule",
+                factory = DescribeRuleViewModel.Factory(ruleExtractor),
+            )
+            DescribeRuleSheet(
+                viewModel = vm,
+                seedText = seed,
+                onDismiss = { describeSheetSeed = null },
+                onExtracted = { prefill ->
+                    describeSheetSeed = null
+                    onOpenAiRuleEdit(prefill)
+                },
+            )
+        }
+    }
+
+    if (aiUnavailableSheetVisible) {
+        AiUnavailableSheet(
+            onDismiss = { aiUnavailableSheetVisible = false },
+            onGoToSettings = {
+                aiUnavailableSheetVisible = false
+                onGoToAiSettings()
+            },
+        )
+    }
+}
+
+/**
+ * Shown when the user taps "Describe this rule…" while the AI feature
+ * is off or the model isn't downloaded. Single sheet for both cases —
+ * landing on Settings surfaces the right next step either way (toggle
+ * on → opt-in + download; toggle on but no file → Download button).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AiUnavailableSheet(
+    onDismiss: () -> Unit,
+    onGoToSettings: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+        ) {
+            Text(
+                text = "AI-assisted rules isn't on yet",
+                style = MaterialTheme.typography.titleLarge,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Turn it on in Settings to describe rules in plain English. " +
+                    "You'll be asked to download a one-time 2.58 GB model.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = YutoriTheme.colors.onMuted,
+            )
+            Spacer(Modifier.height(20.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                androidx.compose.material3.OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                ) { Text("Not now") }
+                androidx.compose.material3.Button(
+                    onClick = onGoToSettings,
+                    modifier = Modifier.weight(1f),
+                ) { Text("Go to Settings") }
+            }
+            Spacer(Modifier.height(12.dp))
+        }
     }
 }
 
@@ -277,6 +385,7 @@ private fun SuggestionCard(
     onAccept: () -> Unit,
     onReview: () -> Unit,
     onDismiss: () -> Unit,
+    onDescribeThisRule: ((String) -> Unit)? = null,
 ) {
     val colors = YutoriTheme.colors
     val confident = suggestion.inferredClassification != null
@@ -337,6 +446,19 @@ private fun SuggestionCard(
                     onClick = onDismiss,
                     primary = false,
                     muted = true,
+                )
+            }
+
+            // Describe-this-rule surface only appears on unsure cards —
+            // confident ones already have a concrete reclassify target
+            // so the AI wouldn't add anything.
+            if (!confident && onDescribeThisRule != null) {
+                Spacer(Modifier.height(6.dp))
+                SuggestionActionButton(
+                    label = "✦ Describe this rule…",
+                    onClick = { onDescribeThisRule(suggestion.merchantKey) },
+                    primary = false,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }

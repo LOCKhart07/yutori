@@ -97,6 +97,7 @@ private sealed interface Screen {
     data class RecipientRuleEdit(
         val ruleId: Long? = null,
         val prefillSuggestionId: Long? = null,
+        val aiPrefill: com.yutori.ai.RulePrefill? = null,
     ) : Screen
     data object AlertSettings : Screen
     data object SendFeedback : Screen
@@ -490,6 +491,11 @@ private fun AppContent() {
             val suggestionDao = database.ruleSuggestionDao()
             val controller = app.suggestionsController
 
+            val ruleExtractor = remember(app) {
+                com.yutori.ai.RuleExtractor(
+                    invoker = com.yutori.ai.DefaultLlmInvoker(app.llmEngineHolder),
+                )
+            }
             RecipientRulesScreen(
                 rulesFlow = ruleDao.observeAll(),
                 suggestionsFlow = suggestionDao.observeActive(),
@@ -522,6 +528,12 @@ private fun AppContent() {
                 onEditRule = { rule ->
                     goTo(Screen.RecipientRuleEdit(ruleId = rule.id))
                 },
+                aiState = app.aiSettingsRepository.state,
+                ruleExtractor = ruleExtractor,
+                onOpenAiRuleEdit = { prefill ->
+                    goTo(Screen.RecipientRuleEdit(aiPrefill = prefill))
+                },
+                onGoToAiSettings = { goTo(Screen.AiSettings) },
             )
         }
 
