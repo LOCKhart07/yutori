@@ -89,6 +89,7 @@ jobs:
             | jq 'map({
                 tag_name,
                 name,
+                # Keep each release body bounded so prompt size stays stable.
                 body: ((.body // "")[0:2000])
               })' \
             > recent-releases.json

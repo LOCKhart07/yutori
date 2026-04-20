@@ -122,7 +122,9 @@ exactly these keys:
    includes a `---RECENT RELEASES---` block with recent release notes.
    If an issue asks where to find/use a feature that appears shipped
    there, do **not** mark it as a duplicate of a still-open feature
-   issue; classify it as an actionable question/bug instead.
+   issue. Prefer `kind: "question"` + `blocker: "ready"` for
+   "where/how do I access it?" asks; use `kind: "bug"` only when the
+   user reports the shipped path is broken/regressed.
 4. If torn between two enum values, pick the more conservative one.
    For `blocker`, prefer `needs-decision` or `needs-repro` over
    `ready` when uncertain.
