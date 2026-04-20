@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v18 mockup: bury the ingestion log off the dashboard (#146)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --divider-strong:rgba(237,238,240,0.14);
+    --accent:        #C6E3A3;
+    --accent-soft:   rgba(198,227,163,0.10);
+    --negative:      #E27A7A;
+    --info:          #9EC3E6;
+    --info-soft:     rgba(158,195,230,0.10);
+    --warning:       #E6C67A;
+    --warning-soft:  rgba(230,198,122,0.10);
+    --positive-soft: rgba(122,229,159,0.14);
+    --positive:      #7ae59f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 96px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 52px 0 10px; font-size: 17px; color: #C9CACD; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 18px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .blurb strong { color: #C9CACD; }
+
+  .phone {
+    width: 380px;
+    background: var(--surface);
+    border-radius: 28px;
+    padding: 20px 24px 26px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .phones { display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start; }
+  .phone-label {
+    font-size: 11px; color: var(--on-faint); text-transform: uppercase;
+    letter-spacing: 0.08em; font-weight: 600;
+    max-width: 380px; margin: 12px 0 28px;
+  }
+  .phone-label strong { color: var(--on-muted); }
+
+  .back {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--on-muted); font-size: 13px; margin: 2px 0 18px;
+  }
+  .back svg { width: 18px; height: 18px; }
+  .screen-title { font-size: 20px; font-weight: 600; color: var(--on); margin: 0 0 16px; }
+
+  /* --- Dashboard primitives (simplified from DashboardScreen.kt) --- */
+  .dash-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin: 2px 0 14px;
+  }
+  .dash-head .month { font-size: 22px; font-weight: 600; color: var(--on); }
+  .dash-head .meta { font-size: 12px; color: var(--on-muted); }
+
+  .spend-card {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .spend-card .amount { font-size: 30px; font-weight: 700; color: var(--on); }
+  .spend-card .sub { font-size: 12px; color: var(--on-muted); margin-top: 2px; }
+  .bar { height: 6px; background: var(--surface-el2); border-radius: 3px; margin-top: 14px; overflow: hidden; }
+  .bar .fill { height: 100%; background: var(--accent); width: 58%; }
+
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 600;
+    margin: 18px 0 8px;
+  }
+  .section-head .tap {
+    font-size: 11px; color: var(--info); text-transform: none; letter-spacing: 0;
+    font-weight: 500; display: flex; align-items: center; gap: 2px;
+  }
+
+  /* --- Today's txs stub --- */
+  .txlist {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .tx {
+    padding: 11px 12px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--divider);
+  }
+  .tx:first-child { border-top: none; }
+  .tx .who { font-size: 13px; color: var(--on); }
+  .tx .when { font-size: 11px; color: var(--on-muted); margin-top: 2px; }
+  .tx .amt { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--on); }
+
+  /* --- Current (before) ingested messages block --- */
+  .ingest-block {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .ingest-row {
+    padding: 10px 12px;
+    border-top: 1px solid var(--divider);
+  }
+  .ingest-row:first-child { border-top: none; }
+  .ingest-row .top {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  .ingest-row .sender { font-size: 14px; font-weight: 600; color: var(--on); }
+  .ingest-row .pill {
+    font-size: 10px; border-radius: 999px; padding: 3px 8px;
+    font-weight: 500; white-space: nowrap;
+  }
+  .pill.counted { background: var(--positive-soft); color: var(--positive); }
+  .pill.ignored { background: var(--surface-el2); color: var(--on-muted); }
+  .pill.review  { background: var(--warning-soft); color: var(--warning); }
+  .pill.income  { background: var(--info-soft); color: var(--info); }
+  .ingest-row .body {
+    font-size: 12px; color: var(--on-muted);
+    margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* Strike-through overlay for "before" frame */
+  .strike {
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    pointer-events: none;
+    border-radius: 28px;
+    border: 2px dashed rgba(226,122,122,0.35);
+  }
+  .strike-tag {
+    position: absolute; top: 10px; right: 14px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--negative);
+    background: rgba(226,122,122,0.12);
+    padding: 3px 8px; border-radius: 4px;
+  }
+
+  /* --- Settings row primitives --- */
+  .set-group {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .set-section-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 600;
+    margin: 18px 4px 8px;
+  }
+  .set-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 14px;
+    border-top: 1px solid var(--divider);
+  }
+  .set-row:first-child { border-top: none; }
+  .set-row .label { font-size: 14px; color: var(--on); }
+  .set-row .caption { font-size: 11px; color: var(--on-muted); margin-top: 3px; line-height: 1.4; max-width: 260px; }
+  .set-row .chev { color: var(--on-faint); font-size: 18px; }
+  .set-row.new .label::after {
+    content: "NEW"; font-size: 9px; color: var(--accent);
+    background: var(--accent-soft); padding: 1px 6px; border-radius: 4px;
+    margin-left: 8px; font-weight: 600; letter-spacing: 0.06em;
+    vertical-align: middle;
+  }
+
+  /* --- Ingestion-log screen --- */
+  .log-meta {
+    font-size: 11px; color: var(--on-muted);
+    margin: -8px 0 14px; line-height: 1.5;
+  }
+  .log-list {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .log-row {
+    padding: 12px 14px;
+    border-top: 1px solid var(--divider);
+  }
+  .log-row:first-child { border-top: none; }
+  .log-row .top {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  .log-row .sender { font-size: 14px; font-weight: 600; color: var(--on); }
+  .log-row .time { font-size: 11px; color: var(--on-faint); }
+  .log-row .body {
+    font-size: 12px; color: var(--on-muted);
+    margin-top: 4px; line-height: 1.45;
+  }
+  .log-row .footline {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 6px;
+  }
+
+  /* Empty-state inside log screen */
+  .empty {
+    padding: 28px 20px; text-align: center;
+    color: var(--on-muted); font-size: 12px; line-height: 1.6;
+  }
+  .empty .big { color: var(--on); font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+
+  .callout {
+    margin-top: 24px;
+    padding: 12px 14px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--on-muted); font-size: 12px; line-height: 1.55;
+    border-radius: 0 8px 8px 0;
+    max-width: 820px;
+  }
+  .callout strong { color: var(--on); }
+  .callout code { background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<h1>v18 — bury the ingestion log off the dashboard (#146)</h1>
+<p class="blurb">
+  The "Latest ingested messages" block on the dashboard is distracting — it's debug-flavoured chrome
+  sitting next to the month's spend total. Move it to a dedicated <strong>Message log</strong> screen
+  reachable from <em>Settings → Data &amp; accounts</em>. The dashboard loses the block entirely; the
+  data isn't lost, just one tap away for when the user wants to verify "did my last SMS classify
+  correctly?". No change to ingestion, parsing, or data model — purely a UI relocation.
+</p>
+
+<!--════════════════════════════════════════════════════════════════
+  A. Before → After on the dashboard
+  ════════════════════════════════════════════════════════════════-->
+<h2>A — Dashboard: before vs. after</h2>
+<p class="blurb">
+  The current block shows 5 rows — each is a sender + body preview + outcome pill. That's four lines
+  of type-dense information directly under the spend total. Removing it lets the month number and
+  Today's transactions breathe.
+</p>
+
+<div class="phones">
+
+  <!-- A1 — before -->
+  <div>
+    <div class="phone">
+      <div class="dash-head">
+        <div class="month">April 2026</div>
+        <div class="meta">Today · 21 Apr</div>
+      </div>
+
+      <div class="spend-card">
+        <div class="amount">₹24,380</div>
+        <div class="sub">of ₹42,000 budget · 17 days left</div>
+        <div class="bar"><div class="fill"></div></div>
+      </div>
+
+      <div class="section-head"><span>Today</span></div>
+      <div class="txlist">
+        <div class="tx">
+          <div><div class="who">Metro Mart</div><div class="when">12:42 · HDFC ••1234</div></div>
+          <div class="amt">−₹450</div>
+        </div>
+        <div class="tx">
+          <div><div class="who">Zomato</div><div class="when">09:14 · UPI</div></div>
+          <div class="amt">−₹289</div>
+        </div>
+      </div>
+
+      <div class="section-head"><span>Latest ingested messages</span></div>
+      <div class="ingest-block">
+        <div class="ingest-row">
+          <div class="top"><div class="sender">VK-HDFCBK</div><div class="pill counted">Affects budget</div></div>
+          <div class="body">Rs.450.00 spent on card xx1234 at METRO MART on 21-Apr-26. Avl limit Rs.82,130.</div>
+        </div>
+        <div class="ingest-row">
+          <div class="top"><div class="sender">VM-KOTAKB</div><div class="pill ignored">Ignored</div></div>
+          <div class="body">OTP 662241 for your card txn is valid for 5 mins. Do not share with anyone.</div>
+        </div>
+        <div class="ingest-row">
+          <div class="top"><div class="sender">JD-AXISBK</div><div class="pill review">Needs review</div></div>
+          <div class="body">Your account alert: INR 299 debited via UPI ref 7239***. Call 18001234 if not you.</div>
+        </div>
+        <div class="ingest-row">
+          <div class="top"><div class="sender">VM-ICICIB</div><div class="pill income">Tracked as income</div></div>
+          <div class="body">INR 85,000.00 credited to A/c XX4421 — salary from EMPLOYER LTD on 01-Apr-26.</div>
+        </div>
+        <div class="ingest-row">
+          <div class="top"><div class="sender">VK-HDFCBK</div><div class="pill counted">Affects budget</div></div>
+          <div class="body">UPI/P2M/swiggy-payments@paytm Rs.289.00 debited on 21-Apr-26 at 09:14.</div>
+        </div>
+      </div>
+      <div class="strike"></div>
+      <div class="strike-tag">Remove</div>
+    </div>
+    <div class="phone-label"><strong>A1 · Before</strong> — the block takes ~40% of the first scroll and competes with the spend total for attention.</div>
+  </div>
+
+  <!-- A2 — after -->
+  <div>
+    <div class="phone">
+      <div class="dash-head">
+        <div class="month">April 2026</div>
+        <div class="meta">Today · 21 Apr</div>
+      </div>
+
+      <div class="spend-card">
+        <div class="amount">₹24,380</div>
+        <div class="sub">of ₹42,000 budget · 17 days left</div>
+        <div class="bar"><div class="fill"></div></div>
+      </div>
+
+      <div class="section-head"><span>Today</span></div>
+      <div class="txlist">
+        <div class="tx">
+          <div><div class="who">Metro Mart</div><div class="when">12:42 · HDFC ••1234</div></div>
+          <div class="amt">−₹450</div>
+        </div>
+        <div class="tx">
+          <div><div class="who">Zomato</div><div class="when">09:14 · UPI</div></div>
+          <div class="amt">−₹289</div>
+        </div>
+      </div>
+
+      <!-- Nothing else. The dashboard ends here on a clean empty state. -->
+    </div>
+    <div class="phone-label"><strong>A2 · After</strong> — dashboard is just the month, the spend card, and today's transactions. No debug chrome.</div>
+  </div>
+
+</div>
+
+<!--════════════════════════════════════════════════════════════════
+  B. Settings entry point
+  ════════════════════════════════════════════════════════════════-->
+<h2>B — Settings → Data &amp; accounts · new row</h2>
+<p class="blurb">
+  The entry point is a new row at the bottom of the <strong>Data &amp; accounts</strong> section,
+  below <em>AI-assisted rules</em>. Labelled <strong>Message log</strong> with the subtitle
+  <em>"Recent SMS Yutori has processed"</em> so it reads as reference material, not an action.
+  Naming alternatives noted at the bottom of this mockup.
+</p>
+
+<div class="phones">
+
+  <!-- B1 — settings screen -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Back
+      </div>
+      <div class="screen-title">Settings</div>
+
+      <div class="set-section-label">Data &amp; accounts</div>
+      <div class="set-group">
+        <div class="set-row">
+          <div>
+            <div class="label">My accounts</div>
+            <div class="caption">Banks, cards, and UPI handles you own</div>
+          </div>
+          <div class="chev">›</div>
+        </div>
+        <div class="set-row">
+          <div>
+            <div class="label">Recipient rules</div>
+            <div class="caption">Classify payments to specific merchants or handles</div>
+          </div>
+          <div class="chev">›</div>
+        </div>
+        <div class="set-row">
+          <div>
+            <div class="label">AI-assisted rules</div>
+            <div class="caption">Describe a rule in plain English</div>
+          </div>
+          <div class="chev">›</div>
+        </div>
+        <div class="set-row new">
+          <div>
+            <div class="label">Message log</div>
+            <div class="caption">Recent SMS Yutori has processed</div>
+          </div>
+          <div class="chev">›</div>
+        </div>
+      </div>
+
+      <div class="set-section-label">Alerts</div>
+      <div class="set-group">
+        <div class="set-row">
+          <div><div class="label">Warn threshold</div><div class="caption">80% of budget</div></div>
+          <div class="chev">›</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>B1</strong> · Settings with the new <em>Message log</em> row at the bottom of Data &amp; accounts. <code>NEW</code> chip is only shown on first ever app launch after the change, then dropped.</div>
+  </div>
+
+  <!-- B2 — ingestion log full screen -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">Message log</div>
+      <div class="log-meta">Newest first · showing last 50 of 1,204 ingested SMS.</div>
+
+      <div class="log-list">
+        <div class="log-row">
+          <div class="top">
+            <div class="sender">VK-HDFCBK</div>
+            <div class="time">21 Apr · 12:42</div>
+          </div>
+          <div class="body">Rs.450.00 spent on card xx1234 at METRO MART on 21-Apr-26. Avl limit Rs.82,130.</div>
+          <div class="footline">
+            <div class="pill counted">Affects budget</div>
+          </div>
+        </div>
+        <div class="log-row">
+          <div class="top">
+            <div class="sender">VM-KOTAKB</div>
+            <div class="time">21 Apr · 11:08</div>
+          </div>
+          <div class="body">OTP 662241 for your card txn is valid for 5 mins. Do not share with anyone.</div>
+          <div class="footline">
+            <div class="pill ignored">Ignored</div>
+          </div>
+        </div>
+        <div class="log-row">
+          <div class="top">
+            <div class="sender">JD-AXISBK</div>
+            <div class="time">21 Apr · 10:31</div>
+          </div>
+          <div class="body">Your account alert: INR 299 debited via UPI ref 7239***. Call 18001234 if not you.</div>
+          <div class="footline">
+            <div class="pill review">Needs review</div>
+          </div>
+        </div>
+        <div class="log-row">
+          <div class="top">
+            <div class="sender">VK-HDFCBK</div>
+            <div class="time">21 Apr · 09:14</div>
+          </div>
+          <div class="body">UPI/P2M/swiggy-payments@paytm Rs.289.00 debited on 21-Apr-26 at 09:14.</div>
+          <div class="footline">
+            <div class="pill counted">Affects budget</div>
+          </div>
+        </div>
+        <div class="log-row">
+          <div class="top">
+            <div class="sender">VM-ICICIB</div>
+            <div class="time">01 Apr · 03:02</div>
+          </div>
+          <div class="body">INR 85,000.00 credited to A/c XX4421 — salary from EMPLOYER LTD on 01-Apr-26.</div>
+          <div class="footline">
+            <div class="pill income">Tracked as income</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-label"><strong>B2</strong> · <em>Message log</em> screen. Same row shape as the old dashboard block, but fullscreen + scrollable, with a timestamp added (we have the space now). Body preview is 2 lines instead of 1 since verticals are cheap here.</div>
+  </div>
+
+  <!-- B3 — empty state (fresh install, no SMS yet) -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">Message log</div>
+      <div class="empty">
+        <div class="big">No messages yet</div>
+        Yutori hasn't ingested any SMS on this device yet. As bank and UPI messages arrive, they'll
+        show up here with their classification.
+      </div>
+    </div>
+    <div class="phone-label"><strong>B3</strong> · empty state. Only reachable right after a fresh install — once you've imported history or let SMS flow in, the list has content.</div>
+  </div>
+
+</div>
+
+<!--════════════════════════════════════════════════════════════════
+  C. What's intentionally NOT in this mockup
+  ════════════════════════════════════════════════════════════════-->
+<div class="callout">
+  <strong>Scope kept tight.</strong>
+  No filter chips (All / Affects budget / Needs review / Ignored), no search, no per-row tap-to-open
+  detail sheet, no "re-classify" action. Those are reasonable next steps but out of scope for #146 —
+  the issue asks for burial, not a redesign. If we ship this and the user then asks "can I filter to
+  only Needs review?", that's a follow-up.
+</div>
+
+<div class="callout" style="margin-top: 8px;">
+  <strong>Why 50?</strong>
+  The DAO today exposes <code>observeLatest(limit)</code>; the dashboard block used 5. For the
+  burial screen I'd default to 50 with a "Load more" footer (not drawn). Infinite scroll of 1,200+
+  rows would be simple to implement but the value drops fast past the last couple of days — the
+  user's mental question is "did my <em>recent</em> SMS get classified?", not "what happened in
+  February?".
+</div>
+
+<div class="callout" style="margin-top: 8px;">
+  <strong>Naming — <code>Message log</code> vs alternatives.</strong>
+  I picked "Message log" because it's plain, not technical, and reads as reference material.
+  Alternatives: <em>Ingestion log</em> (matches the internal term but leaks jargon),
+  <em>Parsed SMS</em> (accurate but exposes implementation), <em>Message history</em> (fine,
+  slightly more formal). Easy to flip before writing code if you prefer one of these.
+</div>
+
+<div class="callout" style="margin-top: 8px;">
+  <strong>No dashboard shortcut.</strong>
+  Considered a small icon in the dashboard's top chrome that opens the Message log directly. Left
+  it out — the whole point of the issue is that this is noise on the dashboard; putting a tiny icon
+  back is the thin-end-of-the-wedge. Settings is the right and only home.
+</div>
+
+</body>
+</html>
