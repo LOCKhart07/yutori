@@ -1,6 +1,8 @@
 package com.yutori.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -53,6 +55,7 @@ fun AiSettingsScreen(
     onCancelDownload: () -> Unit,
     onDeleteModel: () -> Unit,
     onRetryDownload: () -> Unit,
+    onOpenRecipientRules: () -> Unit = {},
 ) {
     val colors = YutoriTheme.colors
 
@@ -96,6 +99,9 @@ fun AiSettingsScreen(
                         onDeleteModel = onDeleteModel,
                         onRetryDownload = onRetryDownload,
                     )
+                    if (state.modelState is ModelUiState.Ready) {
+                        TryItRow(onClick = onOpenRecipientRules)
+                    }
                 }
             }
         }
@@ -104,6 +110,48 @@ fun AiSettingsScreen(
             OptInSheet(
                 onConfirm = onConfirmOptIn,
                 onCancel = onDismissOptIn,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TryItRow(onClick: () -> Unit) {
+    val colors = YutoriTheme.colors
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceElevated,
+        border = BorderStroke(1.dp, colors.info.copy(alpha = 0.35f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "\u2726",
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.info,
+            )
+            Spacer(Modifier.padding(horizontal = 8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Try it",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = "Open Recipient rules and describe a rule in plain English.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onMuted,
+                )
+            }
+            Text(
+                text = "\u203A",
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.onFaint,
             )
         }
     }

@@ -196,6 +196,17 @@ fun RecipientRulesScreen(
                         if (user.isEmpty()) "YOUR RULES" else "YOUR RULES (${user.size})",
                     )
                 }
+                if (ruleExtractor != null) {
+                    item(key = "describe-a-rule") {
+                        DescribeRuleEntry(onClick = {
+                            if (aiReady) {
+                                describeSheetSeed = ""
+                            } else {
+                                aiUnavailableSheetVisible = true
+                            }
+                        })
+                    }
+                }
                 item(key = "add-new-rule") {
                     AddRuleEntry(onClick = onAddNewRule)
                 }
@@ -726,6 +737,38 @@ private fun AddRuleEntry(onClick: () -> Unit) {
             Spacer(Modifier.padding(horizontal = 4.dp))
             Text(
                 text = "Add a new rule",
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onMuted,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DescribeRuleEntry(onClick: () -> Unit) {
+    val colors = YutoriTheme.colors
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceElevated,
+        border = BorderStroke(1.dp, colors.divider),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = "\u2726",
+                style = MaterialTheme.typography.bodyLarge,
+                color = colors.info,
+            )
+            Spacer(Modifier.padding(horizontal = 4.dp))
+            Text(
+                text = "Describe a rule in plain English",
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.onMuted,
             )

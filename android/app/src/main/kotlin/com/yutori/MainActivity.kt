@@ -626,6 +626,7 @@ private fun AppContent() {
                 onCancelDownload = vm::onCancelDownload,
                 onDeleteModel = vm::onDeleteModel,
                 onRetryDownload = vm::onRetryDownload,
+                onOpenRecipientRules = { goTo(Screen.RecipientRules) },
             )
         }
     }
