@@ -81,6 +81,19 @@ jobs:
             --json number,title \
             > open-issues.json
 
+      - name: Stage recent release notes (for shipped-state grounding)
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/triage"
+          gh api "/repos/$REPO/releases?per_page=5" \
+            | jq 'map({
+                tag_name,
+                name,
+                # Keep each release body bounded so prompt size stays stable.
+                body: ((.body // "")[0:2000])
+              })' \
+            > recent-releases.json
+
       - name: Assemble prompt
         run: |
           set -euo pipefail
@@ -96,6 +109,8 @@ jobs:
             jq -r '.body' issue.json | sed 's/^/  /'
             printf '\n---OPEN ISSUES---\n'
             jq -r '.[] | "- #\(.number): \(.title)"' open-issues.json
+            printf '\n---RECENT RELEASES---\n'
+            cat recent-releases.json
             printf '\n---END---\n'
             printf 'Write the JSON object to ./triage.json now.\n'
           } > prompt.txt
