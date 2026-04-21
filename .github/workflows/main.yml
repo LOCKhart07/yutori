@@ -1,0 +1,12 @@
+name: Main cache warmup
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    uses: ./.github/workflows/gate.yml
