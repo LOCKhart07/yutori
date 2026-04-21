@@ -6,7 +6,7 @@ run-name: "PR #${{ github.event.pull_request.number }}"
 #
 # To make checks required before merge, flip on in
 # Settings → Branches → main → Require status checks →
-# tick `gate / detekt` and `gate / test`.
+# tick `gate / Detekt` and `gate / Unit tests`.
 # See docs/copilot-coding-agent.md.
 
 on:

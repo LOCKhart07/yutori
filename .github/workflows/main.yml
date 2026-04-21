@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: main-cache-warmup
+  cancel-in-progress: false
+
 jobs:
   gate:
     uses: ./.github/workflows/gate.yml

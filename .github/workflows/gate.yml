@@ -30,6 +30,10 @@ jobs:
       - name: Set up Gradle (with cache)
         uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e  # v6.1.0
         with:
+          # Default is read-only on non-default branches; this workflow
+          # is called from main pushes, tag pushes, and PRs, so without
+          # this override non-main runs never write cache and pay
+          # cold-dep cost every time.
           cache-read-only: false
 
       - name: Run detekt

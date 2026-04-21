@@ -97,8 +97,8 @@ gates every release:
 ```
 
 To make it required before merge: **Settings → Branches → `main` →
-Require status checks before merging → tick `gate / detekt` and
-`gate / test`** (from `pr-checks.yml`). Do this after the first green
+Require status checks before merging → tick `gate / Detekt` and
+`gate / Unit tests`** (from `pr-checks.yml`). Do this after the first green
 run so the check names are registered with GitHub.
 
 Instrumentation tests (`:database:connectedAndroidTest`) are excluded
