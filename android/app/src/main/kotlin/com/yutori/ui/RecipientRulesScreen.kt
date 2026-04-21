@@ -456,7 +456,6 @@ private fun SuggestionCard(
                     label = "Dismiss",
                     onClick = onDismiss,
                     primary = false,
-                    muted = true,
                 )
             }
 
@@ -482,7 +481,6 @@ private fun SuggestionActionButton(
     onClick: () -> Unit,
     primary: Boolean,
     modifier: Modifier = Modifier,
-    muted: Boolean = false,
     enabled: Boolean = true,
 ) {
     val colors = YutoriTheme.colors
@@ -494,7 +492,6 @@ private fun SuggestionActionButton(
     val fg = when {
         primary && enabled -> MaterialTheme.colorScheme.onPrimary
         primary -> colors.onMuted
-        muted -> colors.onFaint
         else -> colors.onMuted
     }
     Surface(
