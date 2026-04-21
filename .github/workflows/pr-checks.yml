@@ -1,12 +1,12 @@
 name: PR checks
 run-name: "PR #${{ github.event.pull_request.number }}"
 
-# Runs on every PR into main. Calls the reusable tests.yml so the
-# gradle invocation matches exactly what gates a release.
+# Runs on every PR into main. Calls the reusable gate.yml so detekt +
+# tests match exactly what gates releases and main-cache warmups.
 #
 # To make checks required before merge, flip on in
 # Settings → Branches → main → Require status checks →
-# tick `tests / test` and `detekt`.
+# tick `gate / Detekt` and `gate / Unit tests`.
 # See docs/copilot-coding-agent.md.
 
 on:
@@ -18,36 +18,5 @@ permissions:
   contents: read
 
 jobs:
-  tests:
-    uses: ./.github/workflows/tests.yml
-
-  detekt:
-    name: Detekt
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: android
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  # v5.2.0
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Set up Gradle (with cache)
-        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e  # v6.1.0
-        with:
-          cache-read-only: false
-
-      - name: Run detekt
-        run: ./gradlew detekt --continue --parallel --build-cache --stacktrace
-
-      - name: Upload detekt reports
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: detekt-reports-pr
-          path: android/**/build/reports/detekt/*
+  gate:
+    uses: ./.github/workflows/gate.yml

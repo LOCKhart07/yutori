@@ -10,10 +10,12 @@ Scope:
   every PR (spec-first, proof-of-work, unit tests, invariants).
 - `.github/workflows/triage-issue.yml` — the triage workflow, extended
   with a final step that assigns Copilot when the gate below holds.
-- `.github/workflows/tests.yml` — reusable unit-test workflow.
-- `.github/workflows/pr-checks.yml` — runs `tests.yml` on every PR.
-- `.github/workflows/release.yml` — calls `tests.yml` before building
-  the release APK (unchanged behaviour; just re-uses the same job).
+- `.github/workflows/gate.yml` — reusable detekt + unit-test workflow.
+- `.github/workflows/pr-checks.yml` — runs `gate.yml` on every PR.
+- `.github/workflows/release.yml` — calls `gate.yml` before building
+  the release APK.
+- `.github/workflows/main.yml` — runs `gate.yml` on pushes to `main` to
+  keep default-branch Gradle caches warm.
 
 ## Gate — when Copilot is auto-assigned
 
@@ -95,9 +97,9 @@ gates every release:
 ```
 
 To make it required before merge: **Settings → Branches → `main` →
-Require status checks before merging → tick `test`** (from
-`pr-checks.yml`). Do this after the first green run so the check name
-is registered with GitHub.
+Require status checks before merging → tick `gate / Detekt` and
+`gate / Unit tests`** (from `pr-checks.yml`). Do this after the first green
+run so the check names are registered with GitHub.
 
 Instrumentation tests (`:database:connectedAndroidTest`) are excluded
 — they need an emulator and are too slow/flaky for every PR. Release
