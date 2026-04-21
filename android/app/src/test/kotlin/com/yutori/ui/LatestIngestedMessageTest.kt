@@ -1,44 +1,32 @@
 package com.yutori.ui
 
 import com.yutori.database.entities.SmsLogEntity
+import com.yutori.parser.Classification
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class LatestIngestedMessageTest {
 
     @Test
-    fun `unmatched classification maps to needs review`() {
-        smsLog(classification = "UNMATCHED")
-            .toLatestIngestedMessage()
-            .outcome shouldBe IngestedMessageOutcome.NEEDS_REVIEW
+    fun `every known Classification decodes onto the model`() {
+        // Covers the decoding contract across all 13 values — if Classification
+        // grows an enum value, Classification.valueOf still decodes it and the
+        // model carries it through without lossy rollup.
+        Classification.entries.forEach { c ->
+            smsLog(classification = c.name)
+                .toLatestIngestedMessage()
+                .classification shouldBe c
+        }
     }
 
     @Test
-    fun `drop classifications map to ignored`() {
-        smsLog(classification = "OTP")
-            .toLatestIngestedMessage()
-            .outcome shouldBe IngestedMessageOutcome.IGNORED
-    }
-
-    @Test
-    fun `spend classifications map to affects budget`() {
-        smsLog(classification = "UPI_PAYMENT")
-            .toLatestIngestedMessage()
-            .outcome shouldBe IngestedMessageOutcome.AFFECTS_BUDGET
-    }
-
-    @Test
-    fun `incoming credits map to tracked as income`() {
-        smsLog(classification = "INCOMING_CREDIT")
-            .toLatestIngestedMessage()
-            .outcome shouldBe IngestedMessageOutcome.TRACKED_AS_INCOME
-    }
-
-    @Test
-    fun `unknown classification falls back to needs review`() {
+    fun `unknown classification string decodes to null`() {
+        // Legacy rows or rows written by a future app version may carry a
+        // string that no longer matches any enum name. The model surfaces
+        // this as null; the screen renders it the same as UNMATCHED.
         smsLog(classification = "NEW_CLASSIFICATION")
             .toLatestIngestedMessage()
-            .outcome shouldBe IngestedMessageOutcome.NEEDS_REVIEW
+            .classification shouldBe null
     }
 
     @Test
