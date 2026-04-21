@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v23 mockup: easter eggs (#79)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --divider-strong:rgba(237,238,240,0.14);
+    --accent:        #C6E3A3;
+    --accent-soft:   rgba(198,227,163,0.10);
+    --info:          #9EC3E6;
+    --info-soft:     rgba(158,195,230,0.10);
+    --brand-teal:    #5C9C9C;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 96px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 52px 0 10px; font-size: 17px; color: #C9CACD; }
+  h3 { font-weight: 500; margin: 24px 0 10px; font-size: 12px; color: var(--on-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 18px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: #8A8E96; font-size: 12px; max-width: 820px; margin: 12px 0 0; line-height: 1.55; }
+  .note strong { color: #C9CACD; }
+  .note code { background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  .phone {
+    width: 380px;
+    background: var(--surface);
+    border-radius: 28px;
+    padding: 20px 24px 26px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .phones { display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start; }
+  .caption { font-size: 12px; color: var(--on-muted); margin-top: 8px; max-width: 380px; line-height: 1.5; }
+  .caption strong { color: var(--on); }
+
+  /* Dashboard surfaces */
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .month-label { font-size: 17px; font-weight: 600; color: var(--on); }
+  .topbar .icons { color: var(--on-muted); font-size: 15px; letter-spacing: 6px; }
+  .hero-amt {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 44px; font-weight: 600; letter-spacing: -0.01em;
+    color: var(--on);
+  }
+  .hero-sub {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); margin-top: 6px;
+  }
+  .progress-bar {
+    margin-top: 14px; height: 6px; background: var(--surface-el);
+    border-radius: 3px; overflow: hidden;
+  }
+  .progress-bar .fill {
+    height: 100%; background: var(--accent); border-radius: 3px;
+  }
+  .stat-row {
+    display: flex; gap: 10px; margin-top: 14px;
+  }
+  .stat-chip {
+    flex: 1;
+    background: var(--surface-el);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .stat-chip .k {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 500;
+  }
+  .stat-chip .v {
+    font-size: 16px; font-weight: 600; color: var(--on);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sparkle {
+    color: var(--info); font-size: 12px;
+    line-height: 1;
+  }
+  .today-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--info-soft);
+    color: var(--info); font-size: 11px; font-weight: 500;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    margin-top: 10px;
+  }
+
+  /* About surfaces */
+  .about-title { font-size: 22px; font-weight: 600; margin: 6px 0 2px; }
+  .about-sub { font-size: 12px; color: var(--on-muted); margin-bottom: 20px; }
+  .logo-block { display: flex; flex-direction: column; align-items: center; margin: 8px 0 18px; }
+  .logo {
+    width: 72px; height: 72px;
+    background: var(--brand-teal);
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 38px; font-weight: 600; color: var(--on);
+    margin-bottom: 10px;
+  }
+  .section-head {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 600; margin: 16px 0 8px;
+  }
+  .build-card {
+    background: var(--surface-el);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .build-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 13px 16px;
+  }
+  .build-row .k { font-size: 14px; color: var(--on); }
+  .build-row .v {
+    font-size: 14px; color: var(--on-muted);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  .build-row.tapping {
+    background: var(--info-soft);
+    transition: background 120ms;
+  }
+  .build-row.tapping .v { color: var(--info); }
+  .build-divider { height: 1px; background: var(--divider); }
+
+  /* Dialog / popup surface */
+  .dialog-host {
+    width: 380px; height: 680px; border-radius: 28px; overflow: hidden;
+    background: #060607; position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  .dialog-host .scrim {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.65);
+  }
+  .dialog {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px;
+    background: var(--surface-el);
+    border-radius: 20px;
+    padding: 22px 22px 20px;
+    border: 1px solid var(--info-soft);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+    animation: popin 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes popin {
+    from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+  .dialog .title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--info); font-weight: 600; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .dialog .close-row {
+    margin-top: 18px; padding-top: 14px;
+    border-top: 1px solid var(--divider);
+    text-align: right;
+  }
+  .dialog .close-btn {
+    font-size: 13px; font-weight: 600;
+    color: var(--info);
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+
+  .stats-card {
+    margin-top: 14px;
+    background: var(--surface-el);
+    border-radius: 14px;
+    padding: 16px 18px;
+    border: 1px solid var(--info-soft);
+    animation: fadein 400ms ease-out;
+  }
+  @keyframes fadein {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .stats-card .title {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--info); font-weight: 600; margin-bottom: 12px;
+  }
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px;
+  }
+  .stat-cell .k {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 500;
+  }
+  .stat-cell .v {
+    font-size: 18px; font-weight: 600; color: var(--on);
+    margin-top: 3px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    line-height: 1.2;
+  }
+  .stat-cell .v .u {
+    font-size: 11px; color: var(--on-muted); font-weight: 400; margin-left: 3px;
+  }
+
+  .recommend {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 10px; padding: 2px 8px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<h1>Easter eggs (#79)</h1>
+<p class="blurb">
+  Two small, separate surprises. <strong>B</strong> passively appears on days the user actually
+  spends nothing. <strong>D</strong> unlocks a hidden stats card after tapping the Build card's
+  version row 7 times.
+</p>
+
+<!-- ================================== -->
+<h2>B — "No spends today" pill</h2>
+<p class="blurb">
+  Appears on the dashboard when <strong>today's actual spend is ₹0</strong> and the user is viewing
+  the current month. Info-tinted pill under the hero, with a small ✦ prefix so it reads as a
+  quiet congratulation rather than a generic status.
+</p>
+<div class="phones">
+  <div>
+    <div class="phone">
+      <div class="topbar"><div class="month-label">April 2026</div><div class="icons">↓ ⚙</div></div>
+      <div class="hero-sub">Spent so far</div>
+      <div class="hero-amt">₹24,600</div>
+      <span class="today-pill">✦ No spends today</span>
+      <div class="progress-bar"><div class="fill" style="width:48%"></div></div>
+      <div class="stat-row">
+        <div class="stat-chip"><div class="k">Carry-over</div><div class="v">+₹2,100</div></div>
+        <div class="stat-chip"><div class="k">Days left</div><div class="v">9</div></div>
+        <div class="stat-chip"><div class="k">Daily burn</div><div class="v">₹1,171</div></div>
+      </div>
+    </div>
+    <div class="caption"><strong>B.</strong> Pill visible only on zero-spend days, current month. Disappears as soon as any transaction lands. Uses the same info-soft token as the override chips shipped in #144.</div>
+  </div>
+</div>
+
+<!-- ================================== -->
+<h2>D — Tap Version 7× → lifetime stats card</h2>
+<p class="blurb">
+  On the About screen, tapping the <em>Version</em> row in the Build card 7 times reveals a
+  hidden <em>Yutori stats</em> card directly below. Stays open for the rest of the session (or
+  until the user leaves About). Taps on the <em>Commit</em> row don't count.
+</p>
+
+<h3>D1 — default state (pre-tap)</h3>
+<div class="phones">
+  <div>
+    <div class="phone">
+      <div class="logo-block">
+        <div class="logo">ゆ</div>
+        <div class="about-title">Yutori</div>
+        <div class="about-sub">Budget breathing room · on-device</div>
+      </div>
+      <div class="section-head">Build</div>
+      <div class="build-card">
+        <div class="build-row"><span class="k">Version</span><span class="v">0.15.0</span></div>
+        <div class="build-divider"></div>
+        <div class="build-row"><span class="k">Commit</span><span class="v">afd8d85</span></div>
+      </div>
+    </div>
+    <div class="caption"><strong>D1.</strong> About screen as today — Build card with Version and Commit rows. Version row is the hidden tap target.</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="logo-block">
+        <div class="logo">ゆ</div>
+        <div class="about-title">Yutori</div>
+        <div class="about-sub">Budget breathing room · on-device</div>
+      </div>
+      <div class="section-head">Build</div>
+      <div class="build-card">
+        <div class="build-row tapping"><span class="k">Version</span><span class="v">0.15.0</span></div>
+        <div class="build-divider"></div>
+        <div class="build-row"><span class="k">Commit</span><span class="v">afd8d85</span></div>
+      </div>
+    </div>
+    <div class="caption"><strong>D2.</strong> Mid-tap-sequence (e.g. taps 4 through 6) — row briefly tints info-soft on each tap so the user has a hint something's registering. No counter text.</div>
+  </div>
+</div>
+
+<h3>D3 — unlocked (dialog)</h3>
+<div class="phones">
+  <div>
+    <div class="dialog-host">
+      <!-- About screen behind the dialog -->
+      <div style="padding: 20px 24px;">
+        <div class="logo-block">
+          <div class="logo">ゆ</div>
+          <div class="about-title">Yutori</div>
+          <div class="about-sub">Budget breathing room · on-device</div>
+        </div>
+        <div class="section-head">Build</div>
+        <div class="build-card">
+          <div class="build-row"><span class="k">Version</span><span class="v">0.15.0</span></div>
+          <div class="build-divider"></div>
+          <div class="build-row"><span class="k">Commit</span><span class="v">afd8d85</span></div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+      <div class="dialog">
+        <div class="title">✦ All-time Yutori stats</div>
+        <div class="stats-grid">
+          <div class="stat-cell"><div class="k">SMS processed</div><div class="v">8,412</div></div>
+          <div class="stat-cell"><div class="k">Transactions</div><div class="v">1,206</div></div>
+          <div class="stat-cell"><div class="k">First tracked</div><div class="v">Aug 2024</div></div>
+          <div class="stat-cell"><div class="k">Months tracked</div><div class="v">20</div></div>
+          <div class="stat-cell"><div class="k">Lifetime tracked</div><div class="v">₹9.4<span class="u">L</span></div></div>
+          <div class="stat-cell"><div class="k">Zero-spend days</div><div class="v">47</div></div>
+        </div>
+        <div class="close-row"><span class="close-btn">Close</span></div>
+      </div>
+    </div>
+    <div class="caption"><strong>D3.</strong> After the 7th tap, a scrimmed dialog pops over the About screen with the stats grid. Dismiss via Close, back button, or tap outside. Values illustrative — ₹9.4L uses Indian short-form (lakh).</div>
+  </div>
+</div>
+
+<!-- ================================== -->
+<h2>Pairing</h2>
+<p class="note">
+  The <strong>Zero-spend days</strong> cell in D3 is deliberately the same signal B marks — so
+  the hidden card rewards observance of the quiet pill. The two features are technically
+  independent but share a data path: a repo query for <code>COUNT(DISTINCT date)</code> of days
+  in the current month where today's SMS produced no <code>SPEND</code> transactions (B), plus
+  the same query lifetime-wide (D).
+</p>
+
+</body>
+</html>

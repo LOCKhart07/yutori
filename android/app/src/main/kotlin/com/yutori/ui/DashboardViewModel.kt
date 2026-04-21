@@ -11,6 +11,9 @@ import com.yutori.database.dao.TransactionDao
 import com.yutori.database.entities.BudgetEntity
 import com.yutori.database.entities.TransactionEntity
 import com.yutori.transactions.MonthKeyComputer
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -173,15 +176,38 @@ class DashboardViewModel(
             currentMonthLimit = resolvedLimit,
         )
 
+        val now = nowMsProvider()
         return DashboardUiState.Ready(
             monthKey = monthKey,
             snapshot = snapshot,
-            derived = DashboardDerived.from(snapshot, monthKey, nowMsProvider()),
+            derived = DashboardDerived.from(snapshot, monthKey, now),
             byCategory = bucketByCategory(txEntities),
             byCard = bucketByCard(txEntities),
             transactionCount = txEntities.size,
             pendingForexCount = pendingForexCount,
+            noSpendsToday = computeNoSpendsToday(monthKey, txEntities, now),
         )
+    }
+
+    /**
+     * True when the viewed month is the current month AND none of the
+     * month's SPEND-effect transactions fall within today's local-day
+     * window. Meaningless for past/future months — always false there.
+     */
+    private fun computeNoSpendsToday(
+        monthKey: String,
+        txEntities: List<TransactionEntity>,
+        nowMs: Long,
+    ): Boolean {
+        if (monthKey != currentMonthKey) return false
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.ofInstant(Instant.ofEpochMilli(nowMs), zone)
+        val startMs = today.atStartOfDay(zone).toInstant().toEpochMilli()
+        val endMs = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        return txEntities.none {
+            it.budgetEffect == "SPEND" &&
+                it.occurredAtMs in startMs until endMs
+        }
     }
 
     private fun bucketByCategory(

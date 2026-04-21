@@ -455,6 +455,10 @@ private fun ReadyView(
         }
 
         Spacer(Modifier.height(20.dp))
+        if (state.noSpendsToday) {
+            NoSpendsTodayPill()
+            Spacer(Modifier.height(12.dp))
+        }
         StatRow(snap, derived, inr)
 
         // Banner (state-aware)
@@ -817,6 +821,26 @@ private fun paceProgressColor(pace: PaceBucket): Color {
         PaceBucket.OnTrack -> MaterialTheme.colorScheme.primary
         PaceBucket.OverPace -> colors.warn
         PaceBucket.Over    -> colors.negative
+    }
+}
+
+// Easter egg (#79). Shown only when viewing the current month and no
+// SPEND-effect transaction has occurred today.
+@Composable
+private fun NoSpendsTodayPill() {
+    val info = YutoriTheme.colors.info
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(info.copy(alpha = 0.10f))
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "✦ No spends today",
+            style = MaterialTheme.typography.labelMedium,
+            color = info,
+        )
     }
 }
 

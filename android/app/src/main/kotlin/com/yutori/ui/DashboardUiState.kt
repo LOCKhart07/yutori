@@ -36,6 +36,13 @@ sealed interface DashboardUiState {
         val byCard: List<CardChip>,
         val transactionCount: Int,
         val pendingForexCount: Int,
+        /**
+         * True when viewing the current month AND zero SPEND-effect
+         * transactions have occurred_at within today's local-day window.
+         * Drives the "No spends today" easter-egg pill (#79). Always
+         * false on past/future months.
+         */
+        val noSpendsToday: Boolean = false,
     ) : DashboardUiState
 }
 

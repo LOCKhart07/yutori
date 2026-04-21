@@ -463,6 +463,106 @@ class DashboardViewModelTest {
         state.pendingForexCount shouldBe 1
     }
 
+    // ---- noSpendsToday (#79) ----
+
+    @Test
+    fun `noSpendsToday is true when current month has no SPEND today`() = runTest(dispatcher) {
+        val txs = listOf(
+            // A SPEND earlier in the month, but nothing today.
+            txEntity(id = 1, inrAmount = 500.0, occurredAtMs = epoch("2026-04-10")),
+        )
+        val vm = DashboardViewModel(
+            transactionDao = FakeTxDao(txs),
+            budgetDao = FakeBudgetDao(
+                month = BudgetEntity(
+                    monthKey = "2026-04", limitInr = 30_000.0,
+                    createdAtMs = 0, updatedAtMs = 0,
+                ),
+            ),
+            hasPermissionProvider = { true },
+            nowMs = { epoch("2026-04-15") },
+            computationDispatcher = dispatcher,
+        )
+        val state = vm.uiState.first { it is DashboardUiState.Ready }
+                as DashboardUiState.Ready
+        state.noSpendsToday shouldBe true
+    }
+
+    @Test
+    fun `noSpendsToday is false when a SPEND occurred today`() = runTest(dispatcher) {
+        val txs = listOf(
+            txEntity(id = 1, inrAmount = 200.0, occurredAtMs = epoch("2026-04-15")),
+        )
+        val vm = DashboardViewModel(
+            transactionDao = FakeTxDao(txs),
+            budgetDao = FakeBudgetDao(
+                month = BudgetEntity(
+                    monthKey = "2026-04", limitInr = 30_000.0,
+                    createdAtMs = 0, updatedAtMs = 0,
+                ),
+            ),
+            hasPermissionProvider = { true },
+            nowMs = { epoch("2026-04-15") },
+            computationDispatcher = dispatcher,
+        )
+        val state = vm.uiState.first { it is DashboardUiState.Ready }
+                as DashboardUiState.Ready
+        state.noSpendsToday shouldBe false
+    }
+
+    @Test
+    fun `noSpendsToday ignores REFUND and DROP effects today`() = runTest(dispatcher) {
+        val txs = listOf(
+            txEntity(id = 1, inrAmount = 400.0, effect = "REFUND",
+                occurredAtMs = epoch("2026-04-15")),
+            txEntity(id = 2, inrAmount = 100.0, effect = "DROP",
+                occurredAtMs = epoch("2026-04-15")),
+        )
+        val vm = DashboardViewModel(
+            transactionDao = FakeTxDao(txs),
+            budgetDao = FakeBudgetDao(
+                month = BudgetEntity(
+                    monthKey = "2026-04", limitInr = 30_000.0,
+                    createdAtMs = 0, updatedAtMs = 0,
+                ),
+            ),
+            hasPermissionProvider = { true },
+            nowMs = { epoch("2026-04-15") },
+            computationDispatcher = dispatcher,
+        )
+        val state = vm.uiState.first { it is DashboardUiState.Ready }
+                as DashboardUiState.Ready
+        state.noSpendsToday shouldBe true
+    }
+
+    @Test
+    fun `noSpendsToday is always false on past months`() = runTest(dispatcher) {
+        // Viewing March while today is April — the "no spends today"
+        // signal doesn't apply to past months even if March had no
+        // spend on its own final day.
+        val txs = listOf(
+            txEntity(id = 1, inrAmount = 500.0, monthKey = "2026-03",
+                occurredAtMs = epoch("2026-03-10")),
+        )
+        val vm = DashboardViewModel(
+            transactionDao = FakeTxDao(txs),
+            budgetDao = FakeBudgetDao(
+                priors = listOf(
+                    BudgetEntity(monthKey = "2026-03", limitInr = 30_000.0,
+                        createdAtMs = 0, updatedAtMs = 0),
+                ),
+            ),
+            hasPermissionProvider = { true },
+            nowMs = { epoch("2026-04-15") },
+            computationDispatcher = dispatcher,
+        )
+        vm.setMonth("2026-03")
+        val state = vm.uiState.first {
+            it is DashboardUiState.Ready && it.monthKey == "2026-03"
+        } as DashboardUiState.Ready
+        state.noSpendsToday shouldBe false
+    }
+
     // ---- helpers ----
 
     private fun epoch(ymd: String): Long {
@@ -485,6 +585,7 @@ class DashboardViewModelTest {
         monthKey: String = "2026-04",
         rateSource: String? = null,
         accountId: Long? = null,
+        occurredAtMs: Long = 1_700_000_000_000L,
     ) = TransactionEntity(
         id = id,
         classification = "UPI_PAYMENT",
@@ -500,7 +601,7 @@ class DashboardViewModelTest {
         accountId = accountId,
         last4 = last4,
         issuer = issuer,
-        occurredAtMs = 1_700_000_000_000L,
+        occurredAtMs = occurredAtMs,
         monthKey = monthKey,
     )
 
