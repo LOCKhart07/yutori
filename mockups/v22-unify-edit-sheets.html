@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v22 mockup: unify Edit classification + Edit category sheets (#143)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --divider-strong:rgba(237,238,240,0.14);
+    --accent:        #C6E3A3;
+    --accent-soft:   rgba(198,227,163,0.10);
+    --info:          #9EC3E6;
+    --info-soft:     rgba(158,195,230,0.10);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 96px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 52px 0 10px; font-size: 17px; color: #C9CACD; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 18px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: #8A8E96; font-size: 12px; max-width: 820px; margin: 12px 0 0; line-height: 1.55; }
+  .note strong { color: #C9CACD; }
+  .note code { background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  .sheet-host {
+    width: 380px; height: 680px; border-radius: 28px; overflow: hidden;
+    background: #060607; position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  .sheet-host .scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.55); }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--surface-el);
+    border-top-left-radius: 24px; border-top-right-radius: 24px;
+    padding: 14px 20px 22px;
+    box-shadow: 0 -1px 0 rgba(255,255,255,0.06);
+    display: flex; flex-direction: column;
+  }
+  .sheet.tall { max-height: 92%; }
+  .sheet.medium { max-height: 78%; }
+  .sheet-handle {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: var(--divider-strong);
+    margin: 0 auto 14px;
+  }
+  .sheet-title { font-size: 15px; font-weight: 600; color: var(--on); }
+  .sheet-mode { font-size: 11px; color: var(--on-faint); margin-top: 4px; }
+  .sheet-mode.overridden { color: var(--info); }
+
+  .sheet-list {
+    margin-top: 10px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .sheet-opt {
+    padding: 10px 12px; border-radius: 10px;
+    font-size: 14px; color: var(--on);
+    cursor: pointer;
+  }
+  .sheet-opt.selected { background: var(--surface-el2); color: var(--accent); font-weight: 500; }
+  .sheet-opt.automatic { color: var(--info); }
+  .sheet-opt.automatic.selected { background: var(--info-soft); color: var(--info); }
+  .sheet-divider { height: 1px; background: var(--divider); margin: 6px 4px; }
+
+  .sheet-footer {
+    margin-top: 12px;
+    padding-top: 12px; border-top: 1px solid var(--divider);
+    display: flex; gap: 10px;
+  }
+  .btn {
+    flex: 1;
+    padding: 10px 18px; border-radius: 10px;
+    font-size: 13px; font-weight: 600;
+    border: 1px solid transparent;
+    text-align: center;
+  }
+  .btn.primary { background: var(--accent); color: #0B1206; }
+  .btn.primary[disabled] { opacity: 0.4; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--on-muted); border-color: var(--divider-strong); }
+
+  /* Segmented control */
+  .segmented {
+    display: grid; grid-template-columns: 1fr 1fr;
+    background: var(--surface);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    padding: 3px;
+    margin-top: 12px;
+    gap: 3px;
+  }
+  .seg {
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    text-align: center;
+    color: var(--on-muted);
+    cursor: pointer;
+  }
+  .seg.active { background: var(--surface-el2); color: var(--on); font-weight: 500; }
+  .seg .sub {
+    display: block; font-size: 10px; font-weight: 400; margin-top: 2px;
+    color: var(--on-faint); text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .seg.active .sub { color: var(--info); }
+
+  /* Stacked section header */
+  .section-hdr {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin: 14px 0 6px;
+  }
+  .section-hdr .k {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    font-weight: 600; color: var(--on-muted);
+  }
+  .section-hdr .m { font-size: 11px; color: var(--on-faint); }
+  .section-hdr .m.overridden { color: var(--info); }
+
+  .phones { display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start; }
+  .caption { font-size: 12px; color: var(--on-muted); margin-top: 8px; max-width: 380px; line-height: 1.5; }
+  .caption strong { color: var(--on); }
+
+  .recommend {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 10px; padding: 2px 8px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<h1>Unify Edit classification + Edit category sheets</h1>
+<p class="blurb">
+  Three shapes for #143. Option 1 is the "minimum" — align state/highlight behaviour across the
+  two existing sheets with no visible UI change. Options 2 and 3 merge into one sheet, differing
+  in how the two pickers share the surface.
+</p>
+<p class="note">
+  Today: tapping <em>Edit category</em> or <em>Edit classification</em> opens its own bottom sheet
+  with title + "Currently: automatic/overridden" hint + scrollable picker + Cancel/Save. Both work
+  but selection semantics drift (category starts <code>selected = current</code>; classification
+  starts <code>selected = override-or-null</code>). Opening them back-to-back exposes the drift.
+</p>
+
+<!-- ================================== -->
+<h2>Option 1 — Keep two sheets, align state + highlight only</h2>
+<p class="blurb">
+  Minimum scope. No visible change; fixes only the selection-model drift so both sheets start with
+  <code>selected = current-value-shown</code> and highlight the currently-applied row on open. Two
+  action buttons stay separate, two Save commits. Low risk, shortest diff, closes the issue.
+</p>
+<div class="phones">
+  <div>
+    <div class="sheet-host">
+      <div class="scrim"></div>
+      <div class="sheet medium">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Edit classification</div>
+        <div class="sheet-mode">Currently: automatic</div>
+        <div class="sheet-list">
+          <div class="sheet-opt automatic selected">Use automatic classification</div>
+          <div class="sheet-opt">UPI Payment</div>
+          <div class="sheet-opt">CC Transaction</div>
+          <div class="sheet-opt">CC Bill Payment</div>
+          <div class="sheet-opt">Incoming Credit</div>
+          <div class="sheet-opt">Self Transfer</div>
+          <div class="sheet-opt">Non-financial</div>
+        </div>
+        <div class="sheet-footer">
+          <div class="btn ghost">Cancel</div>
+          <div class="btn primary" disabled>Save</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><strong>1a.</strong> Classification sheet. "Use automatic" highlighted when the value is inferred.</div>
+  </div>
+
+  <div>
+    <div class="sheet-host">
+      <div class="scrim"></div>
+      <div class="sheet medium">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Edit category</div>
+        <div class="sheet-mode overridden">Currently: overridden</div>
+        <div class="sheet-list">
+          <div class="sheet-opt automatic">Use automatic category</div>
+          <div class="sheet-opt">Groceries</div>
+          <div class="sheet-opt selected">Food &amp; Dining</div>
+          <div class="sheet-opt">Transport</div>
+          <div class="sheet-opt">Shopping</div>
+          <div class="sheet-opt">Bills &amp; Utilities</div>
+          <div class="sheet-opt">Entertainment</div>
+          <div class="sheet-opt">Other</div>
+        </div>
+        <div class="sheet-footer">
+          <div class="btn ghost">Cancel</div>
+          <div class="btn primary" disabled>Save</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><strong>1b.</strong> Category sheet. Highlight on the actual current value (not "Use automatic"), matching classification's pattern.</div>
+  </div>
+</div>
+
+<!-- ================================== -->
+<h2>Option 2 — One sheet, segmented tabs <span class="recommend">recommended</span></h2>
+<p class="blurb">
+  One <em>Edit transaction</em> sheet with a segmented <code>[Classification | Category]</code>
+  control under the title. Tab sublabel shows current mode (auto / overridden). Saving commits
+  both — useful when the user wants to re-classify and re-categorise in the same sitting (common
+  when fixing a misread SMS). Save enabled if either side differs from initial.
+</p>
+<div class="phones">
+  <div>
+    <div class="sheet-host">
+      <div class="scrim"></div>
+      <div class="sheet medium">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Edit transaction</div>
+        <div class="segmented">
+          <div class="seg active">Classification<span class="sub">automatic</span></div>
+          <div class="seg">Category<span class="sub">automatic</span></div>
+        </div>
+        <div class="sheet-list">
+          <div class="sheet-opt automatic selected">Use automatic classification</div>
+          <div class="sheet-opt">UPI Payment</div>
+          <div class="sheet-opt">CC Transaction</div>
+          <div class="sheet-opt">CC Bill Payment</div>
+          <div class="sheet-opt">Incoming Credit</div>
+          <div class="sheet-opt">Self Transfer</div>
+          <div class="sheet-opt">Non-financial</div>
+        </div>
+        <div class="sheet-footer">
+          <div class="btn ghost">Cancel</div>
+          <div class="btn primary" disabled>Save</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><strong>2a.</strong> Classification tab active. Sublabels show current mode so the user can see override state without switching.</div>
+  </div>
+
+  <div>
+    <div class="sheet-host">
+      <div class="scrim"></div>
+      <div class="sheet medium">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Edit transaction</div>
+        <div class="segmented">
+          <div class="seg">Classification<span class="sub">automatic</span></div>
+          <div class="seg active">Category<span class="sub" style="color:var(--info)">overridden</span></div>
+        </div>
+        <div class="sheet-list">
+          <div class="sheet-opt automatic">Use automatic category</div>
+          <div class="sheet-opt">Groceries</div>
+          <div class="sheet-opt selected">Food &amp; Dining</div>
+          <div class="sheet-opt">Transport</div>
+          <div class="sheet-opt">Shopping</div>
+          <div class="sheet-opt">Bills &amp; Utilities</div>
+          <div class="sheet-opt">Entertainment</div>
+          <div class="sheet-opt">Other</div>
+        </div>
+        <div class="sheet-footer">
+          <div class="btn ghost">Cancel</div>
+          <div class="btn primary" disabled>Save</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><strong>2b.</strong> Category tab active, category is overridden. Sublabel picks up the override state.</div>
+  </div>
+</div>
+
+<p class="note">
+  <strong>Entry points:</strong> both <em>Edit classification</em> and <em>Edit category</em>
+  buttons open this sheet — they just set the initial active tab. No dashboard-level change.
+</p>
+
+<!-- ================================== -->
+<h2>Option 3 — One sheet, both pickers stacked</h2>
+<p class="blurb">
+  One sheet, both lists rendered in full, whole sheet scrolls. Section headers carry "Currently:
+  …" hints. No tab state. Downside: 7+8 options = ~15 rows plus headers; the whole thing is a
+  long scroll and the Save button lives past the fold.
+</p>
+<div class="phones">
+  <div>
+    <div class="sheet-host">
+      <div class="scrim"></div>
+      <div class="sheet tall">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Edit transaction</div>
+        <div class="sheet-list">
+          <div class="section-hdr"><span class="k">Classification</span><span class="m">Currently: automatic</span></div>
+          <div class="sheet-opt automatic selected">Use automatic classification</div>
+          <div class="sheet-opt">UPI Payment</div>
+          <div class="sheet-opt">CC Transaction</div>
+          <div class="sheet-opt">CC Bill Payment</div>
+          <div class="sheet-opt">Incoming Credit</div>
+          <div class="sheet-opt">Self Transfer</div>
+          <div class="sheet-opt">Non-financial</div>
+          <div class="sheet-divider"></div>
+          <div class="section-hdr"><span class="k">Category</span><span class="m overridden">Currently: overridden</span></div>
+          <div class="sheet-opt automatic">Use automatic category</div>
+          <div class="sheet-opt">Groceries</div>
+          <div class="sheet-opt selected">Food &amp; Dining</div>
+          <div class="sheet-opt">Transport</div>
+          <div class="sheet-opt">Shopping</div>
+          <div class="sheet-opt">Bills &amp; Utilities</div>
+          <div class="sheet-opt">Entertainment</div>
+          <div class="sheet-opt">Other</div>
+        </div>
+        <div class="sheet-footer">
+          <div class="btn ghost">Cancel</div>
+          <div class="btn primary" disabled>Save</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><strong>3.</strong> Both pickers stacked. Sheet scrolls as a whole; Save sticks to the bottom. Context-dense but busy.</div>
+  </div>
+</div>
+
+<!-- ================================== -->
+<h2>Tradeoffs</h2>
+<p class="note">
+  <strong>1. Light</strong> — zero visual change, one-commit fix. No merged-sheet win. Good if
+  you're not sold on combining.<br/><br/>
+  <strong>2. Tabs</strong> — visibly combined, stays compact, one Save commits both. Adds a small
+  segmented control. Entry points still feel natural (the tapped button sets the initial tab).<br/><br/>
+  <strong>3. Stacked</strong> — no tab switch to learn, but 15 rows is a long scroll and the Save
+  button is below the fold. Feels heavy in hand.<br/><br/>
+  <strong>Recommendation:</strong> 2. Compactness + one-Save for related edits outweigh the added
+  segmented control. If you'd rather close the issue without touching the UI at all, option 1.
+</p>
+
+</body>
+</html>

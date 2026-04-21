@@ -784,9 +784,14 @@ private fun EditCategorySheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val colors = YutoriTheme.colors
-    var selected by remember { mutableStateOf(initialCategory) }
     val options: List<String?> = remember { listOf(null) + Category.entries.map { it.name } }
-    val saveEnabled = selected != initialCategory || (selected == null && initiallyOverridden)
+    // Match EditClassificationSheet: the "currently applied" option gets the
+    // highlight and Save enables when the user picks something different.
+    // When automatic, that's the null ("Use automatic") row; when
+    // overridden, it's the specific override value.
+    val initiallySelected = if (initiallyOverridden) initialCategory else null
+    var selected by remember { mutableStateOf(initiallySelected) }
+    val saveEnabled = selected != initiallySelected
     val currentModeLabel = if (initiallyOverridden) {
         "Currently: overridden"
     } else {
