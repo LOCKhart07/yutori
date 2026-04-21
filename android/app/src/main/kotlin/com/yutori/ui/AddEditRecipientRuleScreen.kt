@@ -51,6 +51,7 @@ import com.yutori.database.entities.RecipientRuleEntity
 import com.yutori.database.entities.RuleSuggestionEntity
 import com.yutori.parser.Category
 import com.yutori.parser.Classification
+import com.yutori.parser.displayName
 import com.yutori.ui.theme.YutoriTextStyles
 import com.yutori.ui.theme.YutoriTheme
 import kotlinx.coroutines.launch
@@ -268,9 +269,9 @@ fun AddEditRecipientRuleScreen(
             Spacer(Modifier.height(14.dp))
             FieldLabel("Reclassify as")
             EnumDropdown(
-                value = reclassifyAs?.let(::classificationLabel) ?: "Don't change",
+                value = reclassifyAs?.displayName ?: "Don't change",
                 options = RECLASSIFY_OPTIONS,
-                optionLabel = ::reclassifyOptionLabel,
+                optionLabel = { c -> c?.displayName ?: "Don't change" },
                 onPick = {
                     reclassifyAs = it
                     if (it != Classification.SELF_TRANSFER) linkedAccountId = null
@@ -310,7 +311,7 @@ fun AddEditRecipientRuleScreen(
                     border = BorderStroke(1.dp, colors.divider),
                 ) {
                     Text(
-                        text = "Unavailable for ${classificationLabel(reclassifyAs!!)}",
+                        text = "Unavailable for ${reclassifyAs!!.displayName}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.onFaint,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
@@ -819,18 +820,6 @@ private fun patternKindHelp(kind: PatternKind): String = when (kind) {
     PatternKind.REGEX -> "Java Pattern syntax. Rule matches anywhere in the string — " +
         "anchor with ^/\$ yourself."
 }
-
-private fun classificationLabel(c: Classification): String = when (c) {
-    Classification.CC_BILL_PAYMENT -> "CC bill payment"
-    Classification.SELF_TRANSFER -> "Self-transfer"
-    Classification.REFUND -> "Refund"
-    Classification.INCOMING_CREDIT -> "Incoming credit"
-    Classification.NON_FINANCIAL -> "Non-financial (drop)"
-    else -> c.name
-}
-
-private fun reclassifyOptionLabel(c: Classification?): String =
-    c?.let(::classificationLabel) ?: "Don't change"
 
 private fun accountLabel(a: AccountEntity): String {
     val last4 = a.last4?.let { " ••$it" } ?: ""

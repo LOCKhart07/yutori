@@ -24,3 +24,25 @@ enum class Classification {
     SELF_TRANSFER,
     UNMATCHED,
 }
+
+/**
+ * Canonical human-readable name for a [Classification]. Used by every UI
+ * surface that shows a classification to the user. See
+ * plans/classification-display-spec.md.
+ */
+val Classification.displayName: String
+    get() = when (this) {
+        Classification.CC_TRANSACTION -> "CC transaction"
+        Classification.CC_BILL_PAYMENT -> "CC bill payment"
+        Classification.UPI_PAYMENT -> "UPI payment"
+        Classification.DEBIT_CARD -> "Debit card"
+        Classification.ATM_WITHDRAWAL -> "ATM withdrawal"
+        Classification.REFUND -> "Refund"
+        Classification.CASHBACK -> "Cashback"
+        Classification.INCOMING_CREDIT -> "Incoming credit"
+        Classification.OTP -> "OTP"
+        Classification.BALANCE_ALERT -> "Balance alert"
+        Classification.NON_FINANCIAL -> "Non-financial"
+        Classification.SELF_TRANSFER -> "Self-transfer"
+        Classification.UNMATCHED -> "Unmatched"
+    }

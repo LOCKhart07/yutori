@@ -59,6 +59,7 @@ import com.yutori.database.entities.TransactionSourceEntity
 import com.yutori.database.mappers.RecipientRuleMapper
 import com.yutori.parser.Category
 import com.yutori.parser.Classification
+import com.yutori.parser.displayName
 import com.yutori.ui.theme.YutoriTextStyles
 import com.yutori.ui.theme.YutoriTheme
 import kotlinx.coroutines.launch
@@ -366,7 +367,7 @@ private fun Hero(tx: TransactionEntity) {
     if (origClass != null && origClass != tx.classification) {
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "was ${prettyClassification(origClass)}",
+            text = "was ${displayClassification(origClass)}",
             style = MaterialTheme.typography.labelSmall,
             color = YutoriTheme.colors.onFaint,
         )
@@ -384,7 +385,7 @@ private fun ClassificationPill(classification: String, budgetEffect: String) {
         else     -> colors.onMuted
     }
     Pill(
-        label = "${prettyClassification(classification)} · $budgetEffect",
+        label = "${displayClassification(classification)} · $budgetEffect",
         tint = tint,
     )
 }
@@ -897,7 +898,7 @@ private fun EditClassificationSheet(
                     .verticalScroll(rememberScrollState()),
             ) {
                 options.forEach { option ->
-                    val label = option?.let(::prettyClassification)
+                    val label = option?.let(::displayClassification)
                         ?: "Use automatic classification"
                     val selectedNow = selected == option
                     Surface(
@@ -989,7 +990,7 @@ private fun SourceBlock(src: TransactionSourceEntity, log: SmsLogEntity?) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "From ${log.sender} · ${prettyClassification(log.classification)}",
+                    text = "From ${log.sender} · ${displayClassification(log.classification)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = YutoriTheme.colors.onFaint,
                 )
@@ -1004,17 +1005,13 @@ private fun SourceBlock(src: TransactionSourceEntity, log: SmsLogEntity?) {
     }
 }
 
-// Classification / role enums use upper-snake tokens that include
-// acronyms (UPI, CC, ATM, OTP). Default Title-Casing mangles them —
-// "UPI_PAYMENT" → "Upi Payment" — so preserve the known acronyms.
-private val CLASSIFICATION_ACRONYMS = setOf("UPI", "CC", "ATM", "OTP")
-private val ROLE_ACRONYMS = setOf("UPI", "CC", "ATM", "OTP", "ACK", "NOTIF")
+private fun displayClassification(raw: String): String =
+    runCatching { Classification.valueOf(raw).displayName }.getOrDefault(raw)
 
-private fun prettyClassification(name: String): String =
-    name.split("_").joinToString(" ") { tok ->
-        if (tok in CLASSIFICATION_ACRONYMS) tok
-        else tok.lowercase().replaceFirstChar { c -> c.titlecase() }
-    }
+// MessageRole enums use upper-snake tokens that include acronyms
+// (UPI, CC, ATM, OTP, ACK, NOTIF). Default Title-Casing mangles them —
+// "UPI_NOTIF" → "Upi Notif" — so preserve the known acronyms.
+private val ROLE_ACRONYMS = setOf("UPI", "CC", "ATM", "OTP", "ACK", "NOTIF")
 
 // SMS-source card header: sentence-case with acronyms preserved.
 // BANK_DEBIT → "Bank debit", CC_PAYMENT_RECEIPT → "CC payment receipt",
