@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v20 mockup: AI-assisted rule entry point (#156)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --divider-strong:rgba(237,238,240,0.14);
+    --accent:        #C6E3A3;
+    --accent-soft:   rgba(198,227,163,0.10);
+    --negative:      #E27A7A;
+    --info:          #9EC3E6;
+    --info-soft:     rgba(158,195,230,0.10);
+    --warning:       #E6C67A;
+    --warning-soft:  rgba(230,198,122,0.10);
+    --positive-soft: rgba(122,229,159,0.14);
+    --positive:      #7ae59f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 96px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 52px 0 10px; font-size: 17px; color: #C9CACD; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 18px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .blurb strong { color: #C9CACD; }
+
+  .phone {
+    width: 380px;
+    background: var(--surface);
+    border-radius: 28px;
+    padding: 20px 24px 26px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .phones { display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start; }
+  .phone-label {
+    font-size: 11px; color: var(--on-faint); text-transform: uppercase;
+    letter-spacing: 0.08em; font-weight: 600;
+    max-width: 380px; margin: 12px 0 28px;
+  }
+  .phone-label strong { color: var(--on-muted); }
+
+  .back {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--on-muted); font-size: 13px; margin: 2px 0 18px;
+  }
+  .back svg { width: 18px; height: 18px; }
+  .screen-title { font-size: 20px; font-weight: 600; color: var(--on); margin: 0 0 16px; }
+
+  .caps-header {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--on-faint); font-weight: 600;
+    margin: 18px 0 8px;
+  }
+
+  /* --- Recipient rules primitives --- */
+  .rule-card {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+  }
+  .rule-card .pattern {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--on);
+  }
+  .rule-card .meta {
+    font-size: 11px; color: var(--on-muted); margin-top: 2px;
+  }
+  .add-entry {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px;
+    font-size: 13px; color: var(--on-muted);
+    margin-bottom: 6px;
+  }
+  .add-entry .plus {
+    color: var(--accent); font-weight: 700; font-size: 15px;
+  }
+  .add-entry.ai .plus { color: var(--info); }
+  .add-entry.ai .label { color: var(--on); }
+  .add-entry.ai .sparkle {
+    color: var(--info); font-size: 14px; margin-right: 2px;
+  }
+
+  .suggest-card {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 6px;
+  }
+  .suggest-card .sender {
+    font-size: 13px; font-weight: 600; color: var(--on);
+  }
+  .suggest-card .why {
+    font-size: 11px; color: var(--on-muted); margin-top: 4px;
+  }
+  .suggest-card .row {
+    display: flex; gap: 8px; margin-top: 10px;
+  }
+  .suggest-card button {
+    border: none; border-radius: 999px; padding: 5px 12px;
+    font-size: 11px; cursor: pointer; background: var(--surface-el2); color: var(--on);
+  }
+  .suggest-card .describe {
+    background: var(--info-soft); color: var(--info);
+  }
+
+  /* --- AI-settings primitives --- */
+  .toggle-row, .model-card, .try-card {
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .toggle-row .title { font-size: 14px; color: var(--on); font-weight: 500; }
+  .toggle-row .caption { font-size: 11px; color: var(--on-muted); margin-top: 4px; line-height: 1.45; }
+  .switch {
+    width: 44px; height: 24px; border-radius: 12px;
+    background: var(--accent); position: relative; flex-shrink: 0;
+  }
+  .switch::after {
+    content: ""; position: absolute; top: 3px; right: 3px;
+    width: 18px; height: 18px; border-radius: 50%; background: #060607;
+  }
+  .model-card .title { font-size: 13px; color: var(--on); font-weight: 500; }
+  .model-card .status {
+    font-size: 11px; color: var(--positive); margin-top: 4px;
+  }
+  .model-card .sub {
+    font-size: 11px; color: var(--on-muted); margin-top: 4px;
+  }
+  .try-card {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    border-color: rgba(158,195,230,0.35);
+    background: linear-gradient(180deg, rgba(158,195,230,0.06), transparent);
+  }
+  .try-card .sparkle { color: var(--info); font-size: 18px; }
+  .try-card .body { flex: 1; }
+  .try-card .title { font-size: 14px; color: var(--on); font-weight: 500; }
+  .try-card .sub { font-size: 11px; color: var(--on-muted); margin-top: 3px; line-height: 1.45; }
+  .try-card .chev { color: var(--on-faint); font-size: 18px; }
+
+  /* Strike overlay */
+  .strike {
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    pointer-events: none;
+    border-radius: 28px;
+    border: 2px dashed rgba(226,122,122,0.35);
+  }
+  .strike-tag {
+    position: absolute; top: 10px; right: 14px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--negative);
+    background: rgba(226,122,122,0.12);
+    padding: 3px 8px; border-radius: 4px;
+  }
+
+  .callout {
+    margin-top: 24px;
+    padding: 12px 14px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--on-muted); font-size: 12px; line-height: 1.55;
+    border-radius: 0 8px 8px 0;
+    max-width: 820px;
+  }
+  .callout.info {
+    border-left-color: var(--info);
+    background: var(--info-soft);
+  }
+  .callout strong { color: var(--on); }
+  .callout code { background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<h1>v20 — AI rule entry point on Recipient rules (#156)</h1>
+<p class="blurb">
+  The describe-a-rule sheet (shipped in #64 part 2) currently only appears on <em>unsure</em>
+  suggestion cards — gated on <code>!confident &amp;&amp; onDescribeThisRule != null</code>
+  inside <code>SuggestionCard</code>. A user with no unsure suggestions can enable AI in settings,
+  download the 2.58 GB model, and still have no way to use the feature.
+  Issue #151 (closed as dup of #64) is exactly that.
+</p>
+<p class="blurb">
+  Fix: promote the describe-sheet entry to a <strong>permanent</strong> button on the Recipient rules
+  screen, alongside the existing &ldquo;+ Add a new rule&rdquo;. The AI-settings screen grows a
+  <strong>&ldquo;Try it&rdquo;</strong> row (after the model is installed) that <em>navigates</em> to
+  Recipient rules — not a second launcher. Single source of truth for the feature&rsquo;s entry point.
+</p>
+
+<!--════════════════════════════════════════════════════════════════
+  A. Recipient rules: before vs. after
+  ════════════════════════════════════════════════════════════════-->
+<h2>A — Recipient rules screen</h2>
+
+<div class="phones">
+
+  <!-- A1 — before -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">Recipient rules</div>
+
+      <div class="caps-header">SUGGESTED (0)</div>
+      <div style="font-size: 12px; color: var(--on-muted); margin-bottom: 10px;">
+        No repeat merchants crossed the threshold yet.
+      </div>
+
+      <div class="caps-header">BUILT-IN (8)</div>
+      <div class="rule-card">
+        <div class="pattern">cred.club</div>
+        <div class="meta">CC_BILL_PAYMENT · seed</div>
+      </div>
+      <div class="rule-card">
+        <div class="pattern">paytmbank</div>
+        <div class="meta">SELF_TRANSFER · seed</div>
+      </div>
+
+      <div class="caps-header">YOUR RULES</div>
+      <div class="add-entry">
+        <span class="plus">+</span>
+        <span class="label">Add a new rule</span>
+      </div>
+      <div style="font-size: 11px; color: var(--on-muted);">
+        User rules will appear here.
+      </div>
+
+      <div class="strike"></div>
+      <div class="strike-tag">Before</div>
+    </div>
+    <div class="phone-label">
+      <strong>A1</strong> · Current state (0.12.0). With no unsure suggestions, the describe
+      sheet is unreachable. &ldquo;+ Add a new rule&rdquo; only opens the manual form.
+    </div>
+  </div>
+
+  <!-- A2 — after -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">Recipient rules</div>
+
+      <div class="caps-header">SUGGESTED (0)</div>
+      <div style="font-size: 12px; color: var(--on-muted); margin-bottom: 10px;">
+        No repeat merchants crossed the threshold yet.
+      </div>
+
+      <div class="caps-header">BUILT-IN (8)</div>
+      <div class="rule-card">
+        <div class="pattern">cred.club</div>
+        <div class="meta">CC_BILL_PAYMENT · seed</div>
+      </div>
+      <div class="rule-card">
+        <div class="pattern">paytmbank</div>
+        <div class="meta">SELF_TRANSFER · seed</div>
+      </div>
+
+      <div class="caps-header">YOUR RULES</div>
+      <div class="add-entry ai">
+        <span class="sparkle">✦</span>
+        <span class="label">Describe a rule in plain English</span>
+      </div>
+      <div class="add-entry">
+        <span class="plus">+</span>
+        <span class="label">Add a new rule</span>
+      </div>
+      <div style="font-size: 11px; color: var(--on-muted);">
+        User rules will appear here.
+      </div>
+    </div>
+    <div class="phone-label">
+      <strong>A2</strong> · New describe-a-rule entry sits <em>above</em> &ldquo;+ Add a new rule&rdquo;
+      — AI is the higher-intent / lower-effort path, so it&rsquo;s listed first. Button is always
+      present regardless of whether AI is enabled.
+    </div>
+  </div>
+
+  <!-- A3 — unsure card still works -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">Recipient rules</div>
+
+      <div class="caps-header">SUGGESTED (2)</div>
+      <div class="suggest-card">
+        <div class="sender">zomato-online@ybl</div>
+        <div class="why">Repeat merchant · unsure how to classify</div>
+        <div class="row">
+          <button>Accept</button>
+          <button>Review</button>
+          <button class="describe">✦ Describe this rule…</button>
+          <button>Dismiss</button>
+        </div>
+      </div>
+
+      <div class="caps-header">YOUR RULES</div>
+      <div class="add-entry ai">
+        <span class="sparkle">✦</span>
+        <span class="label">Describe a rule in plain English</span>
+      </div>
+      <div class="add-entry">
+        <span class="plus">+</span>
+        <span class="label">Add a new rule</span>
+      </div>
+    </div>
+    <div class="phone-label">
+      <strong>A3</strong> · The existing per-card &ldquo;✦ Describe this rule…&rdquo; button stays as-is.
+      Unsure cards pre-seed the sheet with the merchant key; the new top-level entry pre-seeds with
+      an empty prompt. Two entry points, one sheet.
+    </div>
+  </div>
+
+</div>
+
+<!--════════════════════════════════════════════════════════════════
+  B. AI settings: before vs. after (after install)
+  ════════════════════════════════════════════════════════════════-->
+<h2>B — AI settings screen (after model install)</h2>
+
+<div class="phones">
+
+  <!-- B1 — before -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">AI-assisted rules</div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="title">AI-assisted rules</div>
+          <div class="caption">
+            Describe a rule in plain English; AI suggests a merchant pattern.
+            Runs entirely on your phone.
+          </div>
+        </div>
+        <div class="switch"></div>
+      </div>
+
+      <div class="model-card">
+        <div class="title">Gemma 4 E2B IT · 2.58 GB</div>
+        <div class="status">✓ Installed</div>
+        <div class="sub">Downloaded 2026-04-20. Tap to manage.</div>
+      </div>
+
+      <div class="strike"></div>
+      <div class="strike-tag">Before</div>
+    </div>
+    <div class="phone-label">
+      <strong>B1</strong> · After enabling AI and downloading the model, the screen has nothing
+      that answers &ldquo;now what?&rdquo;. Nothing on this screen reveals that the feature lives
+      on Recipient rules.
+    </div>
+  </div>
+
+  <!-- B2 — after -->
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Settings
+      </div>
+      <div class="screen-title">AI-assisted rules</div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="title">AI-assisted rules</div>
+          <div class="caption">
+            Describe a rule in plain English; AI suggests a merchant pattern.
+            Runs entirely on your phone.
+          </div>
+        </div>
+        <div class="switch"></div>
+      </div>
+
+      <div class="model-card">
+        <div class="title">Gemma 4 E2B IT · 2.58 GB</div>
+        <div class="status">✓ Installed</div>
+        <div class="sub">Downloaded 2026-04-20. Tap to manage.</div>
+      </div>
+
+      <div class="try-card">
+        <span class="sparkle">✦</span>
+        <div class="body">
+          <div class="title">Try it</div>
+          <div class="sub">
+            Open Recipient rules and describe a rule in plain English.
+          </div>
+        </div>
+        <span class="chev">›</span>
+      </div>
+    </div>
+    <div class="phone-label">
+      <strong>B2</strong> · New &ldquo;Try it&rdquo; row. Only shown when
+      <code>enabled &amp;&amp; modelInstalled</code>. Tapping navigates to Recipient rules —
+      <em>not</em> a second describe-sheet launcher. The user then sees the new top-level entry
+      from A2 and taps it there.
+    </div>
+  </div>
+
+</div>
+
+<!--════════════════════════════════════════════════════════════════
+  C. Cold-start + scope
+  ════════════════════════════════════════════════════════════════-->
+<div class="callout info" style="margin-top: 36px;">
+  <strong>Cold-start path when AI is off or model missing.</strong>
+  If the user taps &ldquo;Describe a rule in plain English&rdquo; (A2) without
+  <code>aiReady</code>, reuse the existing <code>AiUnavailableSheet</code> — same component that
+  already guards the unsure-card path today. The sheet explains that AI is off / model isn&rsquo;t
+  installed and links to AI settings. No new guard surface.
+</div>
+
+<div class="callout" style="margin-top: 8px;">
+  <strong>Why &ldquo;Try it&rdquo; navigates, not launches.</strong>
+  If the settings screen directly opened the describe sheet, we&rsquo;d have two independent
+  launchers for the same feature — easy for them to drift (different seed defaults, different
+  unavailable-state handling, divergent analytics). Navigation keeps Recipient rules as the
+  single home and teaches the user where the feature lives. &ldquo;Try it&rdquo; is a signpost, not
+  a duplicate.
+</div>
+
+<div class="callout" style="margin-top: 8px;">
+  <strong>Ordering: describe-a-rule sits above Add-a-new-rule.</strong>
+  AI path is higher-intent and lower-effort (describe in English vs. fill out a form). Putting it
+  first matches the screen&rsquo;s progression from suggested → assisted → manual.
+</div>
+
+<div class="callout" style="margin-top: 8px;">
+  <strong>Empty-state affordance under Suggested header — dropped.</strong>
+  Option 3 in the issue was a per-empty-state sentence under &ldquo;SUGGESTED&rdquo; when the list
+  is empty and AI is ready. With A2 the top-level entry already solves discoverability; adding a
+  second sentence would be chrome. Skip.
+</div>
+
+<div class="callout" style="margin-top: 8px;">
+  <strong>Not in scope.</strong>
+  No changes to the describe sheet itself, <code>AiUnavailableSheet</code>, the extraction
+  pipeline, or the post-extraction <code>AddEditRecipientRule</code> pre-fill. Wiring only.
+</div>
+
+</body>
+</html>
