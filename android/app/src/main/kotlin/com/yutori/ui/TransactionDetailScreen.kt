@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -435,7 +436,13 @@ private fun MetaSection(tx: TransactionEntity) {
             },
             mono = true,
         )
-        tx.category?.let { MetaRow("Category", prettyCategory(it)) }
+        tx.category?.let {
+            MetaRow(
+                label = "Category",
+                value = prettyCategory(it),
+                trailing = { OverrideChip(overridden = tx.categoryOverride) },
+            )
+        }
         MetaRow("Month", prettyMonth(tx.monthKey))
         val origAmt = tx.originalAmount
         if (tx.originalCurrency != "INR" && origAmt != null) {
@@ -458,7 +465,12 @@ private fun MetaSection(tx: TransactionEntity) {
 }
 
 @Composable
-private fun MetaRow(label: String, value: String, mono: Boolean = false) {
+private fun MetaRow(
+    label: String,
+    value: String,
+    mono: Boolean = false,
+    trailing: (@Composable () -> Unit)? = null,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -471,11 +483,31 @@ private fun MetaRow(label: String, value: String, mono: Boolean = false) {
             style = MaterialTheme.typography.bodyMedium,
             color = YutoriTheme.colors.onMuted,
         )
-        Text(
-            text = value,
-            style = if (mono) YutoriTextStyles.Mono.copy(fontWeight = FontWeight.Normal) else MaterialTheme.typography.bodyMedium,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = value,
+                style = if (mono) YutoriTextStyles.Mono.copy(fontWeight = FontWeight.Normal) else MaterialTheme.typography.bodyMedium,
+            )
+            if (trailing != null) {
+                Spacer(Modifier.width(8.dp))
+                trailing()
+            }
+        }
     }
+}
+
+@Composable
+private fun OverrideChip(overridden: Boolean) {
+    val info = YutoriTheme.colors.info
+    Text(
+        text = if (overridden) "overridden" else "automatic",
+        style = MaterialTheme.typography.labelSmall,
+        color = info,
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(info.copy(alpha = 0.10f))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    )
 }
 
 // ───────────────────────── Notes + actions ─────────────────────────
