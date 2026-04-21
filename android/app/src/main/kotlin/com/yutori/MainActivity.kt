@@ -575,7 +575,6 @@ private fun AppContent() {
                 versionName = com.yutori.BuildConfig.VERSION_NAME,
                 commitSha = com.yutori.BuildConfig.COMMIT_SHA,
                 onBack = { goBack() },
-                onCheckForUpdates = { app.updateViewModel.onCheckNow() },
                 onOpenLicenses = { goTo(Screen.OpenSourceLicenses) },
                 onOpenRepo = {
                     val intent = android.content.Intent(

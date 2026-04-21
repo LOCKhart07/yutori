@@ -55,16 +55,15 @@ import com.yutori.ui.theme.YutoriTheme
  * `mockups/v12-about.html` for the visual reference.
  *
  * Stateless: all inputs are the app's current versionName / commitSha
- * and callbacks to the shared UpdateViewModel. The UpdateDialog that
- * appears when an update is available is rendered at AppContent level,
- * so About only has to kick the check; the overlay handles the rest.
+ * plus navigation callbacks. Update checking lives on top-level
+ * Settings via [com.yutori.ui.update.AppUpdatesSection] — About only
+ * surfaces the build identity.
  */
 @Composable
 fun AboutScreen(
     versionName: String,
     commitSha: String,
     onBack: () -> Unit,
-    onCheckForUpdates: () -> Unit,
     onOpenLicenses: () -> Unit,
     onOpenRepo: () -> Unit,
 ) {
@@ -105,7 +104,6 @@ fun AboutScreen(
                 BuildCard(
                     versionName = versionName,
                     commitSha = commitSha,
-                    onCheckForUpdates = onCheckForUpdates,
                 )
 
                 Spacer(Modifier.height(20.dp))
@@ -295,7 +293,6 @@ private fun PrincipleCard(num: String, title: String, body: String) {
 private fun BuildCard(
     versionName: String,
     commitSha: String,
-    onCheckForUpdates: () -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -306,27 +303,6 @@ private fun BuildCard(
             BuildInfoRow(label = "Version", value = versionName)
             HorizontalDivider(color = YutoriTheme.colors.divider)
             BuildInfoRow(label = "Commit", value = commitSha)
-            HorizontalDivider(color = YutoriTheme.colors.divider)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onCheckForUpdates)
-                    .padding(horizontal = 16.dp, vertical = 13.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Check for updates",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = YutoriTheme.colors.info,
-                    modifier = Modifier.weight(1f),
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = YutoriTheme.colors.onFaint,
-                )
-            }
         }
     }
 }

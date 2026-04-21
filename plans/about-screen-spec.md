@@ -1,9 +1,9 @@
 # About screen + Open-source licenses
 
 Spec for issue #66 (widened) — a Settings → About surface that covers
-operational metadata (version, commit, check for updates, licenses,
-repo link) *and* the story of the app (what "Yutori" means, logo
-rationale, 5 principles). Plus a README `## Why "Yutori"` + `## Principles`
+operational metadata (version, commit, licenses, repo link) *and* the
+story of the app (what "Yutori" means, logo rationale, 5 principles).
+Plus a README `## Why "Yutori"` + `## Principles`
 section carrying the same philosophy text so the in-app story and the
 public-repo landing tell the same story.
 
@@ -54,13 +54,14 @@ Scrollable single Column with these sections in order:
    3. On-device by default
    4. Opinionated about scope
    5. Side-loaded, open source
-5. **"Build"** — elevated card with three rows:
+5. **"Build"** — elevated card with two read-only rows:
    - Version (reads `BuildConfig.VERSION_NAME`)
    - Commit (reads `BuildConfig.COMMIT_SHA`)
-   - Check for updates (actionable row with trailing chevron — fires
-     `UpdateViewModel.onCheckNow()`; result surfaces via the
-     AppContent-level UpdateDialog overlay, same mechanism Settings
-     already uses, so About doesn't duplicate update UI)
+
+   The update-check action lives on top-level Settings via
+   `AppUpdatesSection` — About deliberately does not duplicate it. The
+   AppContent-level `UpdateDialog` overlay still surfaces on this screen
+   if the check was triggered from Settings and an update is available.
 6. **"More"** — two elevated link rows:
    - Open-source licenses → navigates to `Screen.OpenSourceLicenses`
    - View on GitHub → fires `Intent.ACTION_VIEW` on

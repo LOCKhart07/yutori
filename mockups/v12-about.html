@@ -346,10 +346,6 @@
           <span class="label">Commit</span>
           <span class="value">12f4a73</span>
         </div>
-        <div class="build-row actionable">
-          <span class="label">Check for updates</span>
-          <span class="material-icons">keyboard_arrow_right</span>
-        </div>
       </div>
 
       <!-- Links -->
@@ -379,7 +375,7 @@
     <p><strong>Wordmark</strong> is Inter 28sp semibold — not a separate brand asset; leans on the system font so the About surface doesn't require shipping a custom webfont.</p>
     <p><strong>Tagline</strong> wraps naturally on two lines at 240px; on very narrow devices it'll wrap differently but the rhetorical beat ("Not less. But with confidence.") survives.</p>
     <p><strong>Principle cards</strong> are numbered so they read as a list; each one's heading is the principle name, body is the supporting copy with emphasis on the load-bearing phrases (<code>em</code> class is on-brand muted-white, not italic, to avoid visual noise).</p>
-    <p><strong>"Build" block</strong> reuses the Settings card style from <code>AppUpdatesSection</code> — same elevated-surface bg, same row heights, same divider. "Check for updates" is actionable and triggers the same flow as Settings → App updates → Check now (share the ViewModel).</p>
+    <p><strong>"Build" block</strong> reuses the Settings card style from <code>AppUpdatesSection</code> — same elevated-surface bg, same row heights, same divider. Read-only (Version + Commit only); update-checking lives on top-level Settings and About deliberately doesn't duplicate the trigger.</p>
     <p><strong>Licenses link</strong> goes to Frame 2 (sub-screen). GitHub link fires <code>Intent.ACTION_VIEW</code> on <code>https://github.com/LOCKhart07/yutori</code>.</p>
   </aside>
 </div>
