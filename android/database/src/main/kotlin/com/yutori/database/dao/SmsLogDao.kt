@@ -110,6 +110,18 @@ interface SmsLogDao {
     @Query("SELECT MAX(received_at_ms) FROM sms_log")
     suspend fun latestReceivedAtMs(): Long?
 
+    /** Oldest `received_at_ms`, or null if empty (easter-egg stats, #79). */
+    @Query("SELECT MIN(received_at_ms) FROM sms_log")
+    suspend fun earliestReceivedAtMs(): Long?
+
+    /**
+     * Every row's `received_at_ms`. Used for the lifetime zero-spend-
+     * days stat (#79) — compared in Kotlin against SPEND-tx timestamps
+     * to find days with SMS activity but no spend.
+     */
+    @Query("SELECT received_at_ms FROM sms_log")
+    suspend fun allReceivedAtMs(): List<Long>
+
     @Query("SELECT COUNT(*) FROM sms_log WHERE classification = :classification")
     suspend fun countByClassification(classification: String): Int
 }

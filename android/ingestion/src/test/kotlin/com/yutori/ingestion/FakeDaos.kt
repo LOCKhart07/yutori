@@ -89,6 +89,12 @@ class FakeSmsLogDao : SmsLogDao {
 
     override suspend fun latestReceivedAtMs(): Long? =
         all.maxOfOrNull { it.receivedAtMs }
+
+    override suspend fun earliestReceivedAtMs(): Long? =
+        all.minOfOrNull { it.receivedAtMs }
+
+    override suspend fun allReceivedAtMs(): List<Long> =
+        all.map { it.receivedAtMs }
 }
 
 class FakeTransactionDao : TransactionDao {
@@ -195,6 +201,14 @@ class FakeTransactionDao : TransactionDao {
             .mapNotNull { it.merchant }
             .distinct()
             .take(limit)
+
+    override suspend fun countAll(): Int = all.size
+    override suspend fun countDistinctMonths(): Int = all.map { it.monthKey }.toSet().size
+    override suspend fun sumLifetimeSpend(): Double =
+        all.filter { it.budgetEffect == "SPEND" && it.inrAmount != null }
+            .sumOf { it.inrAmount!! }
+    override suspend fun allSpendOccurredAtMs(): List<Long> =
+        all.filter { it.budgetEffect == "SPEND" }.map { it.occurredAtMs }
 
     private fun <T> flowOf(value: T): Flow<T> = MutableStateFlow(value).asStateFlow()
 }

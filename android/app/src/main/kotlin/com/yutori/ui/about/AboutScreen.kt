@@ -30,10 +30,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -66,7 +77,21 @@ fun AboutScreen(
     onBack: () -> Unit,
     onOpenLicenses: () -> Unit,
     onOpenRepo: () -> Unit,
+    loadStats: suspend () -> AllTimeStats = { AllTimeStats(0, 0, null, 0, 0.0, 0) },
 ) {
+    // Easter egg (#79): 7 taps on the Version row opens an all-time
+    // stats dialog. Counter resets on dialog open and on leaving About.
+    var tapCount by remember { mutableStateOf(0) }
+    var versionTinted by remember { mutableStateOf(false) }
+    var showStats by remember { mutableStateOf(false) }
+    var stats: AllTimeStats? by remember { mutableStateOf(null) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(showStats) {
+        if (showStats && stats == null) {
+            stats = loadStats()
+        }
+    }
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -104,6 +129,21 @@ fun AboutScreen(
                 BuildCard(
                     versionName = versionName,
                     commitSha = commitSha,
+                    versionTinted = versionTinted,
+                    onVersionTap = {
+                        scope.launch {
+                            versionTinted = true
+                            delay(VERSION_TAP_TINT_MS)
+                            versionTinted = false
+                        }
+                        val next = tapCount + 1
+                        if (next >= VERSION_TAPS_TO_UNLOCK) {
+                            tapCount = 0
+                            showStats = true
+                        } else {
+                            tapCount = next
+                        }
+                    },
                 )
 
                 Spacer(Modifier.height(20.dp))
@@ -126,7 +166,18 @@ fun AboutScreen(
             }
         }
     }
+
+    val currentStats = stats
+    if (showStats && currentStats != null) {
+        AllTimeStatsDialog(
+            stats = currentStats,
+            onDismiss = { showStats = false },
+        )
+    }
 }
+
+private const val VERSION_TAPS_TO_UNLOCK = 7
+private const val VERSION_TAP_TINT_MS = 120L
 
 @Composable
 private fun Hero() {
@@ -293,6 +344,8 @@ private fun PrincipleCard(num: String, title: String, body: String) {
 private fun BuildCard(
     versionName: String,
     commitSha: String,
+    versionTinted: Boolean,
+    onVersionTap: () -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -300,7 +353,20 @@ private fun BuildCard(
         color = YutoriTheme.colors.surfaceElevated,
     ) {
         Column {
-            BuildInfoRow(label = "Version", value = versionName)
+            BuildInfoRow(
+                label = "Version",
+                value = versionName,
+                rowModifier = Modifier
+                    .clickable(onClick = onVersionTap)
+                    .background(
+                        if (versionTinted) {
+                            YutoriTheme.colors.info.copy(alpha = 0.10f)
+                        } else {
+                            Color.Transparent
+                        },
+                    ),
+                valueColor = if (versionTinted) YutoriTheme.colors.info else null,
+            )
             HorizontalDivider(color = YutoriTheme.colors.divider)
             BuildInfoRow(label = "Commit", value = commitSha)
         }
@@ -308,9 +374,14 @@ private fun BuildCard(
 }
 
 @Composable
-private fun BuildInfoRow(label: String, value: String) {
+private fun BuildInfoRow(
+    label: String,
+    value: String,
+    rowModifier: Modifier = Modifier,
+    valueColor: Color? = null,
+) {
     Row(
-        modifier = Modifier
+        modifier = rowModifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -325,7 +396,101 @@ private fun BuildInfoRow(label: String, value: String) {
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontFamily = FontFamily.Monospace,
             ),
-            color = YutoriTheme.colors.onMuted,
+            color = valueColor ?: YutoriTheme.colors.onMuted,
+        )
+    }
+}
+
+@Composable
+private fun AllTimeStatsDialog(
+    stats: AllTimeStats,
+    onDismiss: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            color = YutoriTheme.colors.surfaceElevated,
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 22.dp, vertical = 20.dp)) {
+                Text(
+                    text = "✦ ALL-TIME YUTORI STATS",
+                    style = YutoriTextStyles.Caps,
+                    color = YutoriTheme.colors.info,
+                )
+                Spacer(Modifier.height(14.dp))
+                StatsGrid(stats)
+                Spacer(Modifier.height(14.dp))
+                HorizontalDivider(color = YutoriTheme.colors.divider)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    Text(
+                        text = "Close",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = YutoriTheme.colors.info,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(onClick = onDismiss)
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatsGrid(stats: AllTimeStats) {
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        StatRow(
+            left = "SMS processed" to stats.smsProcessed.toString(),
+            right = "Transactions" to stats.transactions.toString(),
+        )
+        StatRow(
+            left = "First tracked" to stats.firstTrackedMonth.formatShort(),
+            right = "Months tracked" to stats.monthsTracked.toString(),
+        )
+        StatRow(
+            left = "Lifetime tracked" to formatInrShort(stats.lifetimeSpendInr),
+            right = "Zero-spend days" to stats.zeroSpendDays.toString(),
+        )
+    }
+}
+
+@Composable
+private fun StatRow(left: Pair<String, String>, right: Pair<String, String>) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        StatCell(label = left.first, value = left.second, modifier = Modifier.weight(1f))
+        Spacer(Modifier.size(12.dp))
+        StatCell(label = right.first, value = right.second, modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun StatCell(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(
+            text = label.uppercase(),
+            style = YutoriTextStyles.Caps,
+            color = YutoriTheme.colors.onFaint,
+        )
+        Spacer(Modifier.height(3.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.SemiBold,
+            ),
+            color = MaterialTheme.colorScheme.onBackground,
         )
     }
 }

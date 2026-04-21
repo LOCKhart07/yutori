@@ -583,6 +583,12 @@ private fun AppContent() {
                     ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                     runCatching { context.startActivity(intent) }
                 },
+                loadStats = {
+                    com.yutori.ui.about.AllTimeStats.load(
+                        transactionDao = database.transactionDao(),
+                        smsLogDao = database.smsLogDao(),
+                    )
+                },
             )
         }
 

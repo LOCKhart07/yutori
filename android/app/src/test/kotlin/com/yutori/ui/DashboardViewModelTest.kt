@@ -647,6 +647,12 @@ class DashboardViewModelTest {
         override suspend fun findByMerchantKey(merchantKey: String) =
             emptyList<TransactionEntity>()
         override suspend fun findRecentUpiMerchants(limit: Int): List<String> = emptyList()
+        override suspend fun countAll() = all.size
+        override suspend fun countDistinctMonths() = all.map { it.monthKey }.toSet().size
+        override suspend fun sumLifetimeSpend() =
+            all.filter { it.budgetEffect == "SPEND" }.sumOf { it.inrAmount ?: 0.0 }
+        override suspend fun allSpendOccurredAtMs() =
+            all.filter { it.budgetEffect == "SPEND" }.map { it.occurredAtMs }
     }
 
     class FakeBudgetDao(

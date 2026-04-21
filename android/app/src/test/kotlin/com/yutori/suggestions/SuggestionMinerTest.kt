@@ -266,6 +266,10 @@ class SuggestionMinerTest {
         override suspend fun findBySelfTransferCandidateMerchant(merchant: String): List<TransactionEntity> = emptyList()
         override suspend fun findByMerchantKey(merchantKey: String): List<TransactionEntity> = emptyList()
         override suspend fun findRecentUpiMerchants(limit: Int): List<String> = emptyList()
+        override suspend fun countAll(): Int = 0
+        override suspend fun countDistinctMonths(): Int = 0
+        override suspend fun sumLifetimeSpend(): Double = 0.0
+        override suspend fun allSpendOccurredAtMs(): List<Long> = emptyList()
     }
 
     private class FakeSuggestionDao(

@@ -146,6 +146,37 @@ interface TransactionDao {
     @Query("SELECT MIN(month_key) FROM transactions")
     fun observeEarliestMonthKey(): Flow<String?>
 
+    /** Lifetime transaction count (easter-egg stats, #79). */
+    @Query("SELECT COUNT(*) FROM transactions")
+    suspend fun countAll(): Int
+
+    /** Number of distinct months with at least one transaction (#79). */
+    @Query("SELECT COUNT(DISTINCT month_key) FROM transactions")
+    suspend fun countDistinctMonths(): Int
+
+    /** Sum of SPEND-effect `inr_amount` across all time. 0.0 if empty (#79). */
+    @Query(
+        """
+        SELECT COALESCE(SUM(inr_amount), 0.0) FROM transactions
+         WHERE budget_effect = 'SPEND'
+           AND inr_amount IS NOT NULL
+        """,
+    )
+    suspend fun sumLifetimeSpend(): Double
+
+    /**
+     * Every SPEND row's `occurred_at_ms`. Used for the lifetime zero-
+     * spend-days count (#79) — compared in Kotlin against SMS receipt
+     * timestamps to find days with activity but no spend.
+     */
+    @Query(
+        """
+        SELECT occurred_at_ms FROM transactions
+         WHERE budget_effect = 'SPEND'
+        """,
+    )
+    suspend fun allSpendOccurredAtMs(): List<Long>
+
     @Query(
         """
         SELECT COALESCE(SUM(inr_amount), 0.0) FROM transactions
