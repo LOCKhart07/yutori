@@ -436,11 +436,24 @@ private fun MetaSection(tx: TransactionEntity) {
             },
             mono = true,
         )
+        MetaRow(
+            label = "Classification",
+            value = displayClassification(tx.classification),
+            trailing = if (tx.classificationOverride) {
+                { OverrideChip() }
+            } else {
+                null
+            },
+        )
         tx.category?.let {
             MetaRow(
                 label = "Category",
                 value = prettyCategory(it),
-                trailing = { OverrideChip(overridden = tx.categoryOverride) },
+                trailing = if (tx.categoryOverride) {
+                    { OverrideChip() }
+                } else {
+                    null
+                },
             )
         }
         MetaRow("Month", prettyMonth(tx.monthKey))
@@ -497,10 +510,10 @@ private fun MetaRow(
 }
 
 @Composable
-private fun OverrideChip(overridden: Boolean) {
+private fun OverrideChip() {
     val info = YutoriTheme.colors.info
     Text(
-        text = if (overridden) "overridden" else "automatic",
+        text = "overridden",
         style = MaterialTheme.typography.labelSmall,
         color = info,
         modifier = Modifier

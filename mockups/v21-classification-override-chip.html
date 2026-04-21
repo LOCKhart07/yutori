@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v21 mockup: classification override chip (#144)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --divider-strong:rgba(237,238,240,0.14);
+    --accent:        #C6E3A3;
+    --accent-soft:   rgba(198,227,163,0.10);
+    --info:          #9EC3E6;
+    --info-soft:     rgba(158,195,230,0.10);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 96px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 52px 0 10px; font-size: 17px; color: #C9CACD; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 18px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: #8A8E96; font-size: 12px; max-width: 820px; margin: 12px 0 0; line-height: 1.55; }
+  .note strong { color: #C9CACD; }
+  .note code { background: #1a1a1d; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  .phone {
+    width: 380px;
+    background: var(--surface);
+    border-radius: 28px;
+    padding: 20px 24px 26px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .phones { display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start; }
+  .caption { font-size: 12px; color: var(--on-muted); margin-top: 8px; max-width: 380px; line-height: 1.5; }
+  .caption strong { color: var(--on); }
+
+  .back {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--on-muted); font-size: 13px; margin: 2px 0 18px;
+  }
+  .back svg { width: 18px; height: 18px; }
+
+  .hero { margin-bottom: 14px; }
+  .hero .when { font-size: 10px; color: var(--on-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .hero .amt {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 32px; font-weight: 600; color: var(--on);
+    letter-spacing: -0.01em;
+  }
+  .hero .merchant { margin-top: 12px; font-size: 16px; color: var(--on); font-weight: 500; }
+  .pill-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 12px; flex-wrap: wrap;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--surface-el);
+    color: var(--on-muted); font-size: 11px; font-weight: 500;
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--on-muted); }
+  .chip {
+    display: inline-flex; align-items: center;
+    font-size: 10px; padding: 1px 6px; border-radius: 4px;
+    background: var(--info-soft); color: var(--info);
+    letter-spacing: 0.02em;
+  }
+  .chip.inline { margin-left: 6px; }
+  .meta { padding-top: 6px; }
+  .meta .row-line {
+    display: flex; justify-content: space-between; padding: 8px 0;
+    font-size: 13px;
+  }
+  .meta .row-line .k { color: var(--on-muted); }
+  .meta .row-line .v { color: var(--on); display: inline-flex; align-items: center; }
+  .meta .row-line .v.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 500; }
+  .meta .divider { height: 1px; background: var(--divider); }
+
+  .actions {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin-top: 16px;
+    padding-top: 14px; border-top: 1px solid var(--divider);
+  }
+  .action-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 11px 8px;
+    background: var(--surface-el);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    color: var(--on); font-size: 12px; font-weight: 500;
+  }
+  .action-btn.ghost { color: var(--on-faint); background: transparent; border-style: dashed; }
+
+  .recommend {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 10px; padding: 2px 8px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<h1>Classification override chip — placement</h1>
+<p class="blurb">
+  Follow-up to the Category chip. Chip only shows when the value is overridden; the automatic
+  (default) state renders with no decoration. The shipped Category behavior now matches that rule.
+  Open question is only <em>where</em> to put the chip for classification — there's no existing
+  Classification MetaRow, and classification already surfaces as the hero pill.
+</p>
+
+<h2>State A — automatic (reference)</h2>
+<p class="blurb">
+  Baseline. No chip anywhere because nothing is overridden. Included so the options below have
+  something to compare against.
+</p>
+<div class="phones">
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Back
+      </div>
+      <div class="hero">
+        <div class="when">14 APR 2026 · 19:42</div>
+        <div class="amt">₹350.00</div>
+        <div class="merchant">swiggy-newbrand@paytm</div>
+        <div class="pill-row">
+          <span class="pill"><span class="dot"></span>UPI Payment · SPEND</span>
+        </div>
+      </div>
+      <div class="meta">
+        <div class="divider"></div>
+        <div class="row-line"><span class="k">Account</span><span class="v mono">Kotak ••0000</span></div>
+        <div class="row-line"><span class="k">Category</span><span class="v">Other</span></div>
+        <div class="row-line"><span class="k">Month</span><span class="v">April 2026</span></div>
+      </div>
+      <div class="actions">
+        <div class="action-btn">Edit note</div>
+        <div class="action-btn">Edit classification</div>
+        <div class="action-btn">Edit category</div>
+        <div class="action-btn ghost">Add rule</div>
+      </div>
+    </div>
+    <div class="caption"><strong>A.</strong> Everything automatic — clean, no chips.</div>
+  </div>
+</div>
+
+<h2>Option B — Classification MetaRow, chip only when overridden <span class="recommend">recommended</span></h2>
+<p class="blurb">
+  Adds a <code>Classification</code> row to <code>MetaSection</code>. Renders with a chip only
+  when <code>classificationOverride == true</code>. Mirrors the shipped Category pattern — same
+  code path, same visual weight.
+</p>
+<div class="phones">
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Back
+      </div>
+      <div class="hero">
+        <div class="when">14 APR 2026 · 19:42</div>
+        <div class="amt">₹350.00</div>
+        <div class="merchant">swiggy-newbrand@paytm</div>
+        <div class="pill-row">
+          <span class="pill"><span class="dot"></span>Self Transfer · DROP</span>
+        </div>
+      </div>
+      <div class="meta">
+        <div class="divider"></div>
+        <div class="row-line"><span class="k">Account</span><span class="v mono">Kotak ••0000</span></div>
+        <div class="row-line"><span class="k">Classification</span><span class="v">Self Transfer<span class="chip inline">overridden</span></span></div>
+        <div class="row-line"><span class="k">Category</span><span class="v">Food &amp; Dining<span class="chip inline">overridden</span></span></div>
+        <div class="row-line"><span class="k">Month</span><span class="v">April 2026</span></div>
+      </div>
+      <div class="actions">
+        <div class="action-btn">Edit note</div>
+        <div class="action-btn">Edit classification</div>
+        <div class="action-btn">Edit category</div>
+        <div class="action-btn ghost">Add rule</div>
+      </div>
+    </div>
+    <div class="caption"><strong>B1.</strong> Both overridden. Chip sits in the same MetaRow trailing slot for both.</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Back
+      </div>
+      <div class="hero">
+        <div class="when">14 APR 2026 · 19:42</div>
+        <div class="amt">₹350.00</div>
+        <div class="merchant">swiggy-newbrand@paytm</div>
+        <div class="pill-row">
+          <span class="pill"><span class="dot"></span>Self Transfer · DROP</span>
+        </div>
+      </div>
+      <div class="meta">
+        <div class="divider"></div>
+        <div class="row-line"><span class="k">Account</span><span class="v mono">Kotak ••0000</span></div>
+        <div class="row-line"><span class="k">Classification</span><span class="v">Self Transfer<span class="chip inline">overridden</span></span></div>
+        <div class="row-line"><span class="k">Category</span><span class="v">Other</span></div>
+        <div class="row-line"><span class="k">Month</span><span class="v">April 2026</span></div>
+      </div>
+      <div class="actions">
+        <div class="action-btn">Edit note</div>
+        <div class="action-btn">Edit classification</div>
+        <div class="action-btn">Edit category</div>
+        <div class="action-btn ghost">Add rule</div>
+      </div>
+    </div>
+    <div class="caption"><strong>B2.</strong> Only classification overridden. Category has no chip — matches the "chips only when overridden" rule.</div>
+  </div>
+</div>
+
+<h2>Option C — chip next to the Hero pill</h2>
+<p class="blurb">
+  No new MetaRow. Chip sits inline with the classification pill in the hero. Cleaner vertically
+  but breaks symmetry with Category, which lives in the meta block.
+</p>
+<div class="phones">
+  <div>
+    <div class="phone">
+      <div class="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        Back
+      </div>
+      <div class="hero">
+        <div class="when">14 APR 2026 · 19:42</div>
+        <div class="amt">₹350.00</div>
+        <div class="merchant">swiggy-newbrand@paytm</div>
+        <div class="pill-row">
+          <span class="pill"><span class="dot"></span>Self Transfer · DROP</span>
+          <span class="chip">overridden</span>
+        </div>
+      </div>
+      <div class="meta">
+        <div class="divider"></div>
+        <div class="row-line"><span class="k">Account</span><span class="v mono">Kotak ••0000</span></div>
+        <div class="row-line"><span class="k">Category</span><span class="v">Food &amp; Dining<span class="chip inline">overridden</span></span></div>
+        <div class="row-line"><span class="k">Month</span><span class="v">April 2026</span></div>
+      </div>
+      <div class="actions">
+        <div class="action-btn">Edit note</div>
+        <div class="action-btn">Edit classification</div>
+        <div class="action-btn">Edit category</div>
+        <div class="action-btn ghost">Add rule</div>
+      </div>
+    </div>
+    <div class="caption"><strong>C.</strong> Classification chip rides the hero pill row. Category chip still lives in MetaRow.</div>
+  </div>
+</div>
+
+<p class="note">
+  <strong>Recommendation:</strong> B. Same code path as the shipped Category chip — reuse the
+  trailing-slot <code>OverrideChip</code>, add one MetaRow, render only when overridden.
+</p>
+
+</body>
+</html>
