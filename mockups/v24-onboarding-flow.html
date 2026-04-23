@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yutori — v24 mockup: onboarding 4-step flow (#39)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --on:            #EDEEF0;
+    --on-muted:      #8A8E96;
+    --on-faint:      #5A5D63;
+    --divider:       rgba(237,238,240,0.08);
+    --accent:        #F5B547;
+    --accent-soft:   rgba(245,181,71,0.12);
+    --brand-teal:    #3F6B6B;
+    --info:          #8FB8D8;
+    --info-soft:     rgba(143,184,216,0.12);
+    --positive:      #7FB77E;
+    --positive-soft: rgba(127,183,126,0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607;
+    color: #E5E5E5;
+    padding: 60px 32px 80px;
+    min-height: 100vh;
+  }
+  h1 { font-weight: 700; margin: 0 0 6px; font-size: 22px; }
+  h2 { font-weight: 600; margin: 56px 0 18px; font-size: 17px; color: #C9CACD; }
+  .blurb { color: #8A8E96; max-width: 820px; margin: 0 0 32px; font-size: 13px; line-height: 1.6; }
+  .blurb code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .note { color: #8A8E96; font-size: 12px; max-width: 280px; margin: 10px 0 0; line-height: 1.5; }
+  .note strong { color: #C9CACD; }
+
+  .row-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 56px 28px;
+    max-width: 1400px;
+  }
+
+  .frame {
+    width: 300px;
+    border-radius: 28px;
+    background: var(--surface);
+    color: var(--on);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 24px 48px -16px rgba(0,0,0,0.6);
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+  }
+  .frame .label {
+    position: absolute;
+    top: -22px;
+    left: 4px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8A8E96;
+    font-weight: 600;
+  }
+  .statusbar {
+    height: 28px; padding: 0 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10px; color: var(--on-muted); font-variant-numeric: tabular-nums;
+  }
+
+  .progress {
+    display: flex;
+    gap: 6px;
+    padding: 6px 18px 0;
+  }
+  .progress .dot {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(237,238,240,0.10);
+  }
+  .progress .dot.active {
+    background: var(--accent);
+  }
+  .progress .dot.done {
+    background: rgba(245,181,71,0.40);
+  }
+
+  .body {
+    flex: 1;
+    padding: 28px 22px 18px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .headline {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 0 0 14px;
+    color: var(--on);
+  }
+  .lede {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--on-muted);
+    margin: 0 0 12px;
+  }
+  .lede strong { color: var(--on); font-weight: 500; }
+
+  .footer {
+    padding: 0 22px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 14px;
+    border: 0;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #1A1300;
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--on-muted);
+  }
+  .btn-tertiary {
+    background: var(--surface-el);
+    color: var(--on);
+  }
+
+  /* welcome — quiet, hierarchical, lots of negative space ("the space itself is the design") */
+  .welcome-stack {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 16px 0;
+  }
+  .hero-logo {
+    width: 168px;
+    height: 168px;
+    margin-bottom: 28px;
+    display: block;
+  }
+  .hero-kanji {
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif;
+    font-size: 34px;
+    color: var(--on);
+    line-height: 1.1;
+    margin: 0;
+    font-weight: 400;
+  }
+  .hero-romaji {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--on-muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin: 10px 0 0;
+    font-weight: 500;
+  }
+  .hero-meaning {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--on-faint);
+    margin: 6px 0 0;
+    font-style: italic;
+  }
+  .welcome-foot {
+    font-size: 12px;
+    color: var(--on-muted);
+    text-align: center;
+    margin: 0 0 12px;
+  }
+
+  /* permission cards — matches PermCard.kt: surfaceEl card, surfaceEl2 icon disc, onMuted icon */
+  .perm-list {
+    display: flex; flex-direction: column; gap: 10px;
+    margin: 6px 0 12px;
+  }
+  .perm {
+    display: flex; gap: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--surface-el);
+    align-items: center;
+  }
+  .perm-icon {
+    width: 32px; height: 32px;
+    border-radius: 999px;
+    background: var(--surface-el2);
+    color: var(--on-muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .perm-title {
+    font-size: 13px; font-weight: 600;
+    margin: 0 0 3px;
+    color: var(--on);
+  }
+  .perm-detail {
+    font-size: 12px;
+    color: var(--on-muted);
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  /* import options — matches RadioRow in ImportDialog.kt: neutral row, selection ONLY via radio dot */
+  .opt-list {
+    display: flex; flex-direction: column;
+    margin: 8px 0 12px;
+  }
+  .opt {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 4px;
+    cursor: pointer;
+  }
+  .opt-label { font-size: 14px; color: var(--on-muted); font-weight: 400; }
+  .opt.selected .opt-label { color: var(--on); font-weight: 500; }
+  .opt-radio {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--on-faint);
+    flex-shrink: 0;
+    position: relative;
+  }
+  .opt.selected .opt-radio {
+    border-color: var(--accent);
+  }
+  .opt.selected .opt-radio::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  /* budget input */
+  .budget-input-wrap {
+    background: var(--surface-el);
+    border-radius: 16px;
+    padding: 22px 18px;
+    display: flex; align-items: center; gap: 8px;
+    margin: 10px 0 14px;
+  }
+  .budget-currency {
+    font-size: 28px; font-weight: 600; color: var(--on-muted);
+  }
+  .budget-amount {
+    font-size: 32px; font-weight: 700;
+    color: var(--on);
+    flex: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .budget-cursor {
+    display: inline-block;
+    width: 2px; height: 28px;
+    background: var(--accent);
+    vertical-align: middle;
+    margin-left: 2px;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .budget-hint {
+    font-size: 12px;
+    color: var(--on-faint);
+    margin: 4px 0 0;
+  }
+  .preset-row {
+    display: flex; gap: 8px; margin-top: 6px;
+  }
+  .preset {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    background: var(--surface-el);
+    border-radius: 10px;
+    font-size: 12px;
+    color: var(--on-muted);
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .preset.active { color: var(--on); font-weight: 600; border-color: var(--on-faint); }
+
+  .skip-link {
+    text-align: center;
+    font-size: 12px;
+    color: var(--on-muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 4px 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>v24 — Onboarding 4-step flow (issue #39)</h1>
+<p class="blurb">
+  Spec: <code>plans/ui-spec.md §4</code>. Today only the permission gate exists
+  (<code>app/ui/PermissionScreen.kt</code>); this proposal wraps it in the full
+  Welcome → Permissions → Import → Budget flow with a top progress bar, a Skip
+  affordance on every screen, and a one-shot "onboarding completed" flag in
+  DataStore so it never re-fires (contract §4.2). Skipping permissions still
+  delivers users to the dashboard with the existing "Enable SMS access" banner.
+</p>
+
+<h2>Happy path — all 4 screens, accept everything</h2>
+<div class="row-wrap">
+
+  <!-- ==================== Frame 1: Welcome ==================== -->
+  <div class="frame">
+    <div class="label">1 · Welcome</div>
+    <div class="statusbar"><span>9:41</span><span>●●● 100%</span></div>
+    <div class="progress">
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    <div class="body" style="padding-bottom: 0;">
+      <div class="welcome-stack">
+        <img class="hero-logo" src="../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="Yutori logo" />
+        <p class="hero-kanji">余裕</p>
+        <p class="hero-romaji">Yutori</p>
+        <p class="hero-meaning">breathing room</p>
+      </div>
+    </div>
+    <div class="footer">
+      <p class="welcome-foot">Your data never leaves your device.</p>
+      <button class="btn btn-primary">Get started</button>
+    </div>
+  </div>
+
+  <!-- ==================== Frame 2: Permissions ==================== -->
+  <div class="frame">
+    <div class="label">2 · Permissions</div>
+    <div class="statusbar"><span>9:41</span><span>●●● 100%</span></div>
+    <div class="progress">
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    <div class="body">
+      <h3 class="headline">Let Yutori read your SMSes</h3>
+      <p class="lede">Three short asks to get fully set up.</p>
+      <div class="perm-list">
+        <div class="perm">
+          <div class="perm-icon">↘</div>
+          <div>
+            <p class="perm-title">Receive SMS</p>
+            <p class="perm-detail">So new transactions show up automatically.</p>
+          </div>
+        </div>
+        <div class="perm">
+          <div class="perm-icon">≡</div>
+          <div>
+            <p class="perm-title">Read SMS</p>
+            <p class="perm-detail">So we can import your past transactions (optional).</p>
+          </div>
+        </div>
+        <div class="perm">
+          <div class="perm-icon">🔔</div>
+          <div>
+            <p class="perm-title">Notifications</p>
+            <p class="perm-detail">For budget alerts at 50% / 80% / 100%.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn btn-primary">Grant access</button>
+      <a class="skip-link" href="#">Skip for now</a>
+    </div>
+  </div>
+
+  <!-- ==================== Frame 3: Import decision ==================== -->
+  <div class="frame">
+    <div class="label">3 · Import history</div>
+    <div class="statusbar"><span>9:41</span><span>●●● 100%</span></div>
+    <div class="progress">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+    </div>
+    <div class="body">
+      <h3 class="headline">Import past SMS</h3>
+      <p class="lede">Reads your SMS history and extracts transactions. Already-imported messages are skipped automatically.</p>
+      <div class="opt-list">
+        <div class="opt">
+          <div><div class="opt-label">Last 1 month</div></div>
+          <div class="opt-radio"></div>
+        </div>
+        <div class="opt selected">
+          <div><div class="opt-label">Last 3 months</div></div>
+          <div class="opt-radio"></div>
+        </div>
+        <div class="opt">
+          <div><div class="opt-label">Last 6 months</div></div>
+          <div class="opt-radio"></div>
+        </div>
+        <div class="opt">
+          <div><div class="opt-label">Last 1 year</div></div>
+          <div class="opt-radio"></div>
+        </div>
+        <div class="opt">
+          <div><div class="opt-label">Everything on this phone</div></div>
+          <div class="opt-radio"></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn btn-primary">Start import</button>
+      <a class="skip-link" href="#">Skip — don't import</a>
+    </div>
+  </div>
+
+  <!-- ==================== Frame 4: Budget ==================== -->
+  <div class="frame">
+    <div class="label">4 · Monthly budget</div>
+    <div class="statusbar"><span>9:41</span><span>●●● 100%</span></div>
+    <div class="progress">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+    </div>
+    <div class="body">
+      <h3 class="headline">Set your monthly budget</h3>
+      <p class="lede">We'll alert you at 50%, 80%, and 100% of this number. Edit anytime.</p>
+      <div class="budget-input-wrap">
+        <span class="budget-currency">₹</span>
+        <span class="budget-amount">40,000<span class="budget-cursor"></span></span>
+      </div>
+      <p class="budget-hint">Tap to edit. Common starting points:</p>
+      <div class="preset-row">
+        <div class="preset">₹20k</div>
+        <div class="preset active">₹40k</div>
+        <div class="preset">₹60k</div>
+        <div class="preset">₹1L</div>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn btn-primary">Save & finish</button>
+      <a class="skip-link" href="#">Skip — set later</a>
+    </div>
+  </div>
+
+</div>
+
+<p class="note" style="max-width:820px; margin-top: 28px;">
+  <strong>Open questions for review:</strong>
+  (a) Progress dots at top — keep, or drop in favor of "Step 2 of 4" text?
+  (b) Frame 1 hero — placeholder "y" glyph; swap for the app icon at build time?
+  (c) Frame 4 presets — are ₹20k / ₹40k / ₹60k / ₹1L sensible defaults, or compute from import-result median spend?
+  (d) Skip on frame 4 — store budget=null vs. don't write a row at all? (Affects "No budget set" CTA wiring on dashboard.)
+</p>
+
+</body>
+</html>
