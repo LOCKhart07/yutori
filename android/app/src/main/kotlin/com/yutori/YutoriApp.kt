@@ -51,6 +51,10 @@ class YutoriApp : Application() {
         com.yutori.settings.ImpactAlertSettings(applicationContext)
     }
 
+    val onboardingPrefs: com.yutori.onboarding.OnboardingPrefs by lazy {
+        com.yutori.onboarding.OnboardingPrefs(applicationContext)
+    }
+
     /**
      * Process-scoped ViewModel store owned by the Application. Lets
      * [UpdateViewModel] survive Activity recreation so Settings and the
@@ -108,6 +112,13 @@ class YutoriApp : Application() {
         // happen before WorkManager could plausibly run a pending worker,
         // so kept before initDatabase().
         com.yutori.ai.AiSettingsRepositoryProvider.register(aiSettingsRepository)
+
+        // Treat pre-existing installs that already granted SMS access
+        // as onboarded — the Welcome / Import / Budget steps would
+        // otherwise re-fire on first launch after this version lands.
+        onboardingPrefs.backfillIfPreviouslyGranted(
+            Permissions.hasRealtimePermission(applicationContext),
+        )
 
         initDatabase()
         val db = database ?: return  // short-circuit the rest of init; MainActivity shows recovery screen

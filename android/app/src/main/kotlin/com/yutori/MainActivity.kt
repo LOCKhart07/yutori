@@ -129,6 +129,46 @@ private fun AppContent() {
         Permissions.hasRealtimePermission(app)
     }
 
+    // First-launch flow (#39, mockups/v24-onboarding-flow.html). Gated
+    // by the persistent OnboardingPrefs flag so it never re-fires
+    // after completion (ui-spec §4.2). Existing installs that already
+    // granted SMS access are backfilled in YutoriApp.onCreate() so
+    // they jump straight here.
+    val onboardingPrefs = app.onboardingPrefs
+    var onboardingDone by remember { mutableStateOf(onboardingPrefs.isCompleted()) }
+    if (!onboardingDone) {
+        val onboardingScope = androidx.compose.runtime.rememberCoroutineScope()
+        val onboardingMonthKey = remember {
+            com.yutori.transactions.MonthKeyComputer
+                .ofDevice(System.currentTimeMillis())
+        }
+        com.yutori.onboarding.OnboardingFlow(
+            monthKey = onboardingMonthKey,
+            hasSmsReadProvider = { Permissions.hasSmsPermissions(app) },
+            onPermissionsAccepted = { permissionGeneration++ },
+            onStartImport = { sinceMs -> HistoricalImportWorker.enqueue(app, sinceMs) },
+            onSaveBudget = { budget ->
+                onboardingScope.launch {
+                    val budgetDao = database.budgetDao()
+                    val now = System.currentTimeMillis()
+                    val existing = budgetDao.getByMonth(budget.monthKey)
+                    budgetDao.upsert(
+                        BudgetMapper.toEntity(
+                            budget = budget,
+                            createdAtMs = existing?.createdAtMs ?: now,
+                            updatedAtMs = now,
+                        ),
+                    )
+                }
+            },
+            onComplete = {
+                onboardingPrefs.markCompleted()
+                onboardingDone = true
+            },
+        )
+        return
+    }
+
     if (!hasPermission) {
         PermissionScreen(onGranted = { permissionGeneration++ })
         return

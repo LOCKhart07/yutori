@@ -64,9 +64,18 @@ import com.yutori.ui.theme.YutoriTheme
  *    Primary CTA deep-links to the system app-info page so the user
  *    can flip "Allow restricted settings"; Try again re-fires the
  *    permission launcher without leaving Yutori.
+ *
+ * When [flowContext] is non-null this screen renders as step N of the
+ * onboarding flow (mockups/v24-onboarding-flow.html) — replacing the
+ * "STEP 1 OF 1" label with progress dots and adding a "Skip for now"
+ * CTA below Grant. Standalone use (the post-revoke gate) leaves
+ * [flowContext] null and behaves as before.
  */
 @Composable
-fun PermissionScreen(onGranted: () -> Unit) {
+fun PermissionScreen(
+    onGranted: () -> Unit,
+    flowContext: OnboardingFlowContext? = null,
+) {
     val context = LocalContext.current
     val activity = context as? Activity
     var showGuidance by remember { mutableStateOf(false) }
@@ -105,12 +114,27 @@ fun PermissionScreen(onGranted: () -> Unit) {
     } else {
         InitialGate(
             onGrant = { launcher.launch(Permissions.runtimePermissionsToRequest()) },
+            flowContext = flowContext,
         )
     }
 }
 
+/**
+ * Optional context handed to [PermissionScreen] when it's rendered as
+ * a step inside [com.yutori.onboarding.OnboardingFlow] rather than
+ * standalone. Drives the progress dots + Skip CTA.
+ */
+data class OnboardingFlowContext(
+    val stepNumber: Int,
+    val stepCount: Int,
+    val onSkip: () -> Unit,
+)
+
 @Composable
-private fun InitialGate(onGrant: () -> Unit) {
+private fun InitialGate(
+    onGrant: () -> Unit,
+    flowContext: OnboardingFlowContext?,
+) {
     val colors = YutoriTheme.colors
 
     Surface(
@@ -125,8 +149,17 @@ private fun InitialGate(onGrant: () -> Unit) {
                     .padding(top = 24.dp)
                     .padding(horizontal = 32.dp),
             ) {
+                if (flowContext != null) {
+                    OnboardingProgressDots(
+                        stepNumber = flowContext.stepNumber,
+                        stepCount = flowContext.stepCount,
+                    )
+                    Spacer(Modifier.height(20.dp))
+                }
                 Text(
-                    text = "STEP 1 OF 1",
+                    text = flowContext
+                        ?.let { "STEP ${it.stepNumber} OF ${it.stepCount}" }
+                        ?: "STEP 1 OF 1",
                     style = YutoriTextStyles.Caps,
                     color = colors.onFaint,
                 )
@@ -189,6 +222,20 @@ private fun InitialGate(onGrant: () -> Unit) {
                             fontWeight = FontWeight.SemiBold,
                         ),
                         color = MaterialTheme.colorScheme.onPrimary,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                if (flowContext != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Skip for now",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(onClick = flowContext.onSkip)
+                            .padding(vertical = 12.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = colors.onMuted,
                         textAlign = TextAlign.Center,
                     )
                 }

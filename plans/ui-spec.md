@@ -86,29 +86,42 @@ Shown on first launch, or whenever no permission has ever been granted.
 
 ### 4.1 Screens
 
-**Screen 1 — Welcome.** One headline, two paragraphs of plain text:
-"Yutori reads bank SMSes on this device to auto-track your spending."
-"Nothing leaves your phone." One CTA: "Get started."
+Mockup: `mockups/v24-onboarding-flow.html`. All four screens carry a
+top progress strip (active dot in accent amber, completed dots dim,
+upcoming dots neutral) and a "Skip" affordance per §4.2.
+
+**Screen 1 — Welcome.** Brand-first hero: launcher icon, then 余裕 /
+Yutori / "breathing room" stacked under it. A single privacy line
+("Your data never leaves your device.") sits above the "Get started"
+CTA. No tagline copy — the brand stack is the headline.
 
 **Screen 2 — Permission ask.** Explains exactly what each permission is
 for:
 - `RECEIVE_SMS` — "so new transactions show up automatically."
 - `READ_SMS` — "so we can import your past transactions (optional)."
+- `POST_NOTIFICATIONS` — "alerts at 50% / 80% / 100% of your budget."
 
-Two buttons: "Grant access" (triggers runtime permission dialog) and
-"Skip for now." Skipping puts the user on a reduced-capability
-dashboard with a persistent "Enable SMS access" banner.
+Two buttons: "Grant permissions" (triggers runtime permission dialog)
+and "Skip for now." Skipping advances onboarding without granting;
+the existing post-onboarding `PermissionScreen` gate kicks in
+immediately if `RECEIVE_SMS` is still missing (the v1 of this flow
+doesn't yet replace that gate with a banner).
 
-**Screen 3 — Import decision.** Only shown if `READ_SMS` was granted.
-"Would you like to import the last month's SMS history?" Options:
-"Yes, last 1 month" / "Yes, last 3 months" / "Custom date" / "Skip."
-Running the import kicks off the historical import worker
-([ingestion-spec.md](./ingestion-spec.md) §7) and proceeds to the
-dashboard.
+**Screen 3 — Import decision.** Only shown if `READ_SMS` was granted
+in step 2. "Import past SMS" — five options matching the in-app
+`ImportDialog` exactly so both paths enqueue the same range:
+"Last 1 month" / "Last 3 months" (default) / "Last 6 months" /
+"Last 1 year" / "Everything on this phone." Picking one enqueues
+[`HistoricalImportWorker`](../android/app/src/main/kotlin/com/yutori/importing/HistoricalImportWorker.kt)
+and advances; "Skip — don't import" advances without enqueueing.
 
-**Screen 4 — Budget setup prompt.** "Set your monthly budget" — inline
-number input (INR). Can be skipped; dashboard shows "No budget set"
-with a CTA.
+**Screen 4 — Budget setup prompt.** "Set your monthly budget" — INR
+input + four preset chips (₹20k / ₹40k / ₹60k / ₹1L). Save persists
+a [`Budget`](../android/budget/src/main/kotlin/com/yutori/budget/Budget.kt)
+row at the current month with `warnThresholdPct=80`; the user can
+fine-tune the warn threshold later via Alert Settings. "Skip — set
+later" leaves the budgets table untouched and the dashboard shows
+its existing "Set a monthly budget" CTA (§5.3).
 
 ### 4.2 Contract
 
