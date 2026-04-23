@@ -125,14 +125,27 @@ exactly these keys:
    issue. Prefer `kind: "question"` + `blocker: "ready"` for
    "where/how do I access it?" asks; use `kind: "bug"` only when the
    user reports the shipped path is broken/regressed.
-4. If torn between two enum values, pick the more conservative one.
+4. **Follow-up issues are not duplicates.** If the new issue's
+   title or body explicitly names a parent with markers like
+   `follows #N`, `follow-up to #N`, `split from #N`,
+   `split off from #N`, `part N` / `stage N`, or `carries the
+   remaining scope of #N`, it is intentional thin-scope work —
+   the maintainer has deliberately split the scope. Set
+   `duplicate_of: null` and choose `blocker` from the new issue's
+   own content (usually `ready`, or `needs-mockup` /
+   `needs-decision` if the specifics demand it). Do NOT set
+   `blocker: "duplicate"` even if `#N` appears in the
+   `---OPEN ISSUES---` block — parents are often closed in the
+   same grooming pass and may still look open at the moment
+   `issues.opened` fires.
+5. If torn between two enum values, pick the more conservative one.
    For `blocker`, prefer `needs-decision` or `needs-repro` over
    `ready` when uncertain.
-5. `duplicate_of` must be an issue number that appears in the
+6. `duplicate_of` must be an issue number that appears in the
    `---OPEN ISSUES---` block. Otherwise use `null`.
-6. Use `valid: false` only when the issue is clearly spam,
+7. Use `valid: false` only when the issue is clearly spam,
    promotional content, gibberish, a test post, or entirely
    off-topic. A confusing or poorly-specified *real* issue is still
    valid — set `blocker: "needs-repro"` or `"needs-decision"`.
-7. Keep `summary` and `next_step` factual and short. No backticks,
+8. Keep `summary` and `next_step` factual and short. No backticks,
    no HTML, no link markup — the workflow sanitises them anyway.
