@@ -22,7 +22,7 @@ class FeedbackMailerTest {
     }
 
     @Test
-    fun `spaces are percent-encoded as %20, never as plus`() {
+    fun `spaces are percent-encoded, never emitted as plus`() {
         val uri = FeedbackMailer.mailtoUri(
             subject = "crash on save",
             body = "two words",
@@ -48,14 +48,14 @@ class FeedbackMailerTest {
     }
 
     @Test
-    fun `newlines in the body become %0A`() {
+    fun `newlines in the body are percent-encoded`() {
         val uri = FeedbackMailer.mailtoUri(subject = "t", body = "line1\nline2")
 
         uri shouldBe "mailto:dsouzajenslee@gmail.com?subject=t&body=line1%0Aline2"
     }
 
     @Test
-    fun `a literal plus is preserved as %2B, not collapsed to a space`() {
+    fun `a literal plus is preserved, not collapsed to a space`() {
         val uri = FeedbackMailer.mailtoUri(subject = "c++", body = "1+1")
 
         uri shouldBe "mailto:dsouzajenslee@gmail.com?subject=c%2B%2B&body=1%2B1"
