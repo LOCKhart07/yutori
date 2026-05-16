@@ -40,7 +40,13 @@ jobs:
         run: ./gradlew detekt --continue --parallel --build-cache --stacktrace
 
       - name: Upload detekt reports
-        if: always()
+        # Only when detekt actually fails. The report is worthless on
+        # green, and uploading on every run meant an account-wide
+        # Actions artifact-storage quota exhaustion (shared with other
+        # repos) failed this step → failed the gate → skipped the APK
+        # build, blocking releases. The release APK is a GitHub Release
+        # asset (separate storage), so it was never the real problem.
+        if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: detekt-reports
