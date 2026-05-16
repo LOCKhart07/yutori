@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -44,6 +45,9 @@ import androidx.compose.ui.unit.sp
 import com.yutori.budget.Budget
 import com.yutori.ui.theme.YutoriTextStyles
 import com.yutori.ui.theme.YutoriTheme
+import java.text.NumberFormat
+import java.util.Locale
+import kotlin.math.abs
 
 /**
  * Budget setup — v2 styling. Mono limit input, amber accent slider,
@@ -56,6 +60,7 @@ fun BudgetSetupScreen(
     onSave: (Budget) -> Unit,
     onCancel: () -> Unit,
     inheritedFromMonthKey: String? = null,
+    carryOverInr: Double = 0.0,
 ) {
     // #80: the caller loads `currentBudget` asynchronously (initial
     // null, then the stored Budget once the DAO resolves). Keying the
@@ -181,6 +186,16 @@ fun BudgetSetupScreen(
                         sourceMonthKey = inheritedFromMonthKey,
                         targetMonthKey = monthKey,
                     )
+                }
+
+                // Reconciles the dashboard's *effective* number with the
+                // limit you set: effectiveBudget = limit + carryOver
+                // (business-logic-spec §6.1). Hidden when there's nothing
+                // to explain (no carry-over / no parseable limit).
+                val breakdown = budgetBreakdown(parsedLimit, carryOverInr)
+                if (breakdown != null) {
+                    Spacer(Modifier.height(10.dp))
+                    CarryOverBreakdown(breakdown)
                 }
 
                 Spacer(Modifier.height(28.dp))
@@ -375,5 +390,114 @@ private fun InheritedBudgetNote(
                 color = colors.onMuted,
             )
         }
+    }
+}
+
+/**
+ * What the carry-over breakdown card shows. Pure so it's unit-testable
+ * without Compose.
+ */
+internal data class BudgetBreakdown(
+    val limitInr: Double,
+    val carryOverInr: Double,
+    val effectiveInr: Double,
+)
+
+/**
+ * The dashboard headline is the *effective* budget
+ * (`effectiveBudget = limit + carryOver`, business-logic-spec §6.1),
+ * but this editor only sets the *limit* — so tapping the dashboard
+ * number and seeing a different one here looks broken. This produces
+ * the reconciling breakdown.
+ *
+ * Returns null (⇒ card hidden, screen stays quiet) when there is
+ * nothing to explain: the limit isn't parseable/valid, or carry-over
+ * is zero (§6.6 — no prior budget rows / first budgeted month).
+ */
+internal fun budgetBreakdown(
+    limitInr: Double?,
+    carryOverInr: Double,
+): BudgetBreakdown? {
+    if (limitInr == null || limitInr < 0.0) return null
+    if (carryOverInr == 0.0) return null
+    return BudgetBreakdown(
+        limitInr = limitInr,
+        carryOverInr = carryOverInr,
+        effectiveInr = limitInr + carryOverInr,
+    )
+}
+
+@Composable
+private fun CarryOverBreakdown(breakdown: BudgetBreakdown) {
+    val colors = YutoriTheme.colors
+    val inr = remember {
+        NumberFormat.getCurrencyInstance(
+            Locale.Builder().setLanguage("en").setRegion("IN").build(),
+        )
+    }
+    val surplus = breakdown.carryOverInr > 0.0
+    Surface(
+        color = colors.surfaceElevated,
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.divider),
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+            BreakdownRow(
+                label = "Limit",
+                value = inr.formatAmount(breakdown.limitInr, compact = true),
+                valueColor = colors.onMuted,
+            )
+            Spacer(Modifier.height(8.dp))
+            BreakdownRow(
+                label = "Carried over",
+                value = (if (surplus) "+ " else "− ") +
+                    inr.formatAmount(abs(breakdown.carryOverInr), compact = true),
+                valueColor = if (surplus) colors.positive else colors.negative,
+            )
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider(color = colors.divider)
+            Spacer(Modifier.height(10.dp))
+            BreakdownRow(
+                label = "Effective this month",
+                value = inr.formatAmount(breakdown.effectiveInr, compact = true),
+                valueColor = MaterialTheme.colorScheme.onBackground,
+                emphasize = true,
+            )
+        }
+    }
+}
+
+@Composable
+private fun BreakdownRow(
+    label: String,
+    value: String,
+    valueColor: androidx.compose.ui.graphics.Color,
+    emphasize: Boolean = false,
+) {
+    val colors = YutoriTheme.colors
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = if (emphasize) {
+                MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+            } else {
+                MaterialTheme.typography.bodyMedium
+            },
+            color = if (emphasize) MaterialTheme.colorScheme.onBackground else colors.onMuted,
+        )
+        Text(
+            text = value,
+            style = if (emphasize) {
+                YutoriTextStyles.Mono.copy(fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            } else {
+                YutoriTextStyles.Mono
+            },
+            color = valueColor,
+        )
     }
 }

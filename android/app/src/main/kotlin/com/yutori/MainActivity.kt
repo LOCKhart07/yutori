@@ -287,6 +287,28 @@ private fun AppContent() {
         is Screen.BudgetSetup -> {
             val scope = androidx.compose.runtime.rememberCoroutineScope()
             val budgetDao = database.budgetDao()
+            val transactionDao = database.transactionDao()
+
+            // Same carry-over the dashboard shows. Mirrors
+            // DashboardViewModel's prior-month sourcing so the editor's
+            // "Effective" equals the dashboard headline.
+            val carryOverInr: Double by produceState(0.0, s.monthKey) {
+                val priorBudgets = budgetDao.getAllBefore(s.monthKey).map {
+                    com.yutori.budget.Budget(it.monthKey, it.limitInr, it.thresholdWarnPct)
+                }
+                val priorTx = transactionDao.getBeforeMonth(s.monthKey).map {
+                    com.yutori.budget.Transaction(
+                        id = it.id,
+                        monthKey = it.monthKey,
+                        inrAmount = it.inrAmount,
+                        budgetEffect =
+                            com.yutori.classifier.BudgetEffect.valueOf(it.budgetEffect),
+                        occurredAtMs = it.occurredAtMs,
+                    )
+                }
+                value = com.yutori.budget.BudgetCalculator
+                    .carryOver(priorTx, priorBudgets, s.monthKey)
+            }
 
             val currentBudgetEntity: BudgetEntity? by produceState<BudgetEntity?>(
                 initialValue = null,
@@ -309,6 +331,7 @@ private fun AppContent() {
                 monthKey = s.monthKey,
                 currentBudget = currentBudget,
                 inheritedFromMonthKey = inheritedFromMonthKey,
+                carryOverInr = carryOverInr,
                 onSave = { budget ->
                     scope.launch {
                         val now = System.currentTimeMillis()
