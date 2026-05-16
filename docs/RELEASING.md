@@ -95,26 +95,28 @@ release so you can't miss it.
 
 ## Embedded PATs (private repo only)
 
-Two app features call the GitHub API from the installed APK:
+One app feature calls the GitHub API from the installed APK:
 
 | Feature | Endpoint | Reason the PAT is needed |
 | --- | --- | --- |
 | Autoupdater | `GET /repos/{owner}/{repo}/releases/latest` | GitHub 404s anonymous reads on private repos — without auth the app surfaces "Updater offline." |
-| Send feedback (#113) | `POST /repos/{owner}/{repo}/issues` | Anonymous users can't create issues on a private repo; the app would have no way to submit. |
 
-Two separate fine-grained PATs — so a leak of one doesn't implicate
-the other and rotation cost stays narrow:
+> **Send feedback** no longer uses a PAT. As of the #71(a) feedback
+> decoupling it opens the user's mail client via `Intent.ACTION_SENDTO`
+> (`mailto:`) — no GitHub API call, no token, identical behaviour
+> whether the repo is private or public. See
+> `plans/autoupdater-spec.md` §5.
+
+One fine-grained PAT, scoped as narrowly as possible:
 
 | Secret | Permission | BuildConfig field |
 | --- | --- | --- |
 | `RELEASES_TOKEN` | Contents: Read | `GITHUB_RELEASES_TOKEN` |
-| `ISSUES_TOKEN`   | Issues: Write  | `GITHUB_ISSUES_TOKEN` |
 
-Secrets are named without the `GITHUB_` prefix because GH rejects
+The secret is named without the `GITHUB_` prefix because GH rejects
 that prefix on secret names. The workflow maps `secrets.RELEASES_TOKEN`
-and `secrets.ISSUES_TOKEN` onto env vars `GITHUB_RELEASES_TOKEN` and
-`GITHUB_ISSUES_TOKEN`, which Gradle reads into the matching
-`BuildConfig` fields.
+onto env var `GITHUB_RELEASES_TOKEN`, which Gradle reads into the
+matching `BuildConfig` field.
 
 Token setup (per token):
 1. github.com → Settings → Developer settings → Personal access tokens
@@ -134,11 +136,10 @@ Token setup (per token):
    # or: gh secret set RELEASES_TOKEN --repo LOCKhart07/yutori < token.txt
    ```
 
-When a token expires, the corresponding feature breaks quietly —
-the autoupdater flips to "Couldn't check (401)", Send feedback fails
-with an error snackbar showing the same code. Rotate by creating a new
-PAT and overwriting the secret; the next release embeds the fresh one.
-APKs already on users' phones keep the old token until they're replaced.
+When the token expires, the autoupdater breaks quietly — it flips to
+"Couldn't check (401)". Rotate by creating a new PAT and overwriting
+the secret; the next release embeds the fresh one. APKs already on
+users' phones keep the old token until they're replaced.
 
 ### Updater status codes
 
@@ -154,16 +155,18 @@ GitHub API or the literal word `offline`. Map:
 | `5xx` | GitHub server-side. | Try again later. Not actionable on the client. |
 | `offline` | Network, DNS, or a malformed response from GitHub. | Retry when connectivity is back. |
 
-Send feedback (the Issues API) shows the HTTP code inline in its
-error snackbar — e.g. "GitHub rejected the request (401)." — so the
-same mapping applies.
+Send feedback no longer hits the GitHub API, so these codes don't
+apply to it — it hands off to the mail client (`mailto:`) and the
+only failure mode is "no email app installed", surfaced inline on the
+sheet.
 
-Remove this section (and the corresponding `buildConfigField` entries
+Remove this section (and the `GITHUB_RELEASES_TOKEN` `buildConfigField`
 in `android/app/build.gradle.kts`) when the repo goes public — see
-autoupdater-spec §11.2 and issue #71(a). Once public, the autoupdater
-calls become anonymous and the Send feedback flow can either stay
-authenticated (better rate-limit headroom) or switch to an
-`Intent.ACTION_VIEW` on `https://github.com/.../issues/new?...`.
+`plans/autoupdater-spec.md` §5/§13 and issue #71(a). Once public the
+autoupdater's calls become anonymous and the token is dead weight.
+The Send-feedback half of #71(a) is **already done** (the `mailto:`
+switch — it was flip-independent); only the autoupdater PAT removal
+remains, and that stays gated on the repo actually being public.
 
 ## CI tokens
 

@@ -321,6 +321,15 @@ val client = OkHttpClient.Builder()
 Both the JSON API (Retrofit-on-OkHttp) and the asset download use the
 same `OkHttpClient`, so one interceptor registration covers both.
 
+> **Feedback flow note (#71(a) decoupling).** "Send feedback" (#113)
+> used to be the *other* embedded-PAT consumer (`ISSUES_TOKEN` →
+> `IssueReporter` → Issues API POST). It was decoupled from the public
+> flip and its removal shipped early: it now opens the mail client via
+> `Intent.ACTION_SENDTO` (`mailto:`), which needs no token regardless
+> of repo visibility. So this interceptor and its `RELEASES_TOKEN` are
+> the **sole remaining #71(a) surface**, and that removal is the only
+> part still gated on the repo going public.
+
 ## 6. Token wiring
 
 ### 6.1 Gradle
@@ -593,6 +602,12 @@ Three additions:
    6. Revoke the PAT at
       github.com/settings/tokens and delete the calendar reminder.
    7. `git grep '#71(a)'` returns no matches.
+
+   Note: the feedback-flow half of the old #71(a) surface
+   (`ISSUES_TOKEN` / `IssueReporter` / Issues API) already shipped its
+   removal independently via the `mailto:` switch — it was never tied
+   to the flip. Only the autoupdater steps 1–6 above remain, so the
+   step-7 `git grep` only goes fully clean once those land post-flip.
 
 ## 14. Rollout order
 
