@@ -24,6 +24,12 @@ android/parser/src/test/resources/fixtures/
 # Local Gradle properties (may contain per-machine overrides, SDK paths)
 local.properties
 
+# Android-Studio-generated Gradle daemon JVM criteria — pins the daemon
+# to the IDE's bundled JBR (21) + foojay auto-download. The project
+# targets JDK 17 and CI manages its own JVM; keep this IDE artifact
+# local rather than imposing a daemon-JVM pin on every build/CI.
+gradle-daemon-jvm.properties
+
 # ---------------------------------------------------------------------------
 # Android Studio / IntelliJ IDEA
 # ---------------------------------------------------------------------------
