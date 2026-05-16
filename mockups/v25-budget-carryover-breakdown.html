@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>v25 — Budget setup: carry-over breakdown</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --ink:           #ECEEF0;
+    --muted:         rgba(237,238,240,0.62);
+    --faint:         rgba(237,238,240,0.40);
+    --divider:       rgba(237,238,240,0.08);
+    --accent:        #F5B547;
+    --accent-soft:   rgba(245,181,71,0.12);
+    --positive:      #7FB77E;
+    --positive-soft: rgba(127,183,126,0.12);
+    --negative:      #E27A7A;
+    --negative-soft: rgba(226,122,122,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607; color: var(--ink);
+    padding: 40px 24px 80px; line-height: 1.5;
+  }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .sub { color: var(--muted); font-size: 13px; max-width: 760px; margin-bottom: 8px; }
+  .sub code { background: #1a1a1d; padding: 1px 6px; border-radius: 4px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; }
+  .row { display: flex; gap: 32px; flex-wrap: wrap; margin-top: 32px; }
+  .col { width: 360px; }
+  .cap { font-size: 12px; color: var(--faint); text-transform: uppercase;
+    letter-spacing: .08em; margin: 0 0 10px 2px; font-weight: 600; }
+  .cap b { color: var(--accent); }
+
+  .phone {
+    width: 360px; background: var(--surface);
+    border: 1px solid var(--divider); border-radius: 28px;
+    padding: 22px 22px 26px; box-shadow: 0 24px 60px rgba(0,0,0,.5);
+  }
+  .back { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+  .month { font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .1em; font-weight: 600; }
+  .title { font-size: 26px; font-weight: 700; margin: 6px 0 10px; }
+  .blurb { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+
+  .flabel { font-size: 11px; color: var(--faint); text-transform: uppercase;
+    letter-spacing: .08em; font-weight: 600; margin-bottom: 8px; }
+  .input {
+    background: var(--surface-el); border: 1px solid var(--divider);
+    border-radius: 12px; padding: 14px 16px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 26px; color: var(--ink); display: flex; align-items: center;
+  }
+  .input .cur { color: var(--muted); margin-right: 8px; }
+  .input.focus { border-color: var(--accent); }
+  .input input {
+    background: none; border: 0; outline: 0; color: var(--ink);
+    font: inherit; width: 100%;
+  }
+
+  /* The new block */
+  .breakdown {
+    margin-top: 14px; background: var(--surface-el);
+    border: 1px solid var(--divider); border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .brow { display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 14px; padding: 5px 0; }
+  .brow .k { color: var(--muted); }
+  .brow .v {
+    font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px;
+    color: var(--ink);
+  }
+  .brow.carry .v.pos { color: var(--positive); }
+  .brow.carry .v.neg { color: var(--negative); }
+  .bsep { border: 0; border-top: 1px solid var(--divider); margin: 9px 0; }
+  .brow.eff .k { color: var(--ink); font-weight: 600; }
+  .brow.eff .v { font-size: 17px; font-weight: 600; color: var(--ink); }
+  .reconcile {
+    margin-top: 10px; font-size: 12px; color: var(--faint);
+    display: flex; gap: 6px; align-items: center;
+  }
+  .reconcile .dot { color: var(--accent); }
+
+  .nocarry {
+    margin-top: 14px; font-size: 12.5px; color: var(--faint);
+    padding: 2px 2px;
+  }
+
+  /* abbreviated tail so the screen reads in context */
+  .tail { margin-top: 26px; opacity: .55; }
+  .tail .flabel { margin-bottom: 6px; }
+  .track { height: 4px; background: var(--surface-el2); border-radius: 2px;
+    position: relative; margin: 8px 0 6px; }
+  .track::after { content:''; position:absolute; left:0; top:0; bottom:0;
+    width: 62%; background: var(--accent); border-radius: 2px; }
+  .knob { position:absolute; left:62%; top:50%; width:14px; height:14px;
+    background: var(--accent); border-radius:50%; transform: translate(-50%,-50%); }
+  .hint { font-size: 12px; color: var(--muted); }
+  .btns { display:flex; gap:12px; margin-top:24px; }
+  .btn { flex:1; text-align:center; padding:13px 0; border-radius:12px;
+    font-size:14px; font-weight:600; }
+  .btn.sec { background: var(--surface-el); border:1px solid var(--divider);
+    color: var(--muted); font-weight:500; }
+  .btn.pri { background: var(--accent); color:#1a1205; }
+
+  .note { margin-top: 14px; font-size: 12.5px; color: var(--muted);
+    border-left: 2px solid var(--divider); padding-left: 12px; }
+  .note b { color: var(--ink); font-weight: 600; }
+</style>
+</head>
+<body>
+  <h1>v25 — Budget setup: carry-over breakdown</h1>
+  <p class="sub">
+    Not a bug — <code>effectiveBudget = limit + carryOver</code> is spec'd
+    (business-logic-spec §6.1, yutori-plan §158–164) and the dashboard
+    correctly shows spend vs <em>effective</em>. The gap: tapping the
+    dashboard's effective number (e.g. <code>₹1,04,917</code>) opened an
+    editor that only showed the <em>base limit</em> (<code>₹60,000</code>)
+    with a vague one-liner — nothing reconciled the two. This adds the
+    breakdown so it does. <b>Dashboard and the math are untouched.</b>
+  </p>
+  <p class="sub">
+    Placed directly under the limit input (where the <code>#14</code>
+    inherited-budget note already lives), styled like that note. Shown
+    <b>only when carry-over ≠ 0</b> (§6.6: zero when no prior budgets) —
+    keeps the screen quiet for first-time / no-history months.
+    <b>Frame 1's input is live</b> — type a limit and watch Effective track.
+  </p>
+
+  <div class="row">
+
+    <!-- Frame 1 — surplus, interactive -->
+    <div class="col">
+      <p class="cap"><b>1 · Surplus</b> — carry-over &gt; 0 (live: edit the limit)</p>
+      <div class="phone">
+        <div class="back">← Dashboard</div>
+        <div class="month">May 2026</div>
+        <div class="title">Set budget</div>
+        <div class="blurb">How much you want to spend this month.
+          Carry-over from prior months gets added automatically.</div>
+
+        <div class="flabel">Monthly limit (INR)</div>
+        <div class="input focus">
+          <span class="cur">₹</span>
+          <input id="limit" value="60,000" inputmode="numeric" aria-label="limit" />
+        </div>
+
+        <div class="breakdown">
+          <div class="brow"><span class="k">Limit</span>
+            <span class="v" id="b-limit">₹60,000</span></div>
+          <div class="brow carry"><span class="k">Carried over</span>
+            <span class="v pos" id="b-carry">+ ₹44,917</span></div>
+          <hr class="bsep" />
+          <div class="brow eff"><span class="k">Effective this month</span>
+            <span class="v" id="b-eff">₹1,04,917</span></div>
+        </div>
+
+        <div class="tail">
+          <div class="flabel">Warning threshold &nbsp; <span style="float:right;color:var(--accent)">80%</span></div>
+          <div class="track"><span class="knob"></span></div>
+          <div class="hint">Alerts fire at 50%, 80%, and 100% (plus every +10% over).</div>
+          <div class="btns"><div class="btn sec">Cancel</div><div class="btn pri">Save</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Frame 2 — deficit -->
+    <div class="col">
+      <p class="cap"><b>2 · Deficit</b> — carry-over &lt; 0 (prior overspend)</p>
+      <div class="phone">
+        <div class="back">← Dashboard</div>
+        <div class="month">May 2026</div>
+        <div class="title">Set budget</div>
+        <div class="blurb">How much you want to spend this month.
+          Carry-over from prior months gets added automatically.</div>
+
+        <div class="flabel">Monthly limit (INR)</div>
+        <div class="input">
+          <span class="cur">₹</span><span style="font-family:'JetBrains Mono'">60,000</span>
+        </div>
+
+        <div class="breakdown">
+          <div class="brow"><span class="k">Limit</span>
+            <span class="v">₹60,000</span></div>
+          <div class="brow carry"><span class="k">Carried over</span>
+            <span class="v neg">− ₹12,000</span></div>
+          <hr class="bsep" />
+          <div class="brow eff"><span class="k">Effective this month</span>
+            <span class="v">₹48,000</span></div>
+        </div>
+
+        <div class="tail">
+          <div class="flabel">Warning threshold <span style="float:right;color:var(--accent)">80%</span></div>
+          <div class="track"><span class="knob"></span></div>
+          <div class="hint">Alerts fire at 50%, 80%, and 100% (plus every +10% over).</div>
+          <div class="btns"><div class="btn sec">Cancel</div><div class="btn pri">Save</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Frame 3 — no carry-over -->
+    <div class="col">
+      <p class="cap"><b>3 · None</b> — carry-over = 0 (card hidden)</p>
+      <div class="phone">
+        <div class="back">← Dashboard</div>
+        <div class="month">May 2026</div>
+        <div class="title">Set budget</div>
+        <div class="blurb">How much you want to spend this month.
+          Carry-over from prior months gets added automatically.</div>
+
+        <div class="flabel">Monthly limit (INR)</div>
+        <div class="input">
+          <span class="cur">₹</span><span style="font-family:'JetBrains Mono'">60,000</span>
+        </div>
+
+        <div class="nocarry">No carry-over — effective equals the limit.</div>
+
+        <div class="tail">
+          <div class="flabel">Warning threshold <span style="float:right;color:var(--accent)">80%</span></div>
+          <div class="track"><span class="knob"></span></div>
+          <div class="hint">Alerts fire at 50%, 80%, and 100% (plus every +10% over).</div>
+          <div class="btns"><div class="btn sec">Cancel</div><div class="btn pri">Save</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="note">
+    <b>Shipped copy is only:</b> the three row labels —
+    <code>Limit</code>, <code>Carried over</code>,
+    <code>Effective this month</code> — plus the existing top blurb, plus
+    the optional faint frame-3 line. No explanatory sentences in the card:
+    the Effective row <em>is</em> the dashboard number, so it reconciles
+    by construction. The bold captions above each phone
+    (<b>1 · Surplus</b>, etc.) are reviewer annotations, not in-app text.
+  </p>
+  <p class="note">
+    <b>Scope:</b> add-only. New param <code>carryOverInr: Double</code> on
+    <code>BudgetSetupScreen</code>; <code>Screen.BudgetSetup</code> computes
+    it via <code>BudgetCalculator.carryOver(...)</code> (same function the
+    dashboard uses — no new math). Card renders only when
+    <code>carryOverInr != 0.0</code>; Effective = entered-limit +
+    carryOver, recomputed as you type. Dashboard, <code>BudgetCalculator</code>,
+    and the save path are unchanged. The faint-on-zero line (frame 3) and
+    the deficit tone (frame 2) reuse existing theme tokens
+    (<code>positive</code>/<code>negative</code>/<code>faint</code>).
+  </p>
+
+<script>
+  // Frame 1 live: Effective = limit + 44917
+  const CARRY = 44917;
+  const fmt = n => '₹' + n.toLocaleString('en-IN');
+  const input = document.getElementById('limit');
+  const bLimit = document.getElementById('b-limit');
+  const bEff = document.getElementById('b-eff');
+  function recompute() {
+    const raw = parseInt((input.value || '').replace(/[^\d]/g, ''), 10);
+    const lim = isNaN(raw) ? 0 : raw;
+    bLimit.textContent = fmt(lim);
+    bEff.textContent = fmt(lim + CARRY);
+  }
+  input.addEventListener('input', recompute);
+  recompute();
+</script>
+</body>
+</html>
