@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>v26 — Portfolio: standalone dashboard screen</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface:       #0F0F10;
+    --surface-el:    #17171A;
+    --surface-el2:   #1E1E22;
+    --ink:           #ECEEF0;
+    --muted:         rgba(237,238,240,0.62);
+    --faint:         rgba(237,238,240,0.40);
+    --divider:       rgba(237,238,240,0.08);
+    --accent:        #F5B547;
+    --accent-soft:   rgba(245,181,71,0.12);
+    --positive:      #7FB77E;
+    --positive-soft: rgba(127,183,126,0.14);
+    --negative:      #E27A7A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #060607; color: var(--ink);
+    min-height: 100vh; display: grid; place-items: center; padding: 48px;
+  }
+  .note { position: fixed; top: 14px; left: 16px; font-size: 12px;
+    color: rgba(255,255,255,.35); font-family: 'JetBrains Mono', monospace; }
+
+  /* ---- phone ---- */
+  .phone {
+    width: 380px; background: var(--surface);
+    border: 1px solid rgba(255,255,255,.06); border-radius: 40px;
+    padding: 0 0 26px; box-shadow: 0 40px 90px rgba(0,0,0,.6);
+    overflow: hidden;
+  }
+  .statusbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 26px 4px; font-size: 13px; font-weight: 600;
+    color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  }
+  .statusbar .sig { display: flex; gap: 5px; align-items: center; }
+  .statusbar .sig i { width: 4px; height: 4px; border-radius: 50%;
+    background: var(--faint); display: inline-block; }
+  .statusbar .sig i:nth-child(-n+2) { background: var(--muted); }
+  .pad { padding: 8px 26px 0; }
+
+  .monthrow { display: flex; align-items: center; justify-content: space-between;
+    margin: 14px 0 22px; }
+  .month { font-size: 12px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .16em; font-weight: 700; }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 6px; height: 6px; border-radius: 50%;
+    background: var(--divider); display: inline-block; }
+  .dots i.on { background: var(--accent); width: 18px; border-radius: 3px; }
+
+  .heroLabel { font-size: 12px; color: var(--faint); text-transform: uppercase;
+    letter-spacing: .14em; font-weight: 700; margin-bottom: 6px; }
+  .hero { font-size: 64px; font-weight: 800; letter-spacing: -2px;
+    line-height: 1; font-family: 'JetBrains Mono', monospace; }
+  .hero .cur { color: var(--muted); font-weight: 600; font-size: 38px;
+    margin-right: 6px; }
+  .heroSub { font-size: 13.5px; color: var(--muted); margin-top: 12px; }
+  .heroSub b { color: var(--ink); font-weight: 600; }
+
+  .pill { display: inline-flex; align-items: center; gap: 9px;
+    background: var(--positive-soft); color: var(--positive);
+    border: 1px solid rgba(127,183,126,.22);
+    padding: 9px 15px; border-radius: 999px; font-size: 13px;
+    font-weight: 600; margin: 20px 0 22px; }
+  .pill .d { width: 7px; height: 7px; border-radius: 50%;
+    background: var(--positive); }
+  .pill .num { font-family: 'JetBrains Mono', monospace; }
+
+  .track { height: 8px; background: var(--surface-el2); border-radius: 4px;
+    position: relative; margin: 4px 0 12px; }
+  .track .fill { position: absolute; inset: 0 auto 0 0; width: 57%;
+    background: var(--accent); border-radius: 4px; }
+  .track .tick { position: absolute; top: -3px; bottom: -3px; left: 80%;
+    width: 2px; background: rgba(255,255,255,.28); }
+  .spendrow { display: flex; justify-content: space-between;
+    font-size: 13px; color: var(--muted); }
+  .spendrow .amt { font-family: 'JetBrains Mono', monospace; color: var(--ink);
+    font-weight: 600; }
+
+  .sep { border: 0; border-top: 1px solid var(--divider); margin: 24px 0 18px; }
+  .recap { font-size: 11px; color: var(--faint); text-transform: uppercase;
+    letter-spacing: .14em; font-weight: 700; margin-bottom: 14px; }
+
+  .tx { display: flex; align-items: center; gap: 13px; padding: 11px 0; }
+  .tx .ic { width: 38px; height: 38px; border-radius: 12px;
+    background: var(--surface-el); display: grid; place-items: center;
+    font-size: 16px; flex-shrink: 0; }
+  .tx .mid { flex: 1; min-width: 0; }
+  .tx .nm { font-size: 14.5px; font-weight: 600; }
+  .tx .meta { font-size: 12px; color: var(--faint); margin-top: 2px;
+    display: flex; align-items: center; gap: 7px; }
+  .chip { font-size: 10.5px; font-weight: 600; padding: 2px 8px;
+    border-radius: 6px; background: var(--surface-el2); color: var(--muted);
+    text-transform: none; letter-spacing: 0; }
+  .chip.ovr { background: var(--accent-soft); color: var(--accent); }
+  .tx .rt { text-align: right; flex-shrink: 0; }
+  .tx .val { font-size: 14.5px; font-weight: 600;
+    font-family: 'JetBrains Mono', monospace; }
+  .tx .ago { font-size: 11.5px; color: var(--faint); margin-top: 2px; }
+
+  .footer { display: flex; align-items: center; gap: 8px; margin-top: 20px;
+    padding-top: 18px; border-top: 1px solid var(--divider);
+    font-size: 12px; color: var(--faint); }
+  .footer .lk { color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="note">v26 — standalone dashboard (case-study / Play-style). Grid thumbnail = v26-portfolio-card.html</div>
+
+  <div class="phone">
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="sig"><i></i><i></i><i></i><i></i><i></i> &nbsp; 87%</span>
+    </div>
+
+    <div class="pad">
+      <div class="monthrow">
+        <span class="month">May 2026</span>
+        <span class="dots"><i></i><i></i><i class="on"></i></span>
+      </div>
+
+      <div class="heroLabel">Left to spend</div>
+      <div class="hero"><span class="cur">₹</span>25,800</div>
+      <div class="heroSub">of <b>₹60,000</b> effective &nbsp;·&nbsp; <b>13 days</b> left in May</div>
+
+      <div class="pill">
+        <span class="d"></span> On track &nbsp;·&nbsp;
+        <span class="num">₹1,980/day</span> keeps you here
+      </div>
+
+      <div class="track">
+        <span class="fill"></span><span class="tick"></span>
+      </div>
+      <div class="spendrow">
+        <span><span class="amt">₹34,200</span> spent</span>
+        <span>57% &nbsp;·&nbsp; warn at 80%</span>
+      </div>
+
+      <hr class="sep" />
+      <div class="recap">Recent · synced from SMS</div>
+
+      <div class="tx">
+        <div class="ic">🍜</div>
+        <div class="mid"><div class="nm">Swiggy</div>
+          <div class="meta"><span class="chip">Food</span> UPI</div></div>
+        <div class="rt"><div class="val">−₹438</div><div class="ago">2h ago</div></div>
+      </div>
+      <div class="tx">
+        <div class="ic">🧺</div>
+        <div class="mid"><div class="nm">BigBasket</div>
+          <div class="meta"><span class="chip">Groceries</span> Card</div></div>
+        <div class="rt"><div class="val">−₹2,140</div><div class="ago">Yesterday</div></div>
+      </div>
+      <div class="tx">
+        <div class="ic">☕</div>
+        <div class="mid"><div class="nm">Blue Tokai</div>
+          <div class="meta"><span class="chip">Food</span> UPI</div></div>
+        <div class="rt"><div class="val">−₹560</div><div class="ago">Yesterday</div></div>
+      </div>
+      <div class="tx">
+        <div class="ic">🚕</div>
+        <div class="mid"><div class="nm">Uber</div>
+          <div class="meta"><span class="chip">Transport</span> UPI</div></div>
+        <div class="rt"><div class="val">−₹317</div><div class="ago">Tue</div></div>
+      </div>
+      <div class="tx">
+        <div class="ic">📦</div>
+        <div class="mid"><div class="nm">Amazon</div>
+          <div class="meta"><span class="chip ovr">Shopping · set by you</span></div></div>
+        <div class="rt"><div class="val">−₹1,799</div><div class="ago">Sun</div></div>
+      </div>
+
+      <div class="footer">
+        <span class="lk">⛌</span> Parsed on-device from bank &amp; UPI SMS · no cloud, no accounts
+      </div>
+    </div>
+  </div>
+</body>
+</html>

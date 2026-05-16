@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>v26 — Portfolio grid thumbnail (1600×740)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cream:   #FAF1EC;
+    --teal:    #3F6B6B;
+    --accent:  #F5B547;
+    --surface: #0F0F10;
+    --ink:     #ECEEF0;
+    --muted:   rgba(237,238,240,0.60);
+    --faint:   rgba(237,238,240,0.38);
+    --divider: rgba(237,238,240,0.08);
+    --positive:#7FB77E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #0b0b0c; }
+  body { display: grid; place-items: center; min-height: 100vh; padding: 40px;
+    font-family: 'Inter', system-ui, sans-serif; }
+  .hint { position: fixed; top: 14px; left: 16px; font-size: 12px;
+    color: rgba(255,255,255,.34); font-family: 'JetBrains Mono', monospace; }
+  /* #bare → exact 1600×740 export crop (used by the headless screenshot) */
+  body.bare { padding: 0; display: block; min-height: 0; }
+  body.bare .hint { display: none; }
+  body.bare #card { border-radius: 0; }
+
+  /* ===== THE ASSET — screenshot this node (devtools ▸ Capture node screenshot) ===== */
+  #card {
+    width: 1600px; height: 740px; overflow: hidden; position: relative;
+    border-radius: 20px;
+    background:
+      radial-gradient(900px 620px at 22% 28%, #4d7d7b 0%, rgba(77,125,123,0) 60%),
+      linear-gradient(135deg, #3F6B6B 0%, #2c4f4e 46%, #1c3534 100%);
+    display: flex; align-items: stretch;
+  }
+  #card::after {            /* fine grain so flat teal doesn't band */
+    content: ""; position: absolute; inset: 0; opacity: .04; mix-blend-mode: overlay;
+    background-image: radial-gradient(circle at 1px 1px, #fff 1px, transparent 0);
+    background-size: 5px 5px;
+  }
+
+  /* ---- LEFT: brand panel ---- */
+  .brand {
+    flex: 1; padding: 92px 70px 92px 96px;
+    display: flex; flex-direction: column; justify-content: center; gap: 26px;
+    position: relative; z-index: 2;
+  }
+  .kanji {
+    font-size: 14px; letter-spacing: .42em; font-weight: 600;
+    color: rgba(250,241,236,.52); text-transform: uppercase;
+  }
+  .lockup { display: flex; align-items: center; gap: 30px; }
+  .icon {
+    width: 124px; height: 124px; border-radius: 30px; flex-shrink: 0;
+    box-shadow: 0 20px 44px rgba(0,0,0,.42),
+                0 0 0 1px rgba(250,241,236,.10) inset;
+    background: var(--cream);
+  }
+  .icon img { width: 100%; height: 100%; display: block; border-radius: 30px; }
+  .wordmark { font-size: 76px; font-weight: 800; color: var(--cream);
+    letter-spacing: -2px; line-height: 1; }
+  .rule { width: 64px; height: 4px; border-radius: 2px;
+    background: var(--accent); }
+  .tag { font-size: 30px; font-weight: 600; color: var(--cream);
+    line-height: 1.32; max-width: 560px; }
+  .tag .soft { color: rgba(250,241,236,.62); font-weight: 500; }
+  .sub { font-size: 16.5px; color: rgba(250,241,236,.56); font-weight: 500;
+    letter-spacing: .01em; }
+
+  /* ---- RIGHT: phone ---- */
+  .stage { width: 600px; position: relative; z-index: 2; }
+  .glow { position: absolute; width: 460px; height: 460px; border-radius: 50%;
+    top: 50%; left: 46%; transform: translate(-50%,-50%);
+    background: radial-gradient(circle, rgba(245,181,71,.16) 0%, rgba(245,181,71,0) 68%); }
+  .phone {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    width: 352px; background: var(--surface);
+    border: 1px solid rgba(255,255,255,.07); border-radius: 42px;
+    padding: 0 0 22px; overflow: hidden;
+    box-shadow: 0 50px 100px rgba(0,0,0,.55),
+                0 0 0 7px rgba(13,13,14,.9);
+  }
+  .sb { display: flex; justify-content: space-between; padding: 15px 26px 2px;
+    font-size: 12.5px; font-weight: 600; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace; }
+  .pad { padding: 6px 26px 0; }
+  .mrow { display: flex; justify-content: space-between; align-items: center;
+    margin: 14px 0 20px; }
+  .month { font-size: 11.5px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .16em; font-weight: 700; }
+  .dots { display: flex; gap: 5px; }
+  .dots i { width: 5px; height: 5px; border-radius: 50%;
+    background: var(--divider); }
+  .dots i.on { background: var(--accent); width: 16px; border-radius: 3px; }
+
+  .hl { font-size: 11.5px; color: var(--faint); text-transform: uppercase;
+    letter-spacing: .15em; font-weight: 700; margin-bottom: 7px; }
+  .hero { font-family: 'JetBrains Mono', monospace; font-weight: 700;
+    font-size: 62px; letter-spacing: -2px; line-height: 1; color: var(--ink); }
+  .hero .c { color: var(--muted); font-size: 34px; margin-right: 5px; }
+  .hsub { font-size: 13px; color: var(--muted); margin-top: 11px; }
+  .hsub b { color: var(--ink); font-weight: 600; }
+
+  .pill { display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(127,183,126,.14); color: var(--positive);
+    border: 1px solid rgba(127,183,126,.22);
+    padding: 8px 14px; border-radius: 999px; font-size: 12.5px;
+    font-weight: 600; margin: 18px 0 20px; }
+  .pill .d { width: 6px; height: 6px; border-radius: 50%;
+    background: var(--positive); }
+  .pill .n { font-family: 'JetBrains Mono', monospace; }
+
+  .trk { height: 7px; background: #1E1E22; border-radius: 4px;
+    position: relative; }
+  .trk .f { position: absolute; inset: 0 auto 0 0; width: 57%;
+    background: var(--accent); border-radius: 4px; }
+  .trk .tk { position: absolute; top: -3px; bottom: -3px; left: 80%;
+    width: 2px; background: rgba(255,255,255,.26); }
+  .srow { display: flex; justify-content: space-between; margin-top: 10px;
+    font-size: 12px; color: var(--muted); }
+  .srow b { font-family: 'JetBrains Mono', monospace; color: var(--ink);
+    font-weight: 600; }
+
+  .sep { border: 0; border-top: 1px solid var(--divider); margin: 20px 0 14px; }
+  .rc { font-size: 10.5px; color: var(--faint); text-transform: uppercase;
+    letter-spacing: .14em; font-weight: 700; margin-bottom: 10px; }
+  .tx { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+  .tx .i { width: 34px; height: 34px; border-radius: 11px; background: #17171A;
+    display: grid; place-items: center; font-size: 15px; flex-shrink: 0; }
+  .tx .m { flex: 1; min-width: 0; }
+  .tx .nm { font-size: 13.5px; font-weight: 600; }
+  .tx .mt { font-size: 11px; color: var(--faint); margin-top: 1px; }
+  .ch { font-size: 9.5px; font-weight: 600; padding: 2px 7px; border-radius: 5px;
+    background: #1E1E22; color: var(--muted); }
+  .tx .v { font-size: 13.5px; font-weight: 600;
+    font-family: 'JetBrains Mono', monospace; }
+  .ft { display: flex; align-items: center; gap: 7px; margin-top: 16px;
+    padding-top: 14px; border-top: 1px solid var(--divider);
+    font-size: 11px; color: var(--faint); }
+</style>
+</head>
+<body>
+  <div class="hint">v26 — grid thumbnail · 1600×740 (≈2.16:1). Open with #bare for an exact-crop export.</div>
+  <script>if (location.hash === '#bare') document.body.classList.add('bare');</script>
+
+  <div id="card">
+    <!-- left -->
+    <div class="brand">
+      <div class="kanji">余裕 · breathing room</div>
+      <div class="lockup">
+        <span class="icon"><img src="../brand/icon/source/ic_launcher_master.svg" alt="Yutori" /></span>
+        <span class="wordmark">Yutori</span>
+      </div>
+      <div class="rule"></div>
+      <div class="tag">Breathing room for your money.<br />
+        <span class="soft">Know how much you have — without the spreadsheet.</span></div>
+      <div class="sub">On-device budgeting from bank &amp; UPI SMS · no cloud, no accounts, no Play Store</div>
+    </div>
+
+    <!-- right -->
+    <div class="stage">
+      <div class="glow"></div>
+      <div class="phone">
+        <div class="sb"><span>9:41</span><span>· · · &nbsp; 87%</span></div>
+        <div class="pad">
+          <div class="mrow">
+            <span class="month">May 2026</span>
+            <span class="dots"><i></i><i></i><i class="on"></i></span>
+          </div>
+          <div class="hl">Left to spend</div>
+          <div class="hero"><span class="c">₹</span>25,800</div>
+          <div class="hsub">of <b>₹60,000</b> effective · <b>13 days</b> left</div>
+
+          <div class="pill"><span class="d"></span> On track ·
+            <span class="n">₹1,980/day</span></div>
+
+          <div class="trk"><span class="f"></span><span class="tk"></span></div>
+          <div class="srow"><span><b>₹34,200</b> spent</span><span>57% · warn 80%</span></div>
+
+          <hr class="sep" />
+          <div class="rc">Recent · synced from SMS</div>
+          <div class="tx"><div class="i">🍜</div>
+            <div class="m"><div class="nm">Swiggy</div>
+              <div class="mt"><span class="ch">Food</span> &nbsp; UPI · 2h ago</div></div>
+            <div class="v">−₹438</div></div>
+          <div class="tx"><div class="i">🧺</div>
+            <div class="m"><div class="nm">BigBasket</div>
+              <div class="mt"><span class="ch">Groceries</span> &nbsp; Card · Yesterday</div></div>
+            <div class="v">−₹2,140</div></div>
+          <div class="tx"><div class="i">🚕</div>
+            <div class="m"><div class="nm">Uber</div>
+              <div class="mt"><span class="ch">Transport</span> &nbsp; UPI · Tue</div></div>
+            <div class="v">−₹317</div></div>
+
+          <div class="ft">⛌ &nbsp;Parsed on-device · no cloud, no accounts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
