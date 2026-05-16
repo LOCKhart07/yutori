@@ -1,12 +1,8 @@
 package com.yutori.ui.feedback
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -24,9 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yutori.feedback.FeedbackContext
+import com.yutori.feedback.FeedbackMailer
 import com.yutori.feedback.FeedbackViewModel
 import com.yutori.feedback.Phase
 import com.yutori.ui.theme.YutoriTextStyles
@@ -53,13 +48,14 @@ import com.yutori.ui.theme.YutoriTheme
 
 /**
  * Settings → Send feedback sheet (#113). Full-screen compose UI —
- * title + description + read-only context preview. Submit flows
- * through [FeedbackViewModel] to the GitHub Issues API.
+ * title + description + read-only context preview.
  *
- * On success the sheet flips to a confirmation state with "View
- * issue" / "Done" — the parent never has to host a snackbar. On
- * failure an inline error row appears above the context card with a
- * Retry action; typed content stays intact.
+ * Tapping Send hands a prefilled `mailto:` draft to the user's mail
+ * client via [FeedbackMailer] (post-#71(a): no GitHub API, no token).
+ * On success the sheet closes — the user finishes and sends in their
+ * mail app, where they can also review/redact the auto-appended
+ * context. The only failure is "no email app installed", shown inline
+ * with a Retry; typed content stays intact.
  */
 @Composable
 fun SendFeedbackScreen(
@@ -69,6 +65,21 @@ fun SendFeedbackScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val statusInset: PaddingValues = WindowInsets.statusBars.asPaddingValues()
+
+    val launchMail: () -> Unit = {
+        val draft = vm.draft()
+        val launched = runCatching {
+            context.startActivity(
+                FeedbackMailer.intent(subject = draft.subject, body = draft.body),
+            )
+        }.isSuccess
+        if (launched) {
+            vm.reset()
+            onClose()
+        } else {
+            vm.onNoEmailApp()
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -82,34 +93,19 @@ fun SendFeedbackScreen(
         ) {
             TopBar(
                 canSend = state.canSend,
-                sending = state.phase is Phase.Sending,
                 onClose = onClose,
-                onSend = { vm.submit() },
+                onSend = launchMail,
             )
             HorizontalDivider(color = YutoriTheme.colors.divider)
 
-            when (val phase = state.phase) {
-                is Phase.Sent -> SentConfirmation(
-                    number = phase.number,
-                    onView = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(phase.htmlUrl))
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        runCatching { context.startActivity(intent) }
-                    },
-                    onDone = {
-                        vm.reset()
-                        onClose()
-                    },
-                )
-                else -> ComposeBody(
-                    title = state.title,
-                    description = state.description,
-                    errorMessage = (phase as? Phase.Failed)?.message,
-                    onTitleChange = vm::setTitle,
-                    onDescriptionChange = vm::setDescription,
-                    onRetry = { vm.submit() },
-                )
-            }
+            ComposeBody(
+                title = state.title,
+                description = state.description,
+                errorMessage = (state.phase as? Phase.Failed)?.message,
+                onTitleChange = vm::setTitle,
+                onDescriptionChange = vm::setDescription,
+                onRetry = launchMail,
+            )
         }
     }
 }
@@ -117,7 +113,6 @@ fun SendFeedbackScreen(
 @Composable
 private fun TopBar(
     canSend: Boolean,
-    sending: Boolean,
     onClose: () -> Unit,
     onSend: () -> Unit,
 ) {
@@ -142,26 +137,18 @@ private fun TopBar(
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
             modifier = Modifier.weight(1f),
         )
-        if (sending) {
-            CircularProgressIndicator(
-                modifier = Modifier.padding(horizontal = 12.dp).heightIn(min = 18.dp, max = 18.dp),
-                strokeWidth = 2.dp,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        } else {
-            Text(
-                text = "Send",
-                modifier = Modifier
-                    .clickable(enabled = canSend, onClick = onSend)
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = if (canSend) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    YutoriTheme.colors.onFaint
-                },
-            )
-        }
+        Text(
+            text = "Send",
+            modifier = Modifier
+                .clickable(enabled = canSend, onClick = onSend)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = if (canSend) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                YutoriTheme.colors.onFaint
+            },
+        )
     }
 }
 
@@ -268,66 +255,6 @@ private fun ErrorRow(message: String, onRetry: () -> Unit) {
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.primary,
         )
-    }
-}
-
-@Composable
-private fun SentConfirmation(
-    number: Int,
-    onView: () -> Unit,
-    onDone: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(
-            imageVector = Icons.Default.Check,
-            contentDescription = null,
-            modifier = Modifier.size(56.dp),
-            tint = YutoriTheme.colors.positive,
-        )
-        Spacer(Modifier.padding(vertical = 10.dp))
-        Text(
-            text = "Thanks — sent.",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Spacer(Modifier.padding(vertical = 6.dp))
-        Text(
-            text = "Issue #$number opened.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = YutoriTheme.colors.onMuted,
-        )
-        Spacer(Modifier.padding(vertical = 24.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "View issue",
-                modifier = Modifier
-                    .clickable(onClick = onView)
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Box(modifier = Modifier.padding(horizontal = 8.dp)) {
-                Text(
-                    text = "·",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = YutoriTheme.colors.onFaint,
-                )
-            }
-            Text(
-                text = "Done",
-                modifier = Modifier
-                    .clickable(onClick = onDone)
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = YutoriTheme.colors.onMuted,
-            )
-        }
     }
 }
 
