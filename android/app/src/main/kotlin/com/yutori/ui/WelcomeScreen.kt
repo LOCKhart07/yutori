@@ -17,16 +17,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.yutori.R
+import androidx.core.graphics.drawable.toBitmap
 import com.yutori.ui.theme.YutoriTheme
 
 /**
@@ -72,8 +75,21 @@ fun WelcomeScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
+                // R.mipmap.ic_launcher is an <adaptive-icon> on
+                // minSdk 28+ — painterResource can't decode that
+                // (vectors/rasters only) and crashes. Render the real
+                // launcher icon via the package manager instead.
+                val context = LocalContext.current
+                val appIcon = remember(context) {
+                    BitmapPainter(
+                        context.packageManager
+                            .getApplicationIcon(context.packageName)
+                            .toBitmap()
+                            .asImageBitmap(),
+                    )
+                }
                 Image(
-                    painter = painterResource(id = R.mipmap.ic_launcher),
+                    painter = appIcon,
                     contentDescription = null,
                     modifier = Modifier.size(168.dp),
                 )
