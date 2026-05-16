@@ -79,12 +79,11 @@ jobs:
           SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-          # Repo secrets are named RELEASES_TOKEN / ISSUES_TOKEN (GH
-          # rejects secret names that start with GITHUB_). Gradle reads
-          # the env vars under their original names to stay consistent
-          # with BuildConfig.
+          # Repo secret is named RELEASES_TOKEN (GH rejects secret
+          # names that start with GITHUB_). Gradle reads the env var
+          # under its original name to stay consistent with BuildConfig.
+          # ISSUES_TOKEN is gone — Send feedback uses mailto now (#71(a)).
           GITHUB_RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-          GITHUB_ISSUES_TOKEN: ${{ secrets.ISSUES_TOKEN }}
         run: ./gradlew :app:assembleRelease --parallel --build-cache --stacktrace
 
       - name: Stage APK with release name
