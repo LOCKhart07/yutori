@@ -18,29 +18,14 @@ sealed class UpdateCheckError(message: String) : Throwable(message) {
 
 class UpdateRepository(
     private val api: GithubApi,
-    // Distinguishes "public repo + anonymous request + no releases yet"
-    // (a legit 404 meaning up-to-date) from "private repo + missing PAT"
-    // (also a 404, but a configuration bug we must surface). False while
-    // the repo is private and no PAT is embedded. Removal target at
-    // #71(a) — when the repo goes public, all 404s are legit and this
-    // parameter becomes meaningless.
-    private val tokenPresent: Boolean,
 ) {
     suspend fun latestRelease(): Result<LatestRelease?> = try {
         val response = api.latestRelease()
         when {
-            response.code() == 404 -> {
-                if (tokenPresent) {
-                    // Authed 404 genuinely means "repo reachable, no
-                    // releases yet." Treat as up-to-date.
-                    Result.success(null)
-                } else {
-                    // Unauthed 404 on a private repo is how GitHub hides
-                    // existence from anonymous callers. Surface the 404
-                    // so the UI can prompt rotating the PAT.
-                    Result.failure(UpdateCheckError.Http(404))
-                }
-            }
+            // The repo is public, so the Releases API is anonymous and a
+            // 404 unambiguously means "no releases published yet" — treat
+            // it as up-to-date rather than an error.
+            response.code() == 404 -> Result.success(null)
             response.isSuccessful -> Result.success(response.body()?.toDomain())
             else -> Result.failure(UpdateCheckError.Http(response.code()))
         }

@@ -24,12 +24,11 @@ class UpdateRepositoryTest {
         server.shutdown()
     }
 
-    private fun repo(token: String = "test-token"): UpdateRepository {
-        val client = UpdateModule.createHttpClient(token = token)
+    private fun repo(): UpdateRepository {
+        val client = UpdateModule.createHttpClient()
         return UpdateModule.createRepository(
             client = client,
             baseUrl = server.url("/").toString(),
-            tokenPresent = token.isNotEmpty(),
         )
     }
 
@@ -94,26 +93,16 @@ class UpdateRepositoryTest {
     }
 
     @Test
-    fun `404 with token yields success with null release`() = runTest {
+    fun `404 yields success with null release (public repo, no releases yet)`() = runTest {
+        // Public repo: the Releases API is anonymous and a 404 just means
+        // nothing is published yet, so it must read as up-to-date, never
+        // as an error.
         server.enqueue(MockResponse().setResponseCode(404).setBody("""{"message":"Not Found"}"""))
 
-        val result = repo(token = "test-token").latestRelease()
+        val result = repo().latestRelease()
 
         result.isSuccess shouldBe true
         result.getOrNull().shouldBeNull()
-    }
-
-    @Test
-    fun `404 without token yields Http 404 failure`() = runTest {
-        // Private-repo-era safeguard: an anonymous 404 on a private repo
-        // must surface as an error (so the UI prompts "Couldn't check
-        // (404)") rather than a silent "up to date". Removal target at
-        // #71(a).
-        server.enqueue(MockResponse().setResponseCode(404).setBody("""{"message":"Not Found"}"""))
-
-        val result = repo(token = "").latestRelease()
-
-        result.exceptionOrNull() shouldBe UpdateCheckError.Http(404)
     }
 
     @Test
@@ -147,17 +136,9 @@ class UpdateRepositoryTest {
     }
 
     @Test
-    fun `bearer header present when token non-empty`() = runTest {
+    fun `requests carry no Authorization header (anonymous public repo)`() = runTest {
         server.enqueue(MockResponse().setResponseCode(404))
-        repo(token = "pat-xyz").latestRelease()
-
-        server.takeRequest().getHeader("Authorization") shouldBe "Bearer pat-xyz"
-    }
-
-    @Test
-    fun `bearer header absent when token empty`() = runTest {
-        server.enqueue(MockResponse().setResponseCode(404))
-        repo(token = "").latestRelease()
+        repo().latestRelease()
 
         server.takeRequest().getHeader("Authorization").shouldBeNull()
     }

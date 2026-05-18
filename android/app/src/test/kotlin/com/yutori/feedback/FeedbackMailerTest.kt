@@ -6,8 +6,8 @@ import io.kotest.matchers.string.shouldStartWith
 import org.junit.jupiter.api.Test
 
 /**
- * Encoding contract for the `mailto:` URI (the post-#71(a) feedback
- * path). The Android `intent()` wrapper is a one-line
+ * Encoding contract for the `mailto:` URI (the feedback path).
+ * The Android `intent()` wrapper is a one-line
  * `Intent(ACTION_SENDTO, Uri.parse(...))` over this — the percent-
  * encoding is the only logic worth pinning, and getting it wrong
  * (notably `+` vs `%20`) silently corrupts every report a user sends.

@@ -11,10 +11,8 @@ import java.net.URLEncoder
  * No GitHub API, no embedded PAT, no network — an [Intent.ACTION_SENDTO]
  * `mailto:` intent. The user reviews (and can redact) the draft in
  * their own mail app before sending, so the auto-appended
- * [FeedbackContext] trailer is always inspectable first. This is the
- * post-#71(a) feedback path: it behaves identically whether the repo
- * is private or public, which is why its rollout was decoupled from
- * the public flip.
+ * [FeedbackContext] trailer is always inspectable first. No GitHub
+ * credential is involved on this path at all.
  */
 object FeedbackMailer {
 

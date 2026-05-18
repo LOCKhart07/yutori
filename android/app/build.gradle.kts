@@ -74,24 +74,11 @@ android {
         buildConfigField("String", "BUILD_TIME", "\"${Instant.now()}\"")
         buildConfigField("boolean", "IS_RELEASE_TAG", isReleaseTag.toString())
 
-        // Fine-grained PAT for the in-app autoupdater's Releases API calls
-        // while `LOCKhart07/yutori` is still a private repo. Empty by
-        // default — unauthenticated builds still compile and the
-        // interceptor no-ops. See plans/autoupdater-spec.md §6 and
-        // docs/RELEASING.md. Remove at #71(a) when the repo goes public.
-        // .trim() is defence-in-depth: a secret pasted with trailing
-        // whitespace (or a shell mishap that stores the literal "-",
-        // see docs/RELEASING.md "Updater status codes") would otherwise
-        // mint an "Authorization: Bearer <mangled>" header that 401s on
-        // every call and looks identical to an expired PAT in the UI.
-        val releasesToken: String = providers.gradleProperty("GITHUB_RELEASES_TOKEN")
-            .orElse(providers.environmentVariable("GITHUB_RELEASES_TOKEN"))
-            .orNull.orEmpty().trim()
-        buildConfigField("String", "GITHUB_RELEASES_TOKEN", "\"$releasesToken\"")
-
-        // Send feedback no longer embeds a PAT — it opens the user's
-        // mail client via ACTION_SENDTO (mailto:). No GITHUB_ISSUES_TOKEN
-        // field; see plans/autoupdater-spec.md §5 and #71(a).
+        // The in-app autoupdater hits the public Releases API anonymously
+        // (the repo is public) and Send feedback opens the user's mail
+        // client via ACTION_SENDTO (mailto:). No embedded PAT on either
+        // path — no GITHUB_RELEASES_TOKEN / GITHUB_ISSUES_TOKEN field.
+        // See plans/autoupdater-spec.md §5.
 
         // --- AI-assisted rule creation (#64 part 2) ------------------
         // URL + SHA-256 for the one model we ship the download flow for

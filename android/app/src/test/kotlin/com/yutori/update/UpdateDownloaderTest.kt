@@ -40,8 +40,8 @@ class UpdateDownloaderTest {
             name = name,
         )
 
-    private fun downloader(token: String = "test-token"): UpdateDownloader {
-        val client = UpdateModule.createHttpClient(token = token)
+    private fun downloader(): UpdateDownloader {
+        val client = UpdateModule.createHttpClient()
         return UpdateDownloader(client, cacheDir)
     }
 
@@ -117,11 +117,11 @@ class UpdateDownloaderTest {
     }
 
     @Test
-    fun `cross-host redirect strips authorization header`() = runTest {
-        // OkHttp strips Authorization on cross-host redirects — critical
-        // because the asset URL returns a 302 to a presigned S3 URL
-        // where the signature is the only credential. Simulate with two
-        // MockWebServers on different ports.
+    fun `cross-host 302 to presigned URL is followed and bytes download`() = runTest {
+        // The asset API URL returns a 302 to a presigned S3 URL on a
+        // different host; the downloader must follow that cross-host hop
+        // and stream the real bytes. (Public repo: anonymous — no auth
+        // header on either leg, so nothing to leak across the redirect.)
         val body = ByteArray(64) { 9 }
         val redirectTarget = MockWebServer().also { it.start() }
         try {
@@ -132,15 +132,14 @@ class UpdateDownloaderTest {
                     .setHeader("Location", redirectTarget.url("/signed").toString()),
             )
 
-            downloader().download(asset(size = body.size.toLong())).toList()
+            val emissions = downloader().download(asset(size = body.size.toLong())).toList()
 
-            val originRequest = server.takeRequest()
-            originRequest.getHeader("Authorization") shouldBe "Bearer test-token"
+            val done = emissions.last().shouldBeInstanceOf<DownloadState.Done>()
+            done.apk.readBytes() shouldBe body
             val redirectedRequest = redirectTarget.takeRequest()
-            // No Authorization on the cross-host leg.
-            (redirectedRequest.getHeader("Authorization") == null) shouldBe true
-            // And the host differs, which is what triggers the strip.
             redirectedRequest.requestUrl.toString() shouldContain "/signed"
+            // No Authorization is ever sent (anonymous public repo).
+            (redirectedRequest.getHeader("Authorization") == null) shouldBe true
         } finally {
             redirectTarget.shutdown()
         }

@@ -51,7 +51,7 @@ import com.yutori.ui.theme.YutoriTheme
  * title + description + read-only context preview.
  *
  * Tapping Send hands a prefilled `mailto:` draft to the user's mail
- * client via [FeedbackMailer] (post-#71(a): no GitHub API, no token).
+ * client via [FeedbackMailer] — no GitHub API, no token.
  * On success the sheet closes — the user finishes and sends in their
  * mail app, where they can also review/redact the auto-appended
  * context. The only failure is "no email app installed", shown inline

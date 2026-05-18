@@ -210,7 +210,7 @@ class UpdateViewModel(
                     prefs.dismissedTag = null
                     return@onSuccess
                 }
-                val rel = release!!
+                val rel = release
                 val suppressed = prefs.dismissedTag == rel.tagName
                 _state.update {
                     it.copy(
