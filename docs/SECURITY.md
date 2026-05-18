@@ -54,6 +54,32 @@ This applies to **every** historical scrub, not just the one on
 2026-04-16. If you do another scrub later, the same GC-retention
 window applies to whatever orphans that run creates.
 
+**Status — 2026-04-16 scrub: GC force-run confirmed (2026-05-18).**
+GitHub Support ran garbage collection + cleared the repo cache on
+request (ticket 4390666, resolved 2026-05-17). Five SHAs were given
+to Support and verified post-GC via
+`gh api repos/LOCKhart07/yutori/commits/<sha>` (before GC, an
+unreachable orphan still resolved by direct SHA). The SHAs are
+deliberately not reproduced here — pasting orphan SHAs into a
+committed file re-creates the exact pointer the scrub removed; the
+ticket history holds them. Outcome:
+
+- Four were pre-rewrite orphans — all now return
+  `HTTP 422 — No commit found for SHA`. Gone.
+- One still returns `HTTP 200`, **and correctly so**: it is not an
+  orphan but the live, reachable commit on `main` that *added* this
+  SECURITY.md file ("docs: add SECURITY.md", 2026-04-16, tagged
+  `v0.2.0`+). Reachable commits are never GC'd; it carries no PII
+  (its diff is the +118-line introduction of this checklist). It was
+  included in the ticket by mistake — no action needed or possible.
+
+GC is repo-wide, so the other pre-rewrite orphans from the 62-commit
+rewrite were swept in the same run even though only these four were
+individually checked. If a later scrub needs the same treatment,
+this is the procedure that worked: open a Support ticket, give the
+repo + known **orphan** (unreachable) SHAs — not live ones — and
+ask them to force-run GC and clear the cache.
+
 ### 2. Verify `.gitignore` covers private artifacts
 
 The repo intentionally keeps a few files local-only. Re-check each is
