@@ -3,10 +3,15 @@
 Tachiyomi-style in-app updater for the side-loaded APK distribution: on
 every app cold-start, check GitHub Releases for a newer version, show a
 dismissible dialog with release notes, and install via
-`PackageInstaller` when the user confirms. Ships while the repo is
-still private — a fine-grained PAT embedded at build time unblocks the
-Releases API, and the design isolates that workaround to a single
-interceptor so removal at #71(a) is a two-minute chore.
+`PackageInstaller` when the user confirms. The repo is public, so the
+Releases API is hit **anonymously** — no embedded credential.
+
+> **History.** This shipped while the repo was still private, behind a
+> single embedded read-only fine-grained PAT isolated to one OkHttp
+> interceptor. When the repo went public that interceptor, its
+> `RELEASES_TOKEN` / `GITHUB_RELEASES_TOKEN` wiring and the repo secret
+> were all removed and the PAT revoked. §5 records what that surface
+> was; the spec body otherwise describes the current anonymous design.
 
 Companion docs: [yutori-plan.md](./yutori-plan.md),
 [settings-spec.md](./settings-spec.md),
@@ -26,8 +31,7 @@ Pairs with the first-run mitigation from #57.
 - Update-available dialog rendering the GitHub release body as the
   in-app changelog.
 - APK download to cache, install via `PackageInstaller.Session`.
-- Private-repo auth via an embedded read-only PAT, isolated behind
-  one interceptor.
+- Anonymous Releases API access (public repo — no auth).
 - Settings toggle to disable the on-open check (manual *Check now*
   always works).
 
@@ -38,8 +42,6 @@ Pairs with the first-run mitigation from #57.
 - Rollback.
 - Pre-release / beta channel selector.
 - Notification channel. No notification surface — dialog only.
-- Public-repo variant. The interceptor is already a no-op on empty
-  tokens; #71(a) is removal-only, not a second code path.
 
 ## 2. Trigger and cadence
 
@@ -69,7 +71,6 @@ Lives in `:app` under `com.yutori.update/`:
 ```
 :app/src/main/kotlin/com/yutori/update/
     UpdateModule.kt              # wiring (OkHttp + Moshi + repo)
-    GithubAuthInterceptor.kt     # #71(a) removal target
     UpdateRepository.kt
     VersionComparator.kt
     UpdateDownloader.kt
@@ -106,17 +107,10 @@ class UpdateRepository(
   `GET https://api.github.com/repos/LOCKhart07/yutori/releases/latest`
 - Headers (added by Retrofit annotations):
   `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`.
-- Auth header is added by the interceptor, not by the repo.
-- 404 handling is token-aware while the repo is still private:
-  - With token: `Result.success(null)` — repo is reachable and has
-    no releases yet. Treat as *up to date*.
-  - Without token: `Result.failure(...)` — GitHub returns 404 to
-    anonymous callers on private repos to hide their existence, so
-    "no token + 404" is the shape of a missing PAT, not a real
-    absence of releases. Surface as *Updater offline*. This branch
-    is part of the #71(a) removal surface — after the repo goes
-    public, every 404 is legit and the token-aware parameter
-    disappears.
+- No auth header — the request is anonymous (public repo).
+- 404 handling: `Result.success(null)`. For a public repo a 404 from
+  `/releases/latest` unambiguously means "no release published yet",
+  so it is treated as *up to date*, never surfaced as an error.
 - `Result.failure(...)` on any other non-2xx, timeout, or parse
   error. Caller logs and shows a user-facing state only for manual
   *Check now*.
@@ -140,11 +134,10 @@ data class LatestRelease(
 
 `asset.url` is the `assets[].url` field from the Releases API
 response (format: `https://api.github.com/repos/…/releases/assets/<id>`).
-This URL returns 302 to a presigned S3 URL when called with
-`Accept: application/octet-stream`, and it *does* work for private
-repos when the right Authorization header is present on the initial
-request. `browser_download_url` does not — it's the public CDN path
-and returns 404 for private repos regardless of token.
+Called with `Accept: application/octet-stream` it returns 302 to a
+presigned S3 URL. We use the API `url` rather than
+`browser_download_url` for consistency with the JSON call (same host,
+same anonymous client); both resolve fine for a public repo.
 
 ### 4.3 `VersionComparator`
 
@@ -281,119 +274,50 @@ for the same release on the same installed version. Cleared when
 `hasUpdate` returns false (i.e. once the user has actually updated,
 the next on-open check will clear the dismissal).
 
-## 5. Auth isolation — the #71(a) removal surface
+## 5. Auth — none (anonymous public repo)
 
-Everything private-repo-specific lives in exactly one class:
-
-```kotlin
-// Remove when #71(a) lands — see docs/RELEASING.md "Going public".
-class GithubAuthInterceptor : Interceptor {
-    override fun intercept(chain: Interceptor.Chain): Response {
-        val token = BuildConfig.GITHUB_RELEASES_TOKEN
-        val request = if (token.isEmpty()) {
-            chain.request()
-        } else {
-            chain.request().newBuilder()
-                .header("Authorization", "Bearer $token")
-                .build()
-        }
-        return chain.proceed(request)
-    }
-}
-```
-
-- No branching in repo/downloader/installer code based on
-  public-vs-private.
-- Empty token ⇒ unauthenticated request ⇒ works for public repos at
-  the anonymous rate limit (60 req/h per IP — fine for one user on
-  cold-start with a 6 h debounce).
-- Wired in one place:
+The repo is public, so the Releases API and the asset download are
+both unauthenticated. `UpdateModule` builds one `OkHttpClient` with
+no auth interceptor; the Retrofit JSON call and the asset download
+share it. Anonymous GitHub reads are rate-limited to 60 req/h per IP
+— a non-issue for one user on cold-start with a 6 h debounce.
 
 ```kotlin
 // :app — UpdateModule.kt
 val client = OkHttpClient.Builder()
-    .addInterceptor(GithubAuthInterceptor())   // Remove at #71(a)
     .connectTimeout(10, SECONDS)
     .readTimeout(30, SECONDS)
     .build()
 ```
 
-Both the JSON API (Retrofit-on-OkHttp) and the asset download use the
-same `OkHttpClient`, so one interceptor registration covers both.
+No branching anywhere on auth or repo visibility, no `Authorization`
+header, nothing to rotate or leak.
 
-> **Feedback flow note (#71(a) decoupling).** "Send feedback" (#113)
-> used to be the *other* embedded-PAT consumer (`ISSUES_TOKEN` →
-> `IssueReporter` → Issues API POST). It was decoupled from the public
-> flip and its removal shipped early: it now opens the mail client via
-> `Intent.ACTION_SENDTO` (`mailto:`), which needs no token regardless
-> of repo visibility. So this interceptor and its `RELEASES_TOKEN` are
-> the **sole remaining #71(a) surface**, and that removal is the only
-> part still gated on the repo going public.
+> **History — the removed PAT surface.** While the repo was private,
+> `GET /releases/latest` 404'd anonymous callers, so the app shipped
+> an embedded read-only fine-grained PAT. Everything private-specific
+> was isolated to one class, `GithubAuthInterceptor` — it attached
+> `Authorization: Bearer <token>` from
+> `BuildConfig.GITHUB_RELEASES_TOKEN` (a no-op on an empty token) and
+> was registered once in `UpdateModule`. The token was injected via
+> Gradle (`GITHUB_RELEASES_TOKEN` gradle property / env var →
+> `buildConfigField`), supplied in CI from the `RELEASES_TOKEN` repo
+> secret. "Send feedback" (#113) had been the *other* embedded-PAT
+> consumer (`ISSUES_TOKEN` → Issues API POST); it switched to a
+> `mailto:` `Intent.ACTION_SENDTO` early, decoupled from the flip.
+> When the repo went public the interceptor, the Gradle/CI wiring,
+> the repo secret and the local `gradle.properties` line were all
+> deleted and the fine-grained PAT revoked. See `docs/RELEASING.md`
+> → *Autoupdater & feedback — no embedded PATs*.
 
-## 6. Token wiring
+## 6. Token wiring — removed
 
-### 6.1 Gradle
-
-`:app/build.gradle.kts`, under `defaultConfig`:
-
-```kotlin
-// Remove when #71(a) lands — see docs/RELEASING.md "Going public".
-val releasesToken = providers.gradleProperty("GITHUB_RELEASES_TOKEN")
-    .orElse(providers.environmentVariable("GITHUB_RELEASES_TOKEN"))
-    .orNull.orEmpty()
-
-buildConfigField("String", "GITHUB_RELEASES_TOKEN", "\"$releasesToken\"")
-```
-
-- `buildFeatures { buildConfig = true }` must be enabled (already is
-  for `VERSION_NAME`).
-- Empty token is a valid build: BuildConfig field becomes `""`, the
-  interceptor no-ops, and the feature silently runs at anonymous
-  rate limits. No build-time warning — dev builds without the token
-  should just work.
-
-### 6.2 Developer machine
-
-`~/.gradle/gradle.properties` (outside the repo):
-
-```
-GITHUB_RELEASES_TOKEN=github_pat_...
-```
-
-`chmod 600 ~/.gradle/gradle.properties`. Same file already used for
-signing secrets (see `docs/RELEASING.md:112`), so no new file hygiene
-to establish.
-
-### 6.3 CI
-
-`.github/workflows/release.yml`:
-
-```yaml
-env:
-  GITHUB_RELEASES_TOKEN: ${{ secrets.GITHUB_RELEASES_TOKEN }}
-```
-
-New repo secret `GITHUB_RELEASES_TOKEN`. Mirror the naming and the
-location of the signing secrets block.
-
-### 6.4 PAT properties
-
-- Type: fine-grained personal access token.
-- Resource owner: `LOCKhart07`.
-- Repository access: `LOCKhart07/yutori` only.
-- Permission: `Contents: Read`. Nothing else.
-- Expiry: 90 days.
-- Calendar reminder to rotate 7 days before expiry. When the repo
-  goes public (#71(a)), revoke early instead of rotating.
-
-### 6.5 What happens when the token expires
-
-- API call returns 401.
-- `UpdateCheckCoordinator` emits `Failed`.
-- Settings status row shows *Updater offline — check logs*. Manual
-  *Check now* shows the same. Everything else in the app is
-  unaffected.
-- Fix: rotate the PAT, replace the gradle.properties value, rebuild.
+There is no token. The Gradle `buildConfigField`, the
+`~/.gradle/gradle.properties` entry, the `release.yml` `env:` mapping
+and the `RELEASES_TOKEN` repo secret described in earlier revisions of
+this spec were all removed when the repo went public (see §5 History).
+Anonymous calls have no expiry and no credential failure mode — only
+the rate-limit / network / server cases in §12 remain.
 
 ## 7. UI surfaces — need mockup approval before code
 
@@ -521,8 +445,9 @@ if it feels natural.
 - Pre-release channel. If added later, it gets a separate
   *Include pre-releases* toggle and swaps to `/releases` instead of
   `/releases/latest`.
-- Mirror-public-repo-for-releases approach (#71(c)). Revisit only if
-  PAT rotation becomes chronically painful before #71(a) lands.
+- Mirror-public-repo-for-releases approach (#71(c)). Was a fallback
+  for private-repo PAT-rotation pain; moot now that reads are
+  anonymous. Not needed.
 - A notification when an update is available. Dialog on cold start
   is the only surface.
 
@@ -535,15 +460,14 @@ if it feels natural.
 - `UpdateRepositoryTest` with MockWebServer:
   - 200 OK with a full payload → parses `LatestRelease`.
   - 200 OK with no APK asset → `asset = null`.
-  - 404 → `Result.success(null)`.
-  - 401 → `Result.failure`.
+  - 404 → `Result.success(null)` (public repo: no releases yet =
+    up to date, never an error).
   - Malformed JSON → `Result.failure`.
-  - Verifies the `Authorization: Bearer test-token` header is
-    present when the interceptor is installed, absent when not.
+  - Verifies no `Authorization` header is sent (anonymous).
 - `UpdateDownloaderTest` with MockWebServer:
   - Happy path: small fake APK, progress emissions, `Done(file)`.
-  - Redirect to a second MockWebServer on a different port to
-    verify `Authorization` header is **not** forwarded.
+  - Redirect to a second MockWebServer on a different port is
+    followed (the presigned-S3 hop) and the bytes still download.
   - 404 on asset → `Failed(NotFound)`.
   - Mid-stream close → `Failed(Network)`.
 - `UpdateCheckCoordinatorTest` — debounce logic, `force = true`
@@ -559,8 +483,7 @@ if it feels natural.
 
 - `UpdateInstaller`. `PackageInstaller.Session` is OS-owned; no
   viable fake. Manual QA covers it.
-- Real GitHub API. Don't want CI to depend on an external service
-  or to smuggle the PAT into test runners.
+- Real GitHub API. Don't want CI to depend on an external service.
 
 ### 12.4 Manual QA (in `docs/RELEASING.md`)
 
@@ -576,38 +499,23 @@ Pre-release smoke:
 7. Settings → App updates → status reads *Up to date*.
 8. *Check now* on v0.(N+1).0 → still *Up to date*.
 
-## 13. Changes to `docs/RELEASING.md`
+## 13. Related `docs/RELEASING.md` content
 
-Three additions:
+These RELEASING.md additions landed alongside the feature and the
+later public-flip cleanup:
 
-1. **Versioning rule (§11 new):** "Never re-use a version tag. If a
-   release needs to be replaced, delete it and bump the patch
-   number. In-app autoupdater clients compare by `tag_name` equality
-   and will not pick up a re-tagged release."
-2. **Autoupdater section (§12 new):** brief overview of the flow,
-   pointer to `plans/autoupdater-spec.md`, and the PAT-rotation
-   reminder.
-3. **"Going public" subsection (§13 new):** the removal checklist
-   for #71(a):
-   1. Delete `GithubAuthInterceptor.kt`.
-   2. Remove the `.addInterceptor(GithubAuthInterceptor())` line
-      from `UpdateModule.kt`.
-   3. Remove the `buildConfigField("GITHUB_RELEASES_TOKEN", …)` and
-      the `providers.gradleProperty(...)` block from
-      `:app/build.gradle.kts`.
-   4. Remove `GITHUB_RELEASES_TOKEN` from the `env:` block of
-      `release.yml` and delete the repo secret.
-   5. Remove the `GITHUB_RELEASES_TOKEN` line from local
-      `gradle.properties` files.
-   6. Revoke the PAT at
-      github.com/settings/tokens and delete the calendar reminder.
-   7. `git grep '#71(a)'` returns no matches.
-
-   Note: the feedback-flow half of the old #71(a) surface
-   (`ISSUES_TOKEN` / `IssueReporter` / Issues API) already shipped its
-   removal independently via the `mailto:` switch — it was never tied
-   to the flip. Only the autoupdater steps 1–6 above remain, so the
-   step-7 `git grep` only goes fully clean once those land post-flip.
+1. **Versioning rule:** "Never re-use a version tag. If a release
+   needs to be replaced, delete it and bump the patch number. In-app
+   autoupdater clients compare by `tag_name` equality and will not
+   pick up a re-tagged release."
+2. **Autoupdater overview:** the flow and a pointer back to this spec.
+3. **Post-public state** (*Autoupdater & feedback — no embedded
+   PATs*): records that the interceptor, the Gradle/CI token wiring,
+   the repo secret and the local `gradle.properties` line were
+   deleted and the fine-grained PAT revoked when the repo went
+   public — and that the feedback half (`ISSUES_TOKEN` / Issues API)
+   had already gone earlier via the `mailto:` switch, decoupled from
+   the flip.
 
 ## 14. Rollout order
 
@@ -629,5 +537,5 @@ Six PRs, each independently landable and reviewable:
    first-run copy tweak (#57 pairing).** Cold-start trigger comes
    online. Release notes doc updates land with this PR.
 
-Split keeps each PR reviewable in isolation and keeps the #71(a)
-removal surface confined to PR #1.
+The split kept each stage reviewable in isolation and confined the
+(now-removed) embedded-PAT surface to stage 1.

@@ -234,8 +234,8 @@ Single commit, single release. `fix:` is wrong (this isn't bug work);
 `feat:` is right — a new user-visible screen. Per `docs/RELEASING.md`
 that drives a minor version bump: **v0.6.2 → v0.7.0**.
 
-The About screen does *not* depend on the #71(a) public-flip
-workstream (issue #126) — both can ship independently. The README
+The About screen did *not* depend on the public-flip
+workstream (issue #126) — both shipped independently. The README
 philosophy copy is worded such that "Read the code" (in principle 5)
 is accurate once the repo is public; it becomes accurate when the
 visibility flip happens, so the timing should be: land this PR →

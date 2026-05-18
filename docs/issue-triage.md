@@ -170,9 +170,8 @@ Three gotchas that bit people before:
 3. **Personal account only.** The "Copilot Requests" permission
    is not available on org-owned fine-grained tokens at time of
    writing. Since `LOCKhart07/yutori` is a personal repo, the PAT
-   is generated under `LOCKhart07` — same account the repo sits
-   under, same pattern as `RELEASES_TOKEN` / `ISSUES_TOKEN` in
-   `docs/RELEASING.md`.
+   is generated under `LOCKhart07` — the same account the repo sits
+   under.
 4. **UI gating on Repository access.** The "Copilot Requests"
    checkbox only appears in the PAT editor once *Repository access*
    is set to `Public repositories` (or `All repositories`). This is
@@ -303,9 +302,9 @@ real-world behaviour demands it.
 - [ ] `.github/triage-prompt.md` — the static prompt; defines the
       JSON shape and the taxonomy Copilot must map to.
 - [ ] `.github/workflows/triage-issue.yml` — the workflow itself.
-- [ ] `COPILOT_GITHUB_TOKEN` secret added to the repo. Track expiry
-      alongside `RELEASES_TOKEN` / `ISSUES_TOKEN` (see
-      `docs/RELEASING.md` → *Embedded PATs*).
+- [ ] `COPILOT_GITHUB_TOKEN` secret added to the repo. It is now the
+      only PAT the project uses; rotate annually (see
+      `docs/RELEASING.md` → *CI tokens*).
 - [ ] Run the label bootstrap.
 - [ ] Open a synthetic test issue and a deliberately adversarial one
       (prompt-injection attempt, 1 MB body, UTF-8 edge cases) and

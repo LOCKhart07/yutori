@@ -93,80 +93,41 @@ signingConfig. The APK is installable via side-load, but:
 The workflow emits a GitHub Actions warning on every debug-signed
 release so you can't miss it.
 
-## Embedded PATs (private repo only)
+## Autoupdater & feedback — no embedded PATs
 
-One app feature calls the GitHub API from the installed APK:
+Neither shipping path embeds a GitHub token:
 
-| Feature | Endpoint | Reason the PAT is needed |
-| --- | --- | --- |
-| Autoupdater | `GET /repos/{owner}/{repo}/releases/latest` | GitHub 404s anonymous reads on private repos — without auth the app surfaces "Updater offline." |
+| Feature | How it talks to GitHub |
+| --- | --- |
+| Autoupdater | `GET /repos/LOCKhart07/yutori/releases/latest`, **anonymous** — the repo is public, so unauthenticated reads succeed. |
+| Send feedback | No API call. Opens the user's mail client via `Intent.ACTION_SENDTO` (`mailto:`). |
 
-> **Send feedback** no longer uses a PAT. As of the #71(a) feedback
-> decoupling it opens the user's mail client via `Intent.ACTION_SENDTO`
-> (`mailto:`) — no GitHub API call, no token, identical behaviour
-> whether the repo is private or public. See
-> `plans/autoupdater-spec.md` §5.
-
-One fine-grained PAT, scoped as narrowly as possible:
-
-| Secret | Permission | BuildConfig field |
-| --- | --- | --- |
-| `RELEASES_TOKEN` | Contents: Read | `GITHUB_RELEASES_TOKEN` |
-
-The secret is named without the `GITHUB_` prefix because GH rejects
-that prefix on secret names. The workflow maps `secrets.RELEASES_TOKEN`
-onto env var `GITHUB_RELEASES_TOKEN`, which Gradle reads into the
-matching `BuildConfig` field.
-
-Token setup (per token):
-1. github.com → Settings → Developer settings → Personal access tokens
-   → Fine-grained tokens → Generate new token.
-2. Resource owner: `LOCKhart07`. Repository access: only
-   `LOCKhart07/yutori`. Repository permissions as per the table above.
-   Expiry: 1 year.
-3. Copy the token, add as the matching repo secret. When uploading via
-   `gh`, pipe the token to stdin **with no `--body` flag** — `gh` reads
-   stdin automatically when it isn't a TTY. Writing `gh secret set NAME
-   --body -` does not mean "read stdin"; it stores the literal one-char
-   string `-`, and the piped token is silently discarded. That mistake
-   once shipped in v0.5.1 + v0.6.0 and produced the 401 symptoms in the
-   "Updater status codes" table below.
-   ```bash
-   printf '%s' "$TOKEN" | gh secret set RELEASES_TOKEN --repo LOCKhart07/yutori
-   # or: gh secret set RELEASES_TOKEN --repo LOCKhart07/yutori < token.txt
-   ```
-
-When the token expires, the autoupdater breaks quietly — it flips to
-"Couldn't check (401)". Rotate by creating a new PAT and overwriting
-the secret; the next release embeds the fresh one. APKs already on
-users' phones keep the old token until they're replaced.
+This was not always so. While the repo was private the autoupdater
+needed a fine-grained `RELEASES_TOKEN` (GitHub 404s anonymous reads of
+a private repo). When the repo went public that PAT, its
+`GITHUB_RELEASES_TOKEN` BuildConfig field, the workflow `env:` mapping
+and the repo secret were all removed, and the fine-grained token
+revoked. See `plans/autoupdater-spec.md` §5. There is now no embedded
+credential to rotate or leak.
 
 ### Updater status codes
 
 The Settings → App updates section surfaces errors as
 `Couldn't check (<tag>)`. The tag is either the HTTP status from the
-GitHub API or the literal word `offline`. Map:
+GitHub API or the literal word `offline`. Since the call is anonymous
+there is no auth failure mode (`401`); a `404` is **not** an error —
+for a public repo it just means "no release published yet", so the
+updater treats it as up-to-date and never surfaces it. What remains:
 
 | Tag | What it means | What to do |
 | --- | --- | --- |
-| `401` | Embedded PAT is invalid, expired, or was stored as a placeholder (e.g. the literal `-`). | Rotate `RELEASES_TOKEN` with a fresh fine-grained PAT — see "Token setup" above — then cut a new release. |
-| `403` | PAT is authenticated but lacks `Contents: Read` on the repo, or has hit GitHub's secondary rate limit. | Re-generate with the permission in the table above. If the PAT is fine, back off and retry. |
-| `404` | Either the PAT can't see the repo (wrong `Resource owner` / repo access), or the repo was renamed/moved. | Re-check PAT scope; confirm `LOCKhart07/yutori` still exists. |
+| `403` | Anonymous GitHub rate limit hit (60 req/hr per IP). | Back off; it clears on its own. Not actionable on the client. |
 | `5xx` | GitHub server-side. | Try again later. Not actionable on the client. |
 | `offline` | Network, DNS, or a malformed response from GitHub. | Retry when connectivity is back. |
 
-Send feedback no longer hits the GitHub API, so these codes don't
-apply to it — it hands off to the mail client (`mailto:`) and the
-only failure mode is "no email app installed", surfaced inline on the
-sheet.
-
-Remove this section (and the `GITHUB_RELEASES_TOKEN` `buildConfigField`
-in `android/app/build.gradle.kts`) when the repo goes public — see
-`plans/autoupdater-spec.md` §5/§13 and issue #71(a). Once public the
-autoupdater's calls become anonymous and the token is dead weight.
-The Send-feedback half of #71(a) is **already done** (the `mailto:`
-switch — it was flip-independent); only the autoupdater PAT removal
-remains, and that stays gated on the repo actually being public.
+Send feedback never hits the GitHub API, so these codes don't apply to
+it — it hands off to the mail client (`mailto:`) and the only failure
+mode is "no email app installed", surfaced inline on the sheet.
 
 ## CI tokens
 
@@ -178,11 +139,11 @@ rotation discipline applies, so rotate them on the same calendar.
 | --- | --- | --- |
 | `COPILOT_GITHUB_TOKEN` | Fine-grained PAT on `LOCKhart07`'s account with **Copilot Requests** enabled (Repository access: *Public repositories* — this is UI gating, not a functional limit; see `docs/issue-triage.md` → *Permissions & secrets*) | `.github/workflows/triage-issue.yml` — authenticates Copilot CLI when auto-triaging newly opened issues. |
 
-Unlike the embedded PATs, this one **stays required after the repo
-flips public** — Copilot CLI still needs to authenticate to its
-backend on the user's behalf. Rotate on the same annual cadence as
-`RELEASES_TOKEN` / `ISSUES_TOKEN` so all three share an expiry
-calendar and a single rotation session covers everything.
+`COPILOT_GITHUB_TOKEN` is the only PAT the project still uses — the
+embedded `RELEASES_TOKEN` / `ISSUES_TOKEN` were removed when the repo
+went public (autoupdater is now anonymous, feedback is `mailto:`).
+Copilot CLI still needs to authenticate to its backend on the user's
+behalf, so this one stays. Rotate it annually.
 
 When it expires, auto-triage fails silently: the workflow posts a
 "Automated triage failed" comment on every new issue until the
