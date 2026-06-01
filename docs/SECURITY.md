@@ -10,10 +10,13 @@ fixtures).
 ## Reporting a vulnerability
 
 Found a security issue — a signing/update weakness, a PII leak in
-history, or a data-exposure bug in the app? Email
-**dsouzajenslee@gmail.com** with details and, if possible, a
-reproduction. Please report privately first rather than opening a
-public issue, so a fix can ship before the details are public.
+history, or a data-exposure bug in the app? Report it privately through
+GitHub: **Security → Report a vulnerability**
+([new advisory](https://github.com/LOCKhart07/yutori/security/advisories/new)).
+This opens a private advisory visible only to you and the maintainer.
+
+Please don't open a public issue for security problems — that discloses
+the details before a fix can ship.
 
 ## Release signing chain
 
