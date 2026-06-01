@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,11 +44,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yutori.budget.Budget
+import com.yutori.budget.SpendSuggestion
 import com.yutori.ui.theme.YutoriTextStyles
 import com.yutori.ui.theme.YutoriTheme
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.roundToLong
 
 /**
  * Budget setup — v2 styling. Mono limit input, amber accent slider,
@@ -61,6 +64,7 @@ fun BudgetSetupScreen(
     onCancel: () -> Unit,
     inheritedFromMonthKey: String? = null,
     carryOverInr: Double = 0.0,
+    suggestion: SpendSuggestion? = null,
 ) {
     // #80: the caller loads `currentBudget` asynchronously (initial
     // null, then the stored Budget once the DAO resolves). Keying the
@@ -74,11 +78,21 @@ fun BudgetSetupScreen(
     var warnPct by remember(currentBudget) {
         mutableStateOf(currentBudget?.warnThresholdPct?.toFloat() ?: 80f)
     }
+    // #15: the history suggestion is a standing affordance — shown
+    // whenever a median exists, independent of inheritance. Dismissed
+    // once used or once the user types their own number. Re-keyed on
+    // currentBudget so an async re-seed (see #80 above) resets it.
+    var suggestionDismissed by remember(currentBudget) { mutableStateOf(false) }
 
     val parsedLimit = limitText.trim().toDoubleOrNull()
     val saveEnabled = parsedLimit != null && parsedLimit >= 0.0
 
     val colors = YutoriTheme.colors
+    val inr = remember {
+        NumberFormat.getCurrencyInstance(
+            Locale.Builder().setLanguage("en").setRegion("IN").build(),
+        )
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -135,6 +149,8 @@ fun BudgetSetupScreen(
                     onValueChange = { new ->
                         if (new.isEmpty() || new.matches(Regex("""\d+(\.\d*)?"""))) {
                             limitText = new
+                            // Typing your own number retires the suggestion.
+                            suggestionDismissed = true
                         }
                     },
                     placeholder = {
@@ -185,6 +201,24 @@ fun BudgetSetupScreen(
                     InheritedBudgetNote(
                         sourceMonthKey = inheritedFromMonthKey,
                         targetMonthKey = monthKey,
+                    )
+                }
+
+                // #15: tap-to-fill suggestion from spend history. Sits
+                // below the inheritance note (info) as the actionable
+                // alternative — green vs the periwinkle note. Hidden when
+                // the field already equals it, or once used/typed-over.
+                val sug = suggestion
+                if (sug != null && shouldShowSuggestion(sug, limitText, suggestionDismissed)) {
+                    Spacer(Modifier.height(10.dp))
+                    BudgetSuggestionChip(
+                        leadIn = suggestionLeadIn(hasPrefill = currentBudget != null),
+                        amountText = inr.formatAmount(sug.median, compact = true),
+                        basisText = suggestionBasisText(sug),
+                        onUse = {
+                            limitText = "%.0f".format(sug.median)
+                            suggestionDismissed = true
+                        },
                     )
                 }
 
@@ -499,5 +533,118 @@ private fun BreakdownRow(
             },
             color = valueColor,
         )
+    }
+}
+
+// ── #15 budget suggestion from history ────────────────────────────
+
+/**
+ * Whether the suggestion chip should render. Hidden when there is no
+ * suggestion, once it's been used/dismissed, or when the field already
+ * shows the suggested value (no point offering a no-op). Comparison is
+ * on the displayed integer-rupee form, matching what tapping writes.
+ */
+internal fun shouldShowSuggestion(
+    suggestion: SpendSuggestion?,
+    currentLimitText: String,
+    dismissed: Boolean,
+): Boolean {
+    if (suggestion == null || dismissed) return false
+    return "%.0f".format(suggestion.median) != currentLimitText.trim()
+}
+
+/**
+ * Lead-in word for the chip. "Or use" when the field is already
+ * pre-filled (a saved or inherited value the suggestion is an
+ * alternative to); "Suggested" when the field is empty.
+ */
+internal fun suggestionLeadIn(hasPrefill: Boolean): String =
+    if (hasPrefill) "Or use" else "Suggested"
+
+/**
+ * The chip's caption, e.g. "median of your last 3 months · Mar 40k ·
+ * Apr 45k · May 42k". Months are rendered chronologically (the
+ * [SpendSuggestion] holds them newest-first) so the breakdown reads
+ * left-to-right in time.
+ */
+internal fun suggestionBasisText(suggestion: SpendSuggestion): String {
+    val n = suggestion.months.size
+    val breakdown = suggestion.months
+        .sortedBy { it.monthKey }
+        .joinToString(" · ") { "${shortMonth(it.monthKey)} ${thousandsK(it.netInr)}" }
+    return "median of your last $n month${if (n == 1) "" else "s"} · $breakdown"
+}
+
+private fun shortMonth(monthKey: String): String = try {
+    val m = monthKey.split("-")[1].toInt()
+    listOf(
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    )[m - 1]
+} catch (_: Exception) {
+    monthKey
+}
+
+/** Compact rupee-thousands for the breakdown line: 42_300 → "42k". */
+private fun thousandsK(amount: Double): String = "${(amount / 1000.0).roundToLong()}k"
+
+@Composable
+private fun BudgetSuggestionChip(
+    leadIn: String,
+    amountText: String,
+    basisText: String,
+    onUse: () -> Unit,
+) {
+    val colors = YutoriTheme.colors
+    Surface(
+        color = colors.positive.copy(alpha = 0.07f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.positive.copy(alpha = 0.28f)),
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(onClick = onUse),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.KeyboardArrowUp,
+                contentDescription = null,
+                tint = colors.positive,
+                modifier = Modifier.size(18.dp),
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = androidx.compose.ui.Alignment.Bottom) {
+                    Text(
+                        text = "$leadIn ",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        color = colors.positive,
+                    )
+                    Text(
+                        text = amountText,
+                        style = YutoriTextStyles.Mono.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = basisText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onMuted,
+                )
+            }
+            Text(
+                text = "Use",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = colors.positive,
+            )
+        }
     }
 }

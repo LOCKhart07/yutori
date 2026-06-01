@@ -115,4 +115,59 @@ object BudgetCalculator {
             percentUsed = percent,
         )
     }
+
+    /**
+     * Median net-spend (gross − refunds) over the [priorMonths]
+     * most-recent months strictly before [monthKey] that have ≥1 SPEND
+     * transaction. Returns null when no such month exists.
+     *
+     * Seeds BudgetSetup's limit as a tap-to-fill suggestion (#15).
+     * Median, not mean, so a single seasonal spike inside the window is
+     * discarded. Months with no spend (none, or refund-only) are
+     * skipped, so the window reaches *past* gaps to find qualifying
+     * months — a `priorMonths`-sized cap on the count, not the calendar
+     * span. Pending-FX rows (inrAmount == null) are excluded from the
+     * per-month net, consistent with [monthSpend] / §6.2.
+     *
+     * [SpendSuggestion.months] are returned newest-first; their net
+     * already reflects each month's own refunds.
+     */
+    fun medianPriorNetSpend(
+        transactions: List<Transaction>,
+        monthKey: String,
+        priorMonths: Int = 3,
+    ): SpendSuggestion? {
+        val netByMonth = HashMap<String, Double>()
+        val monthsWithSpend = HashSet<String>()
+        for (tx in transactions) {
+            if (tx.monthKey >= monthKey) continue
+            val amount = tx.inrAmount ?: continue
+            when (tx.budgetEffect) {
+                BudgetEffect.SPEND -> {
+                    netByMonth.merge(tx.monthKey, amount, Double::plus)
+                    monthsWithSpend.add(tx.monthKey)
+                }
+                BudgetEffect.REFUND -> netByMonth.merge(tx.monthKey, -amount, Double::plus)
+                else -> Unit
+            }
+        }
+
+        // YYYY-MM sorts lexicographically == chronologically; newest first.
+        val qualifying = monthsWithSpend.sortedDescending().take(priorMonths)
+        if (qualifying.isEmpty()) return null
+
+        val months = qualifying.map { MonthNet(it, netByMonth[it] ?: 0.0) }
+        return SpendSuggestion(median = median(months.map { it.netInr }), months = months)
+    }
+
+    /** Statistical median; mean of the two middles for an even count. */
+    private fun median(values: List<Double>): Double {
+        val sorted = values.sorted()
+        val mid = sorted.size / 2
+        return if (sorted.size % 2 == 1) {
+            sorted[mid]
+        } else {
+            (sorted[mid - 1] + sorted[mid]) / 2.0
+        }
+    }
 }

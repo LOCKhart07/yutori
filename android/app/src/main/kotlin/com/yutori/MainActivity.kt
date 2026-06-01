@@ -72,6 +72,16 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Async-loaded inputs for the BudgetSetup screen. Carry-over (#14) and
+ * the history suggestion (#15) both derive from the same prior-month
+ * transactions, so they're loaded together to scan `transactions` once.
+ */
+private data class BudgetSetupData(
+    val carryOverInr: Double = 0.0,
+    val suggestion: com.yutori.budget.SpendSuggestion? = null,
+)
+
 /** v1 MVP screens. Swap for Navigation-Compose when it earns its weight. */
 private sealed interface Screen {
     data object Dashboard : Screen
@@ -289,10 +299,12 @@ private fun AppContent() {
             val budgetDao = database.budgetDao()
             val transactionDao = database.transactionDao()
 
-            // Same carry-over the dashboard shows. Mirrors
-            // DashboardViewModel's prior-month sourcing so the editor's
-            // "Effective" equals the dashboard headline.
-            val carryOverInr: Double by produceState(0.0, s.monthKey) {
+            // Same carry-over the dashboard shows, plus the #15 history
+            // suggestion — both derive from the prior-month transactions,
+            // so load them once. Mirrors DashboardViewModel's prior-month
+            // sourcing so the editor's "Effective" equals the dashboard
+            // headline.
+            val setupData: BudgetSetupData by produceState(BudgetSetupData(), s.monthKey) {
                 val priorBudgets = budgetDao.getAllBefore(s.monthKey).map {
                     com.yutori.budget.Budget(it.monthKey, it.limitInr, it.thresholdWarnPct)
                 }
@@ -306,8 +318,12 @@ private fun AppContent() {
                         occurredAtMs = it.occurredAtMs,
                     )
                 }
-                value = com.yutori.budget.BudgetCalculator
-                    .carryOver(priorTx, priorBudgets, s.monthKey)
+                value = BudgetSetupData(
+                    carryOverInr = com.yutori.budget.BudgetCalculator
+                        .carryOver(priorTx, priorBudgets, s.monthKey),
+                    suggestion = com.yutori.budget.BudgetCalculator
+                        .medianPriorNetSpend(priorTx, s.monthKey),
+                )
             }
 
             val currentBudgetEntity: BudgetEntity? by produceState<BudgetEntity?>(
@@ -331,7 +347,8 @@ private fun AppContent() {
                 monthKey = s.monthKey,
                 currentBudget = currentBudget,
                 inheritedFromMonthKey = inheritedFromMonthKey,
-                carryOverInr = carryOverInr,
+                carryOverInr = setupData.carryOverInr,
+                suggestion = setupData.suggestion,
                 onSave = { budget ->
                     scope.launch {
                         val now = System.currentTimeMillis()

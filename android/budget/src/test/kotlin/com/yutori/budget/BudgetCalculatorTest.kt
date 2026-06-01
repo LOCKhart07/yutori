@@ -334,4 +334,105 @@ class BudgetCalculatorTest {
         s.limitInr shouldBe 50_000.0
         s.effectiveBudgetInr shouldBe 50_000.0
     }
+
+    // ---- medianPriorNetSpend (#15) ----
+
+    @Test
+    fun `medianPriorNetSpend returns the median of three prior months`() {
+        val txs = listOf(
+            tx(monthKey = "2026-03", amount = 10_000.0),
+            tx(monthKey = "2026-04", amount = 20_000.0),
+            tx(monthKey = "2026-05", amount = 30_000.0),
+        )
+        val r = BudgetCalculator.medianPriorNetSpend(txs, "2026-06")
+        r!!.median shouldBe (20_000.0 plusOrMinus 1e-9)
+        // Newest-first, so the chip can render the breakdown in order.
+        r.months.map { it.monthKey } shouldBe listOf("2026-05", "2026-04", "2026-03")
+    }
+
+    @Test
+    fun `medianPriorNetSpend with one qualifying month is that month`() {
+        val txs = listOf(tx(monthKey = "2026-05", amount = 20_000.0))
+        BudgetCalculator.medianPriorNetSpend(txs, "2026-06")!!
+            .median shouldBe (20_000.0 plusOrMinus 1e-9)
+    }
+
+    @Test
+    fun `medianPriorNetSpend averages the two middles for an even count`() {
+        val txs = listOf(
+            tx(monthKey = "2026-02", amount = 10_000.0),
+            tx(monthKey = "2026-03", amount = 20_000.0),
+            tx(monthKey = "2026-04", amount = 30_000.0),
+            tx(monthKey = "2026-05", amount = 40_000.0),
+        )
+        // median of [10k,20k,30k,40k] = (20k + 30k) / 2.
+        BudgetCalculator.medianPriorNetSpend(txs, "2026-06", priorMonths = 4)!!
+            .median shouldBe (25_000.0 plusOrMinus 1e-9)
+    }
+
+    @Test
+    fun `medianPriorNetSpend takes the most recent months, not the oldest`() {
+        val txs = listOf(
+            tx(monthKey = "2026-02", amount = 100_000.0), // outside the 3-window
+            tx(monthKey = "2026-03", amount = 10_000.0),
+            tx(monthKey = "2026-04", amount = 20_000.0),
+            tx(monthKey = "2026-05", amount = 30_000.0),
+        )
+        val r = BudgetCalculator.medianPriorNetSpend(txs, "2026-06")
+        r!!.median shouldBe (20_000.0 plusOrMinus 1e-9) // Feb's 100k must not count
+        r.months.map { it.monthKey } shouldBe listOf("2026-05", "2026-04", "2026-03")
+    }
+
+    @Test
+    fun `medianPriorNetSpend nets a month's refunds against its spend`() {
+        val txs = listOf(
+            tx(monthKey = "2026-05", effect = BudgetEffect.SPEND, amount = 30_000.0),
+            tx(monthKey = "2026-05", effect = BudgetEffect.REFUND, amount = 5_000.0),
+        )
+        BudgetCalculator.medianPriorNetSpend(txs, "2026-06")!!
+            .median shouldBe (25_000.0 plusOrMinus 1e-9)
+    }
+
+    @Test
+    fun `medianPriorNetSpend skips refund-only months and reaches past them`() {
+        val txs = listOf(
+            tx(monthKey = "2026-04", effect = BudgetEffect.SPEND, amount = 20_000.0),
+            tx(monthKey = "2026-05", effect = BudgetEffect.REFUND, amount = 5_000.0),
+        )
+        val r = BudgetCalculator.medianPriorNetSpend(txs, "2026-06")
+        // 2026-05 has no SPEND → not qualifying; window reaches 2026-04.
+        r!!.median shouldBe (20_000.0 plusOrMinus 1e-9)
+        r.months.map { it.monthKey } shouldBe listOf("2026-04")
+    }
+
+    @Test
+    fun `medianPriorNetSpend excludes the current and future months`() {
+        val txs = listOf(
+            tx(monthKey = "2026-06", amount = 99_000.0), // current — excluded
+            tx(monthKey = "2026-07", amount = 88_000.0), // future — excluded
+            tx(monthKey = "2026-05", amount = 20_000.0),
+        )
+        BudgetCalculator.medianPriorNetSpend(txs, "2026-06")!!
+            .median shouldBe (20_000.0 plusOrMinus 1e-9)
+    }
+
+    @Test
+    fun `medianPriorNetSpend excludes pending-FX rows from the net`() {
+        val txs = listOf(
+            tx(monthKey = "2026-05", effect = BudgetEffect.SPEND, amount = null),
+            tx(monthKey = "2026-05", effect = BudgetEffect.SPEND, amount = 20_000.0),
+        )
+        BudgetCalculator.medianPriorNetSpend(txs, "2026-06")!!
+            .median shouldBe (20_000.0 plusOrMinus 1e-9)
+    }
+
+    @Test
+    fun `medianPriorNetSpend is null when no prior month has spend`() {
+        BudgetCalculator.medianPriorNetSpend(emptyList(), "2026-06") shouldBe null
+        // A refund-only history has no qualifying month either.
+        val refundOnly = listOf(
+            tx(monthKey = "2026-05", effect = BudgetEffect.REFUND, amount = 5_000.0),
+        )
+        BudgetCalculator.medianPriorNetSpend(refundOnly, "2026-06") shouldBe null
+    }
 }
